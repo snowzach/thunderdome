@@ -1,6 +1,6 @@
-# Base API Example
+# Thunderdome API 
 
-This API example is a framework for a gRPC API with a REST Gateway. It supports gRPC or HTTP/REST on the same port.
+This is a custodial wallet API for Lightning Network
 
 ## Compiling
 This is designed as a go module aware program and thus requires go 1.11 or better
@@ -77,8 +77,3 @@ Data is stored in a postgres database
 ## TLS/HTTPS
 You can enable https by setting the config option server.tls = true and pointing it to your keyfile and certfile.
 To create a self-signed cert: `openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -keyout server.key -out server.crt`
-
-## Relocation
-If you want to start with this as boilerplate for your project, you can clone this repo and use the `make relocate` option to rename the package.
-`make relocate TARGET=github.com/myname/mycoolproject`
-

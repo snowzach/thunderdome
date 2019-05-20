@@ -8,6 +8,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
+// UserGetByID fetches a user by ID
 func (c *Client) UserGetByID(ctx context.Context, id string) (*tdrpc.User, error) {
 
 	user := new(tdrpc.User)
@@ -21,6 +22,7 @@ func (c *Client) UserGetByID(ctx context.Context, id string) (*tdrpc.User, error
 	return user, nil
 }
 
+// UserGetByLogin fetches a user by login
 func (c *Client) UserGetByLogin(ctx context.Context, login string) (*tdrpc.User, error) {
 
 	user := new(tdrpc.User)
