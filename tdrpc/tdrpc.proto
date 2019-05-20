@@ -8,9 +8,9 @@ option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
 service TdomeRPC {
 
-    rpc Create(CreateRequest) returns (User) {
+    rpc Login(LoginRequest) returns (User) {
         option (google.api.http) = {
-            post: "/create"
+            post: "/login"
             body: "*"
         };
     }
@@ -81,7 +81,7 @@ service TdomeRPC {
 
 }
 
-message CreateRequest {
+message LoginRequest {
     string login = 1;
 }
 

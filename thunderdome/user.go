@@ -11,8 +11,8 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-// Create will take the user's public key and return a User
-func (s *Server) Create(ctx context.Context, request *tdrpc.CreateRequest) (*tdrpc.User, error) {
+// Login will take the user's login (public key) and return a User
+func (s *Server) Login(ctx context.Context, request *tdrpc.LoginRequest) (*tdrpc.User, error) {
 
 	// Right now the login must be a public key
 	if !pubkeyRegexp.MatchString(request.Login) {
