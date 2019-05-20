@@ -2,6 +2,7 @@ module git.coinninja.net/backend/thunderdome
 
 require (
 	cloud.google.com/go v0.39.0 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.6.2+incompatible // indirect
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/go-chi/chi v3.3.3+incompatible

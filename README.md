@@ -77,3 +77,11 @@ Data is stored in a postgres database
 ## TLS/HTTPS
 You can enable https by setting the config option server.tls = true and pointing it to your keyfile and certfile.
 To create a self-signed cert: `openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -keyout server.key -out server.crt`
+
+
+## TODO
+/balance
+/decodeInvoices
+/createinvoice
+/getUserInvoices
+/payInvoice

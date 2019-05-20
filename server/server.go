@@ -18,6 +18,7 @@ import (
 	"github.com/go-chi/render"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/snowzach/certtools"
 	"github.com/snowzach/certtools/autocert"
@@ -25,6 +26,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 )
@@ -36,6 +38,11 @@ type Server struct {
 	server     *http.Server
 	grpcServer *grpc.Server
 	gwRegFuncs []gwRegFunc
+}
+
+// This is the default authentication function, it's not actually going to get used because we will override it
+func authenticate(ctx context.Context) (context.Context, error) {
+	return nil, grpc.Errorf(codes.Unauthenticated, "Access denied")
 }
 
 // When starting to listen, we will reigster gateway functions
@@ -81,8 +88,12 @@ func New() (*Server, error) {
 	}
 
 	// GRPC Interceptors
-	streamInterceptors := []grpc.StreamServerInterceptor{}
-	unaryInterceptors := []grpc.UnaryServerInterceptor{}
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		grpc_auth.StreamServerInterceptor(authenticate),
+	}
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		grpc_auth.UnaryServerInterceptor(authenticate),
+	}
 
 	// GRPC Server Options
 	serverOptions := []grpc.ServerOption{
@@ -181,7 +192,15 @@ func (s *Server) ListenAndServe() error {
 		EmitDefaults: config.GetBool("server.rest.emit_defaults"),
 		OrigName:     config.GetBool("server.rest.orig_names"),
 	})
-	grpcGatewayMux := gwruntime.NewServeMux(gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &grpcGatewayJSONpbMarshaler))
+	grpcGatewayMux := gwruntime.NewServeMux(
+		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &grpcGatewayJSONpbMarshaler),
+		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) { 
+			if header == "Another-Header" {
+				return header, true 
+			}
+			return header, false
+		}),
+	)
 	// If the main router did not find and endpoint, pass it to the grpcGateway
 	s.router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		grpcGatewayMux.ServeHTTP(w, r)

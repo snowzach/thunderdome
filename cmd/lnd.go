@@ -6,43 +6,27 @@ import (
 	"net"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	cli "github.com/spf13/cobra"
 	config "github.com/spf13/viper"
-	"go.uber.org/zap"
+	macaroon "gopkg.in/macaroon.v2"
+	// "go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	macaroon "gopkg.in/macaroon.v2"
-
-	"git.coinninja.net/backend/thunderdome/conf"
-	"git.coinninja.net/backend/thunderdome/server"
-	"git.coinninja.net/backend/thunderdome/store/postgres"
-	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 func init() {
-	rootCmd.AddCommand(apiCmd)
+	rootCmd.AddCommand(verifyCmd)
 }
 
 var (
-	apiCmd = &cli.Command{
-		Use:   "api",
-		Short: "Start API",
-		Long:  `Start API`,
+	verifyCmd = &cli.Command{
+		Use:   "lnd",
+		Short: "LND Test",
+		Long:  `LND Test`,
 		Run: func(cmd *cli.Command, args []string) { // Initialize the databse
-
-			// Create the database connection
-			var store thunderdome.Store
-			var err error
-			switch config.GetString("storage.type") {
-			case "postgres":
-				store, err = postgres.New()
-			}
-			if err != nil {
-				logger.Fatalw("Database Error", "error", err)
-			}
 
 			// Create the connection to lightning
 			creds, err := credentials.NewClientTLSFromFile(config.GetString("lnd.tls_cert"), config.GetString("lnd.host"))
@@ -81,42 +65,41 @@ var (
 			// Do a quick ping without health check to ensure the plugin is alive and functional
 			lclient := lnrpc.NewLightningClient(conn)
 
-			_, err = lclient.GetNetworkInfo(context.Background(), &lnrpc.NetworkInfoRequest{})
+			a, err := lclient.GetNetworkInfo(context.Background(), &lnrpc.NetworkInfoRequest{})
 			if err != nil {
 				logger.Fatalw("Could not GetNetworkInfo", "error", err)
 			}
+			spew.Dump(a)
 
-			// Create the thunderdome server
-			tserver, err := thunderdome.NewServer(store, lclient)
+			b, err := lclient.WalletBalance(context.Background(), &lnrpc.WalletBalanceRequest{})
 			if err != nil {
-				logger.Fatalw("Could not create thunderdome server",
-					"error", err,
-				)
+				logger.Fatalw("Could not WalletBalance", "error", err)
 			}
+			spew.Dump(b)
 
-			// Create the grpc server
-			wserver, err := server.New()
+			// d, err := client.EstimateFee(context.Background(), &lnrpc.EstimateFeeRequest{
+			//      AddrToAmount: map[string]int64{
+			//              "3PEdU1mVicejXLGgi2dyfr9H55z4ndXFba": 1000000,
+			//      },
+			// })
+			// if err != nil {
+			//      logger.Fatalw("Could not EstimateFee", "error", err)
+			// }
+			// spew.Dump(d)
+
+			// e, err := lclient.NewAddress(context.Background(), &lnrpc.NewAddressRequest{
+			// 	Type: lnrpc.AddressType_NESTED_PUBKEY_HASH,
+			// })
+			// if err != nil {
+			// 	logger.Fatalw("Could not EstimateFee", "error", err)
+			// }
+			// spew.Dump(e)
+
+			f, err := lclient.GetTransactions(context.Background(), &lnrpc.GetTransactionsRequest{})
 			if err != nil {
-				logger.Fatalw("Could not create server",
-					"error", err,
-				)
+				logger.Fatalw("Could not GetTransactions", "error", err)
 			}
-
-			// Register the RPC server and it's GRPC Gateway for when it starts
-			tdrpc.RegisterThunderdomeRPCServer(wserver.GRPCServer(), tserver)
-			wserver.GWReg(tdrpc.RegisterThunderdomeRPCHandlerFromEndpoint)
-
-			// Start it up
-			err = wserver.ListenAndServe()
-			if err != nil {
-				logger.Fatalw("Could not start server",
-					"error", err,
-				)
-			}
-
-			<-conf.Stop.Chan() // Wait until StopChan
-			conf.Stop.Wait()   // Wait until everyone cleans up
-			zap.L().Sync()     // Flush the logger
+			spew.Dump(f)
 
 		},
 	}

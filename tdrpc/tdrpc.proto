@@ -2,16 +2,22 @@ syntax="proto3";
 package tdrpc;
 
 import "google/api/annotations.proto";
-// import "google/protobuf/empty.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
-service TdomeRPC {
+service ThunderdomeRPC {
 
     rpc Login(LoginRequest) returns (User) {
         option (google.api.http) = {
             post: "/login"
             body: "*"
+        };
+    }
+
+    rpc Balance(google.protobuf.Empty) returns (BalanceResponse) {
+        option (google.api.http) = {
+            get: "/balance"
         };
     }
 
@@ -35,11 +41,6 @@ service TdomeRPC {
     //     };
     // }
 
-    // rpc Balance(BalanceRequest) returns (BalanceResponse) {
-    //     option (google.api.http) = {
-    //         get: "/balance"
-    //     };
-    // }
 
     // rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
     //     option (google.api.http) = {
@@ -90,4 +91,8 @@ message User {
     string login = 2;
     string address = 3;
     int64 balance = 4;
+}
+
+message BalanceResponse {
+    int64 balance = 1;
 }
