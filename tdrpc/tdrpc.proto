@@ -1,0 +1,93 @@
+syntax="proto3";
+package tdrpc;
+
+import "google/api/annotations.proto";
+// import "google/protobuf/empty.proto";
+
+option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
+
+service TdomeRPC {
+
+    rpc Create(CreateRequest) returns (User) {
+        option (google.api.http) = {
+            post: "/create"
+            body: "*"
+        };
+    }
+
+    // rpc AddInvoice(AddInvoiceRequest) returns (AddInvoiceResponse) {
+    //     option (google.api.http) = {
+    //         post: "/addinvoice"
+    //         body: "*"
+    //     };
+    // }
+
+    // rpc PayInvoice(PayInvoiceRequest) returns (PayInvoiceResponse) {
+    //     option (google.api.http) = {
+    //         post: "/payinvoice"
+    //         body: "*"
+    //     };
+    // }
+
+    // rpc GetBTC(GetBTCRequest) returns (GetBTCResponse) {
+    //     option (google.api.http) = {
+    //         get: "/getbtc"
+    //     };
+    // }
+
+    // rpc Balance(BalanceRequest) returns (BalanceResponse) {
+    //     option (google.api.http) = {
+    //         get: "/balance"
+    //     };
+    // }
+
+    // rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
+    //     option (google.api.http) = {
+    //         get: "/getinfo"
+    //     };
+    // }
+
+    // rpc GetTxts(GetTxtsRequest) returns (GetTxtsResponse) {
+    //     option (google.api.http) = {
+    //         get: "/gettxs"
+    //     };
+    // }
+
+    // rpc GetUserInvoices(GetUserInvoicesRequest) returns (GetUserInvoicesResponse) {
+    //     option (google.api.http) = {
+    //         get: "/getuserinvoices"
+    //     };
+    // }
+
+    // rpc GetPending(GetPendingRequest) returns (GetPendingResponse) {
+    //     option (google.api.http) = {
+    //         get: "/getpending"
+    //     };
+    // }
+
+    // rpc DecodeInvoice(DecodeInvoiceRequest) returns (DecodeInvoiceResponse) {
+    //     option (google.api.http) = {
+    //         get: "/decodeinvoice"
+    //     };
+    // }
+
+    // rpc CheckRouteInvoice(CheckRouteInvoiceRequest) returns (CheckRouteInvoiceResponse) {
+    //     option (google.api.http) = {
+    //         get: "/checkrouteinvoice"
+    //     };
+    // }
+
+
+
+}
+
+message CreateRequest {
+    string login = 1;
+}
+
+message User {
+    string id = 1;
+    string login = 2;
+    string address = 3;
+    int64 balance = 4;
+}
