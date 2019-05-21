@@ -1,4 +1,4 @@
-package thunderdome
+package rpcserver
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 // Login will take the user's login (public key) and return a User
-func (s *Server) Login(ctx context.Context, request *tdrpc.LoginRequest) (*tdrpc.User, error) {
+func (s *RPCServer) Login(ctx context.Context, request *tdrpc.LoginRequest) (*tdrpc.User, error) {
 
 	// Right now the login must be a public key
 	if !pubkeyRegexp.MatchString(request.Login) {
@@ -20,7 +20,7 @@ func (s *Server) Login(ctx context.Context, request *tdrpc.LoginRequest) (*tdrpc
 	}
 
 	// See if we have the user
-	user, err := s.store.UserGetByLogin(ctx, request.Login)
+	user, err := s.rpcStore.UserGetByLogin(ctx, request.Login)
 	if err == nil {
 		return user, nil
 	} else if err != store.ErrNotFound {
@@ -41,7 +41,7 @@ func (s *Server) Login(ctx context.Context, request *tdrpc.LoginRequest) (*tdrpc
 
 	// Save the user
 	user.Address = address.Address
-	user, err = s.store.UserSave(ctx, user)
+	user, err = s.rpcStore.UserSave(ctx, user)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "UserSave Error: %v", err)
 	}

@@ -1,4 +1,4 @@
-package thunderdome
+package rpcserver
 
 import (
 	"context"
@@ -19,33 +19,37 @@ var (
 	pubkeyRegexp = regexp.MustCompile("^[a-f0-9]{66}$")
 )
 
-type Store interface {
+type RPCStore interface {
 	UserGetByID(ctx context.Context, id string) (*tdrpc.User, error)
 	UserGetByLogin(ctx context.Context, login string) (*tdrpc.User, error)
 	UserSave(ctx context.Context, user *tdrpc.User) (*tdrpc.User, error)
 }
 
-type Server struct {
-	logger  *zap.SugaredLogger
-	store   Store
+type RPCServer struct {
+	logger   *zap.SugaredLogger
+	rpcStore RPCStore
+
+	conn    *grpc.ClientConn
 	lclient lnrpc.LightningClient
 }
 
 type contextKey string
 
 // NewServer creates the server
-func NewServer(store Store, lclient lnrpc.LightningClient) (*Server, error) {
+func NewRPCServer(rpcStore RPCStore, conn *grpc.ClientConn) (*RPCServer, error) {
 
-	return &Server{
-		logger:  zap.S().With("package", "thunderdome"),
-		store:   store,
-		lclient: lclient,
+	return &RPCServer{
+		logger:   zap.S().With("package", "rpcserver"),
+		rpcStore: rpcStore,
+
+		conn:    conn,
+		lclient: lnrpc.NewLightningClient(conn),
 	}, nil
 
 }
 
 // AuthFuncOverride will handle authentication
-func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 
 	// // Bypass for Login
 	if fullMethodName == "/tdrpc.ThunderdomeRPC/Login" {
@@ -62,7 +66,7 @@ func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (c
 		return ctx, grpc.Errorf(codes.PermissionDenied, "Permission Denied")
 	}
 
-	user, err := s.store.UserGetByID(ctx, a[0])
+	user, err := s.rpcStore.UserGetByID(ctx, a[0])
 	if err == store.ErrNotFound {
 		return ctx, grpc.Errorf(codes.PermissionDenied, "Permission Denied")
 	} else if err != nil {

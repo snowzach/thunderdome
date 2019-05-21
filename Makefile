@@ -9,7 +9,8 @@ TOOLS := ${GOPATH}/bin/go-bindata \
 	${GOPATH}/src/github.com/golang/protobuf/proto \
 	${GOPATH}/bin/protoc-gen-go \
 	${GOPATH}/bin/protoc-gen-grpc-gateway \
-	${GOPATH}/bin/protoc-gen-swagger
+	${GOPATH}/bin/protoc-gen-swagger \
+	${GOPATH}/bin/wire
 export PROTOBUF_INCLUDES = -I. -I/usr/include -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
 PROTOS := ./tdrpc/tdrpc.pb.gw.go \
 	./server/rpc/version.pb.gw.go
@@ -38,6 +39,9 @@ ${GOPATH}/bin/protoc-gen-grpc-gateway:
 ${GOPATH}/bin/protoc-gen-swagger:
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 
+${GOPATH}/bin/wire:
+	go get github.com/google/wire
+
 # Handle all grpc endpoint protobufs
 %.pb.gw.go: %.proto
 	protoc ${PROTOBUF_INCLUDES} --go_out=paths=source_relative,plugins=grpc:. --grpc-gateway_out=paths=source_relative,logtostderr=true:. --swagger_out=logtostderr=true:. $*.proto
@@ -50,12 +54,15 @@ ${MIGRATIONDIR}/bindata.go: ${MIGRATIONS}
 	# Building bindata
 	go-bindata -o ${MIGRATIONDIR}/bindata.go -prefix ${MIGRATIONDIR} -pkg migrations ${MIGRATIONDIR}/*.sql
 
+cmd/wire_gen.go: cmd/wire.go
+	wire ./cmd/...
+
 .PHONY: mocks
 mocks: tools
 	mockery -dir ./gogrpcapi -name ThingStore
 
 .PHONY: ${EXECUTABLE}
-${EXECUTABLE}: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go
+${EXECUTABLE}: tools ${PROTOS} cmd/wire_gen.go ${MIGRATIONDIR}/bindata.go
 	# Compiling...
 	go build -ldflags "-X ${PACKAGENAME}/conf.Executable=${EXECUTABLE} -X ${PACKAGENAME}/conf.GitVersion=${GITVERSION}" -o ${EXECUTABLE}
 

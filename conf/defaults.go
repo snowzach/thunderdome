@@ -52,7 +52,7 @@ func init() {
 
 	config.SetDefault("lnd.tls_cert", "tls.cert")
 	config.SetDefault("lnd.host", "lnd")
-	config.SetDefault("lnd.port", "10009")
+	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.macaroon", "admin.macaroon")
 
 }

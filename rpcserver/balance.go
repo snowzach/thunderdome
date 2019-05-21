@@ -1,4 +1,4 @@
-package thunderdome
+package rpcserver
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 // Balance will provide the users balance
-func (s *Server) Balance(ctx context.Context, _ *emptypb.Empty) (*tdrpc.BalanceResponse, error) {
+func (s *RPCServer) Balance(ctx context.Context, _ *emptypb.Empty) (*tdrpc.BalanceResponse, error) {
 
 	// Get the authenticated user from the context
 	user := getUser(ctx)
