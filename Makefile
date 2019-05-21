@@ -11,7 +11,7 @@ TOOLS := ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/protoc-gen-grpc-gateway \
 	${GOPATH}/bin/protoc-gen-swagger \
 	${GOPATH}/bin/wire
-export PROTOBUF_INCLUDES = -I. -I/usr/include -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
+export PROTOBUF_INCLUDES = -I. -I/usr/include -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
 PROTOS := ./tdrpc/tdrpc.pb.gw.go \
 	./server/rpc/version.pb.gw.go
 

@@ -23,6 +23,8 @@ type RPCStore interface {
 	UserGetByID(ctx context.Context, id string) (*tdrpc.User, error)
 	UserGetByLogin(ctx context.Context, login string) (*tdrpc.User, error)
 	UserSave(ctx context.Context, user *tdrpc.User) (*tdrpc.User, error)
+	AddInvoice(ctx context.Context, userID string, paymentHash string) error
+	GetUserIDByPaymentHash(ctx context.Context, paymentHash string) (string, error)
 }
 
 type RPCServer struct {

@@ -3,6 +3,7 @@ package tdrpc;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "lnrpc/rpc.proto";
 
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
@@ -21,26 +22,27 @@ service ThunderdomeRPC {
         };
     }
 
-    // rpc AddInvoice(AddInvoiceRequest) returns (AddInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         post: "/addinvoice"
-    //         body: "*"
-    //     };
-    // }
+    // DecodePayReq passthrough to lnrpc DevocePayReq function
+    rpc DecodePayReq(lnrpc.PayReqString) returns (lnrpc.PayReq) {
+        option (google.api.http) = {
+            post: "/decode"
+            body: "*"
+        };
+    }
 
-    // rpc PayInvoice(PayInvoiceRequest) returns (PayInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         post: "/payinvoice"
-    //         body: "*"
-    //     };
-    // }
+    rpc AddInvoice(AddInvoiceRequest) returns (AddInvoiceResponse) {
+        option (google.api.http) = {
+            post: "/addinvoice"
+            body: "*"
+        };
+    }
 
-    // rpc GetBTC(GetBTCRequest) returns (GetBTCResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getbtc"
-    //     };
-    // }
-
+    rpc PayInvoice(PayInvoiceRequest) returns (PayInvoiceResponse) {
+        option (google.api.http) = {
+            post: "/payinvoice"
+            body: "*"
+        };
+    }
 
     // rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
     //     option (google.api.http) = {
@@ -63,12 +65,6 @@ service ThunderdomeRPC {
     // rpc GetPending(GetPendingRequest) returns (GetPendingResponse) {
     //     option (google.api.http) = {
     //         get: "/getpending"
-    //     };
-    // }
-
-    // rpc DecodeInvoice(DecodeInvoiceRequest) returns (DecodeInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         get: "/decodeinvoice"
     //     };
     // }
 
@@ -96,3 +92,26 @@ message User {
 message BalanceResponse {
     int64 balance = 1;
 }
+
+message DecodePayReqRequest {
+    string pay_req = 1;
+}
+
+message AddInvoiceRequest {
+    string memo = 1;
+    int64 value = 2;
+}
+
+message AddInvoiceResponse {
+    string pay_req = 1;
+}
+
+message PayInvoiceRequest {
+    string invoice = 1;
+    int64 value = 2;
+}
+message PayInvoiceResponse {
+    string error = 1;
+}
+
+
