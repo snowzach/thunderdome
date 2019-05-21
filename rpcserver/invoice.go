@@ -55,22 +55,9 @@ func (s *RPCServer) AddInvoice(ctx context.Context, request *tdrpc.AddInvoiceReq
 // PayInvoice pays an invoice on behalf of the user
 func (s *RPCServer) PayInvoice(ctx context.Context, request *tdrpc.PayInvoiceRequest) (*tdrpc.PayInvoiceResponse, error) {
 
-	invoice, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{
-		PayReq: request.Invoice,
-	})
-	if err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Could not decode invoice: %v", err)
-	}
-
 	response, err := s.lclient.SendPaymentSync(ctx, &lnrpc.SendRequest{
-		DestString:        invoice.Destination,
-		PaymentHashString: invoice.PaymentHash,
-		Amt:               request.Value,
-		FeeLimit: &lnrpc.FeeLimit{
-			Limit: &lnrpc.FeeLimit_Percent{
-				Percent: 1,
-			},
-		},
+		Amt:            request.Value,
+		PaymentRequest: request.Invoice,
 	})
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "Could not SendPaymentSync: %v", err)
