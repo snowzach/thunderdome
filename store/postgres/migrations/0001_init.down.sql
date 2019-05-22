@@ -1,1 +1,2 @@
-DROP TABLE public.user;
+DROP TABLE public.account;
+DROP TABLE public.ledger;

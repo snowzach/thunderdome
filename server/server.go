@@ -16,7 +16,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/gogo/gateway"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -187,20 +188,21 @@ func (s *Server) ListenAndServe() error {
 	}
 
 	// Setup the GRPC gateway
-	grpcGatewayJSONpbMarshaler := gwruntime.JSONPb(jsonpb.Marshaler{
+	grpcGatewayJSONpbMarshaler := gateway.JSONPb(jsonpb.Marshaler{
 		EnumsAsInts:  config.GetBool("server.rest.enums_as_ints"),
 		EmitDefaults: config.GetBool("server.rest.emit_defaults"),
 		OrigName:     config.GetBool("server.rest.orig_names"),
 	})
 	grpcGatewayMux := gwruntime.NewServeMux(
 		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &grpcGatewayJSONpbMarshaler),
-		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) { 
+		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) {
 			if header == "Another-Header" {
-				return header, true 
+				return header, true
 			}
 			return header, false
 		}),
 	)
+
 	// If the main router did not find and endpoint, pass it to the grpcGateway
 	s.router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		grpcGatewayMux.ServeHTTP(w, r)

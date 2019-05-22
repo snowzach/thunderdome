@@ -3,22 +3,18 @@ package tdrpc;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
 import "lnrpc/rpc.proto";
 
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
 service ThunderdomeRPC {
 
-    rpc Login(LoginRequest) returns (User) {
+    rpc GetAccount(google.protobuf.Empty) returns (Account) {
         option (google.api.http) = {
-            post: "/login"
-            body: "*"
-        };
-    }
-
-    rpc Balance(google.protobuf.Empty) returns (BalanceResponse) {
-        option (google.api.http) = {
-            get: "/balance"
+            get: "/account"
         };
     }
 
@@ -44,6 +40,12 @@ service ThunderdomeRPC {
         };
     }
 
+    // rpc GetUserInvoices(GetInvoicesRequest) returns (GetInvoicesResponse) {
+    //     option (google.api.http) = {
+    //         get: "/getinvoices"
+    //     };
+    // }
+
     // rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
     //     option (google.api.http) = {
     //         get: "/getinfo"
@@ -53,12 +55,6 @@ service ThunderdomeRPC {
     // rpc GetTxts(GetTxtsRequest) returns (GetTxtsResponse) {
     //     option (google.api.http) = {
     //         get: "/gettxs"
-    //     };
-    // }
-
-    // rpc GetUserInvoices(GetUserInvoicesRequest) returns (GetUserInvoicesResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getuserinvoices"
     //     };
     // }
 
@@ -82,15 +78,41 @@ message LoginRequest {
     string login = 1;
 }
 
-message User {
+message Account {
     string id = 1;
-    string login = 2;
-    string address = 3;
-    int64 balance = 4;
+    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "created_at",(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "updated_at",(gogoproto.moretags) = "db:\"updated_at\""];
+    string address = 4;
+    int64 balance = 5;
+    int64 balance_in = 6 [(gogoproto.jsontag) = "balance_in",(gogoproto.moretags) = "db:\"balance_in\""];
+    int64 balance_out = 7 [(gogoproto.jsontag) = "balance_out",(gogoproto.moretags) = "db:\"balance_out\""];
 }
 
-message BalanceResponse {
-    int64 balance = 1;
+message LedgerRecord {
+    string id = 1;
+    string account_id = 2;
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "created_at",(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "updated_at",(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "expires_at",(gogoproto.moretags) = "db:\"expires_at\""];
+    enum Status {
+        PENDING = 0;
+        COMPLETED = 1;
+        EXPIRED = 2;
+    }
+    Status status = 6;
+    enum Type {
+        BTC = 0;
+        LIGHTNING = 1;
+    }
+    Type type = 7;
+    enum Direction {
+        IN = 0;
+        OUT = 1;
+    }
+    Direction direction = 8;
+    int64 value = 9;
+    string memo = 10;
+    string payment_request = 11;
 }
 
 message DecodePayReqRequest {

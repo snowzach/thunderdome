@@ -11,7 +11,7 @@ TOOLS := ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/protoc-gen-grpc-gateway \
 	${GOPATH}/bin/protoc-gen-swagger \
 	${GOPATH}/bin/wire
-export PROTOBUF_INCLUDES = -I. -I/usr/include -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
+export PROTOBUF_INCLUDES = -I. -I/usr/include -I${GOPATH}/src -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
 PROTOS := ./tdrpc/tdrpc.pb.gw.go \
 	./server/rpc/version.pb.gw.go
 
@@ -27,11 +27,11 @@ ${GOPATH}/bin/go-bindata:
 ${GOPATH}/bin/mockery:
 	go get github.com/vektra/mockery/cmd/mockery
 
-${GOPATH}/src/github.com/golang/protobuf/proto:
-	go get github.com/golang/protobuf/proto
+${GOPATH}/src/github.com/gogo/protobuf/proto:
+	GO111MODULE=off go get github.com/gogo/protobuf/proto
 
-${GOPATH}/bin/protoc-gen-go:
-	go get github.com/golang/protobuf/protoc-gen-go
+${GOPATH}/bin/protoc-gen-gogoslick:
+	go get github.com/gogo/protobuf/protoc-gen-gogoslick
 
 ${GOPATH}/bin/protoc-gen-grpc-gateway:
 	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
@@ -44,11 +44,11 @@ ${GOPATH}/bin/wire:
 
 # Handle all grpc endpoint protobufs
 %.pb.gw.go: %.proto
-	protoc ${PROTOBUF_INCLUDES} --go_out=paths=source_relative,plugins=grpc:. --grpc-gateway_out=paths=source_relative,logtostderr=true:. --swagger_out=logtostderr=true:. $*.proto
+	protoc ${PROTOBUF_INCLUDES} --gogoslick_out=paths=source_relative,plugins=grpc,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:. --grpc-gateway_out=paths=source_relative,logtostderr=true:. --swagger_out=logtostderr=true:. $*.proto
 
 # Handle any non-specific protobufs
 %.pb.go: %.proto
-	protoc ${PROTOBUF_INCLUDES} --go_out=paths=source_relative,plugins=grpc:. $*.proto
+	protoc ${PROTOBUF_INCLUDES} --gogoslick_out=paths=source_relative,plugins=grpc:. $*.proto
 
 ${MIGRATIONDIR}/bindata.go: ${MIGRATIONS}
 	# Building bindata

@@ -2,29 +2,43 @@ SET client_encoding = 'UTF8';
 
 --CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 --COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
-COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
--- users table
-CREATE TABLE public.user (
-  id uuid PRIMARY KEY DEFAULT public.uuid_generate_v4(),
-  login TEXT NOT NULL,
+-- account table
+CREATE TABLE public.account (
+  id TEXT PRIMARY KEY, -- type:id
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE,
   address TEXT NOT NULL DEFAULT '',
-  balance bigint DEFAULT 0
+  balance BIGINT DEFAULT 0,
+  balance_in BIGINT DEFAULT 0,
+  balance_out BIGINT DEFAULT 0
 );
 
-CREATE UNIQUE INDEX uix_user_login ON public.user USING btree (login);
+-- Create the unknown account that can be used to handle unaccounted for transactions
+INSERT INTO account (id, updated_at, address) VALUES ('internal:unknown', NOW(), 'unknown');
 
--- invoice table
-CREATE TABLE public.invoice (
-  id uuid PRIMARY KEY DEFAULT public.uuid_generate_v4(),
-  user_id uuid NOT NULL,
-  payment_hash TEXT NOT NULL,
-  status TEXT
+-- ledger types
+CREATE TYPE ledger_status AS ENUM ('pending', 'completed', 'expired');
+CREATE TYPE ledger_type AS ENUM ('btc', 'ln');
+CREATE TYPE ledger_direction AS ENUM ('in', 'out');
+
+-- ledger table
+CREATE TABLE public.ledger (
+  id TEXT PRIMARY KEY,  -- This will be the invoice/payreq payment_hash or txid
+  account_id TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  status ledger_status,
+  type ledger_type,
+  direction ledger_direction,
+  value BIGINT DEFAULT 0,
+  memo text,
+  payment_request text
 );
 
-CREATE UNIQUE INDEX uix_invoice_payment_hash ON public.invoice USING btree (payment_hash);
-CREATE INDEX ix_invoice_user_id_status ON public.invoice USING btree(user_id, status);
+ALTER TABLE ONLY public.ledger
+  ADD CONSTRAINT fkey_ledger_account_id FOREIGN KEY (account_id) REFERENCES public.account(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY public.invoice
-  ADD CONSTRAINT fkey_invoice_user_id FOREIGN KEY (user_id) REFERENCES public.user(id) ON DELETE CASCADE;
+-- Our default listing format
+CREATE INDEX ix_ledger_account_id_status_updated_at ON public.ledger USING btree(account_id, status, updated_at);

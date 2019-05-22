@@ -2,7 +2,7 @@ package rpcserver
 
 import (
 	"context"
-	"encoding/hex"
+	// "encoding/hex"
 	// "fmt"
 
 	// "github.com/davecgh/go-spew/spew"
@@ -25,9 +25,9 @@ func (s *RPCServer) DecodePayReq(ctx context.Context, request *lnrpc.PayReqStrin
 func (s *RPCServer) AddInvoice(ctx context.Context, request *tdrpc.AddInvoiceRequest) (*tdrpc.AddInvoiceResponse, error) {
 
 	// Get the authenticated user from the context
-	user := getUser(ctx)
-	if user == nil {
-		return nil, grpc.Errorf(codes.Internal, "Did not fetch user from context")
+	account := getAccount(ctx)
+	if account == nil {
+		return nil, grpc.Errorf(codes.Internal, "Missing Account")
 	}
 
 	// Create the invoice
@@ -40,11 +40,11 @@ func (s *RPCServer) AddInvoice(ctx context.Context, request *tdrpc.AddInvoiceReq
 		return nil, grpc.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
 	}
 
-	// Store the userID <-> paymentHash association
-	err = s.rpcStore.AddInvoice(ctx, user.Id, hex.EncodeToString(invoice.RHash))
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
-	}
+	// // Store the userID <-> paymentHash association
+	// err = s.rpcStore.AddInvoice(ctx, account.Id, hex.EncodeToString(invoice.RHash))
+	// if err != nil {
+	// 	return nil, grpc.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
+	// }
 
 	return &tdrpc.AddInvoiceResponse{
 		PayReq: invoice.PaymentRequest,
