@@ -6,20 +6,25 @@ import (
 )
 
 // Scan decodes the database ledger status
-func (status *LedgerRecord_Status) Scan(src interface{}) error {
+func (status LedgerRecord_Status) Scan(src interface{}) error {
 
-	statusString, ok := src.(string)
-	if !ok {
+	var statusString string
+	switch st := src.(type) {
+	case string:
+		statusString = st
+	case []uint8:
+		statusString = string(st)
+	default:
 		return fmt.Errorf("Invalid status type: %T=%v", src, src)
 	}
 
 	switch statusString {
 	case "pending":
-		*status = PENDING
+		status = PENDING
 	case "completed":
-		*status = COMPLETED
+		status = COMPLETED
 	case "expired":
-		*status = EXPIRED
+		status = EXPIRED
 	default:
 		return fmt.Errorf("Unknown status %s", statusString)
 	}
@@ -47,8 +52,13 @@ func (status LedgerRecord_Status) Value() (driver.Value, error) {
 // Scan decodes the database ledger type
 func (t *LedgerRecord_Type) Scan(src interface{}) error {
 
-	typeString, ok := src.(string)
-	if !ok {
+	var typeString string
+	switch st := src.(type) {
+	case string:
+		typeString = st
+	case []uint8:
+		typeString = string(st)
+	default:
 		return fmt.Errorf("Invalid type type: %T=%v", src, src)
 	}
 
@@ -82,8 +92,13 @@ func (t LedgerRecord_Type) Value() (driver.Value, error) {
 // Scan decodes the database ledger direction
 func (direction *LedgerRecord_Direction) Scan(src interface{}) error {
 
-	directionString, ok := src.(string)
-	if !ok {
+	var directionString string
+	switch st := src.(type) {
+	case string:
+		directionString = st
+	case []uint8:
+		directionString = string(st)
+	default:
 		return fmt.Errorf("Invalid direction type: %T=%v", src, src)
 	}
 

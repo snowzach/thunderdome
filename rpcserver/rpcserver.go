@@ -11,9 +11,10 @@ import (
 )
 
 type RPCStore interface {
-	AccountGetByID(context.Context, string) (*tdrpc.Account, error)
-	AccountSave(context.Context, *tdrpc.Account) (*tdrpc.Account, error)
-	UpsertLedgerRecord(context.Context, *tdrpc.LedgerRecord) error
+	AccountGetByID(ctx context.Context, accountID string) (*tdrpc.Account, error)
+	AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error)
+	ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error
+	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
 }
 
 type RPCServer struct {

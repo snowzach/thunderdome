@@ -58,7 +58,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 
 	// Put it in the ledger
 	expiresAt := time.Now().UTC().Add(86400 * time.Second)
-	err = s.rpcStore.UpsertLedgerRecord(ctx, &tdrpc.LedgerRecord{
+	err = s.rpcStore.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
 		Id:        hex.EncodeToString(invoice.RHash),
 		AccountId: account.Id,
 		ExpiresAt: &expiresAt,
@@ -120,9 +120,9 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	}
 
 	// Save the initial state
-	err = s.rpcStore.UpsertLedgerRecord(ctx, lr)
+	err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
+		return nil, grpc.Errorf(codes.Internal, "Could not ProcessLedgerRecord: %v", err)
 	}
 
 	// Send the payment
@@ -139,12 +139,32 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	}
 
 	// Update the status and the balance
-	err = s.rpcStore.UpsertLedgerRecord(ctx, lr)
+	err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
+		return nil, grpc.Errorf(codes.Internal, "Could not ProcessLedgerRecord: %v", err)
 	}
 
 	return &tdrpc.PayResponse{
 		Error: response.GetPaymentError(),
 	}, nil
+}
+
+// Ledger will return the ledger for a user
+func (s *RPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) (*tdrpc.LedgerResponse, error) {
+
+	// Get the authenticated user from the context
+	account := getAccount(ctx)
+	if account == nil {
+		return nil, grpc.Errorf(codes.Internal, "Missing Account")
+	}
+
+	lrs, err := s.rpcStore.GetLedger(ctx, account.Id)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Error on GetLedger: %v", err)
+	}
+
+	return &tdrpc.LedgerResponse{
+		Ledger: lrs,
+	}, nil
+
 }

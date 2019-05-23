@@ -38,24 +38,30 @@ service ThunderdomeRPC {
         };
     }
 
+    rpc Ledger(LedgerRequest) returns (LedgerResponse) {
+        option (google.api.http) = {
+            get: "/ledger"
+        };
+    }
+
 }
 
 message Account {
     string id = 1;
-    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "created_at",(gogoproto.moretags) = "db:\"created_at\""];
-    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "updated_at",(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
     string address = 4;
-    int64 balance = 5;
+    int64 balance = 5  [(gogoproto.jsontag) = "balance"];
     int64 balance_in = 6 [(gogoproto.jsontag) = "balance_in",(gogoproto.moretags) = "db:\"balance_in\""];
     int64 balance_out = 7 [(gogoproto.jsontag) = "balance_out",(gogoproto.moretags) = "db:\"balance_out\""];
 }
 
 message LedgerRecord {
     string id = 1;
-    string account_id = 2;
-    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "created_at",(gogoproto.moretags) = "db:\"created_at\""];
-    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "updated_at",(gogoproto.moretags) = "db:\"updated_at\""];
-    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.jsontag) = "expires_at",(gogoproto.moretags) = "db:\"expires_at\""];
+    string account_id = 2 [(gogoproto.moretags) = "db:\"account_id\""];
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"expires_at\""];
     enum Status {
         PENDING = 0;
         COMPLETED = 1;
@@ -73,9 +79,9 @@ message LedgerRecord {
         OUT = 1;
     }
     Direction direction = 8;
-    int64 value = 9;
-    string memo = 10;
-    string request = 11;
+    int64 value = 9 [(gogoproto.jsontag) = "value"];
+    string memo = 10 [(gogoproto.jsontag) = "memo"];;
+    string request = 11 [(gogoproto.jsontag) = "request"];;
 }
 
 message DecodeRequest {
@@ -123,4 +129,11 @@ message PayRequest {
 }
 message PayResponse {
     string error = 1;
+}
+
+message LedgerRequest {
+}
+
+message LedgerResponse {
+    repeated LedgerRecord ledger = 1;
 }
