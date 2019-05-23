@@ -27,6 +27,7 @@ var (
 			}
 
 			go rpcServer.TransactionMonitor()
+			go rpcServer.InvoiceMonitor()
 
 			server, err := NewServer()
 			if err != nil {

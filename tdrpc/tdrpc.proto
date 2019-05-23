@@ -80,8 +80,10 @@ message LedgerRecord {
     }
     Direction direction = 8;
     int64 value = 9 [(gogoproto.jsontag) = "value"];
-    string memo = 10 [(gogoproto.jsontag) = "memo"];;
-    string request = 11 [(gogoproto.jsontag) = "request"];;
+    uint64 add_index = 10 [(gogoproto.jsontag) = "add_index",(gogoproto.moretags) = "db:\"add_index\""];
+    string memo = 11 [(gogoproto.jsontag) = "memo"];;
+    string request = 12 [(gogoproto.jsontag) = "request"];
+    string error = 13 [(gogoproto.jsontag) = "error"];
 }
 
 message DecodeRequest {
@@ -128,7 +130,7 @@ message PayRequest {
     int64 value = 2;
 }
 message PayResponse {
-    string error = 1;
+    LedgerRecord result = 1;    
 }
 
 message LedgerRequest {

@@ -66,6 +66,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.IN,
 		Value:     request.Value,
+		AddIndex:  invoice.AddIndex,
 		Memo:      request.Memo,
 		Request:   invoice.PaymentRequest,
 	})
@@ -96,9 +97,19 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	}
 
 	// Check for expiration
-	expiresAt := time.Unix(pr.Expiry, 0)
-	if time.Now().Sub(expiresAt) <= 0 {
+	expiresAt := time.Unix(pr.Timestamp+pr.Expiry, 0)
+	if time.Now().UTC().After(expiresAt) {
 		return nil, grpc.Errorf(codes.InvalidArgument, "Request is expired")
+	}
+
+	// Check for zero amount
+	if pr.NumSatoshis == 0 && request.Value == 0 {
+		return nil, grpc.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
+	}
+
+	// See if we already have it
+	if existing, err := s.rpcStore.GetLedgerRecordByID(ctx, pr.PaymentHash); err == nil && existing.Status == tdrpc.COMPLETED {
+
 	}
 
 	// If no value specified, pay the amount in the PayReq
@@ -119,10 +130,10 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		Request:   request.Request,
 	}
 
-	// Save the initial state
+	// Save the initial state - will do some sanity checking as well
 	err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not ProcessLedgerRecord: %v", err)
+		return nil, grpc.Errorf(codes.Internal, "%v", err)
 	}
 
 	// Send the payment
@@ -130,22 +141,29 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		Amt:            request.Value,
 		PaymentRequest: request.Request,
 	})
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not SendPaymentSync: %v", err)
-	} else if response.PaymentError != "" {
+	if err != nil || (response != nil && response.PaymentError != "") {
 		lr.Status = tdrpc.FAILED
+		if response.PaymentError != "" {
+			lr.Error = response.PaymentError
+		} else {
+			lr.Error = err.Error()
+		}
 	} else {
 		lr.Status = tdrpc.COMPLETED
 	}
 
 	// Update the status and the balance
-	err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
+	if plrerr := s.rpcStore.ProcessLedgerRecord(ctx, lr); plrerr != nil {
+		return nil, grpc.Errorf(codes.Internal, "%v", plrerr)
+	}
+
+	// If there was an error, the ledger has been updated, return the error now
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not ProcessLedgerRecord: %v", err)
+		return nil, grpc.Errorf(codes.Internal, "Could not SendPaymentSync: %v", err)
 	}
 
 	return &tdrpc.PayResponse{
-		Error: response.GetPaymentError(),
+		Result: lr,
 	}, nil
 }
 

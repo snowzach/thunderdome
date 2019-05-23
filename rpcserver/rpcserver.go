@@ -15,6 +15,7 @@ type RPCStore interface {
 	AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error)
 	ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error
 	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
+	GetLedgerRecordByID(ctx context.Context, accountID string) (*tdrpc.LedgerRecord, error)
 }
 
 type RPCServer struct {

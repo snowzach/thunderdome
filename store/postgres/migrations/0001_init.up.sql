@@ -18,7 +18,7 @@ CREATE TABLE public.account (
 INSERT INTO account (id, updated_at, address) VALUES ('internal:unknown', NOW(), 'unknown');
 
 -- ledger types
-CREATE TYPE ledger_status AS ENUM ('pending', 'completed', 'expired');
+CREATE TYPE ledger_status AS ENUM ('pending', 'completed', 'expired','failed');
 CREATE TYPE ledger_type AS ENUM ('btc', 'lightning');
 CREATE TYPE ledger_direction AS ENUM ('in', 'out');
 
@@ -33,8 +33,10 @@ CREATE TABLE public.ledger (
   type ledger_type,
   direction ledger_direction,
   value BIGINT DEFAULT 0,
+  add_index BIGINT DEFAULT 0,
   memo text,
-  request text
+  request text,
+  error text
 );
 
 ALTER TABLE ONLY public.ledger
