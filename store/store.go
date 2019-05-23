@@ -8,4 +8,5 @@ import (
 var (
 	ErrNotFound          = errors.New("Not Found")
 	ErrInsufficientFunds = errors.New("Insufficient Funds")
+	ErrRequestExpired    = errors.New("Request Expired")
 )

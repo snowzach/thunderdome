@@ -26,8 +26,8 @@ var (
 				)
 			}
 
-			go rpcServer.TransactionMonitor()
-			go rpcServer.InvoiceMonitor()
+			go rpcServer.BTCMonitor()
+			go rpcServer.LightningMonitor()
 
 			server, err := NewServer()
 			if err != nil {

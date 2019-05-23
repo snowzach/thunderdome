@@ -1,8 +1,5 @@
 SET client_encoding = 'UTF8';
 
---CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
---COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
 -- account table
 CREATE TABLE public.account (
   id TEXT PRIMARY KEY, -- type:id
@@ -24,19 +21,20 @@ CREATE TYPE ledger_direction AS ENUM ('in', 'out');
 
 -- ledger table
 CREATE TABLE public.ledger (
-  id TEXT PRIMARY KEY,  -- This will be the invoice/payreq payment_hash or txid
+  id TEXT NOT NULL,
   account_id TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE,
   expires_at TIMESTAMP WITH TIME ZONE,
-  status ledger_status,
-  type ledger_type,
-  direction ledger_direction,
+  status ledger_status NOT NULL,
+  type ledger_type NOT NULL,
+  direction ledger_direction NOT NULL,
   value BIGINT DEFAULT 0,
   add_index BIGINT DEFAULT 0,
-  memo text,
-  request text,
-  error text
+  memo text DEFAULT '',
+  request text DEFAULT '',
+  error text DEFAULT '',
+  PRIMARY KEY (id, direction)
 );
 
 ALTER TABLE ONLY public.ledger

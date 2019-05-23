@@ -10,7 +10,7 @@ import (
 )
 
 // TransactionMonitor will spin up, search for existing transactions, and listen for incoming transactions
-func (s *RPCServer) TransactionMonitor() {
+func (s *RPCServer) BTCMonitor() {
 
 	txmlogger := s.logger.With("package", "txmonitor")
 
@@ -43,39 +43,6 @@ func (s *RPCServer) TransactionMonitor() {
 			}
 
 			txmlogger.Infow("TXMonitor Message", "tx", tx, "addresses", strings.Join(tx.DestAddresses, ","))
-		}
-
-		time.Sleep(10 * time.Second)
-
-	}
-
-}
-
-func (s *RPCServer) InvoiceMonitor() {
-
-	invmlogger := s.logger.With("package", "invmonitor")
-
-	// If we disconnect, loop and try again
-	for {
-		// Connect to the transaction stream
-		invclient, err := s.lclient.SubscribeInvoices(context.Background(), &lnrpc.InvoiceSubscription{
-			AddIndex:    1,
-			SettleIndex: 1,
-		})
-		if err != nil {
-			invmlogger.Fatalw("Could not SubscribeInvoices", "error", err)
-		}
-
-		invmlogger.Info("Listening for transactions...")
-
-		for {
-			inv, err := invclient.Recv()
-			if err == io.EOF {
-				invmlogger.Error("TXM Closed Connection")
-				break
-			}
-
-			invmlogger.Infow("INVMonitor Message", "inv", inv)
 		}
 
 		time.Sleep(10 * time.Second)

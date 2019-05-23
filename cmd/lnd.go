@@ -62,6 +62,13 @@ var (
 			}
 			spew.Dump(f)
 
+			// Do a quick ping without health check to ensure the plugin is alive and functional
+			g, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
+			if err != nil {
+				logger.Fatalw("Could not GetNetworkInfo", "error", err)
+			}
+			spew.Dump(g)
+
 		},
 	}
 )

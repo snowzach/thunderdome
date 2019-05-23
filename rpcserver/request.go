@@ -107,11 +107,6 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		return nil, grpc.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
 	}
 
-	// See if we already have it
-	if existing, err := s.rpcStore.GetLedgerRecordByID(ctx, pr.PaymentHash); err == nil && existing.Status == tdrpc.COMPLETED {
-
-	}
-
 	// If no value specified, pay the amount in the PayReq
 	if request.Value == 0 {
 		request.Value = pr.NumSatoshis
@@ -134,6 +129,21 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "%v", err)
+	}
+
+	// If this is a payment to someone else using this service, we transfer the balance internally
+	if pr.Destination == s.myPubKey {
+
+		// This is an internal payment, process the record
+		lr, err = s.rpcStore.ProcessInternal(ctx, pr.PaymentHash)
+		if err != nil {
+			return nil, grpc.Errorf(codes.Internal, "%v", err)
+		}
+
+		return &tdrpc.PayResponse{
+			Result: lr,
+		}, nil
+
 	}
 
 	// Send the payment
@@ -159,7 +169,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 
 	// If there was an error, the ledger has been updated, return the error now
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not SendPaymentSync: %v", err)
+		return nil, grpc.Errorf(codes.Internal, "Could not Pay: %v", err)
 	}
 
 	return &tdrpc.PayResponse{

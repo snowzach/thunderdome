@@ -14,16 +14,17 @@ type RPCStore interface {
 	AccountGetByID(ctx context.Context, accountID string) (*tdrpc.Account, error)
 	AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error)
 	ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error
+	ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerRecord, error)
 	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
-	GetLedgerRecordByID(ctx context.Context, accountID string) (*tdrpc.LedgerRecord, error)
+	GetLedgerRecord(ctx context.Context, id string, direction tdrpc.LedgerRecord_Direction) (*tdrpc.LedgerRecord, error)
 }
 
 type RPCServer struct {
 	logger   *zap.SugaredLogger
 	rpcStore RPCStore
-
-	conn    *grpc.ClientConn
-	lclient lnrpc.LightningClient
+	myPubKey string
+	conn     *grpc.ClientConn
+	lclient  lnrpc.LightningClient
 }
 
 type contextKey string
@@ -47,12 +48,20 @@ func getAccount(ctx context.Context) *tdrpc.Account {
 // NewRPCServer creates the server
 func NewRPCServer(rpcStore RPCStore, conn *grpc.ClientConn) (*RPCServer, error) {
 
+	// Fetch the node info to make sure we know our own identity for self-payments
+	lclient := lnrpc.NewLightningClient(conn)
+	info, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the server
 	return &RPCServer{
 		logger:   zap.S().With("package", "rpcserver"),
 		rpcStore: rpcStore,
-
-		conn:    conn,
-		lclient: lnrpc.NewLightningClient(conn),
+		myPubKey: info.IdentityPubkey,
+		conn:     conn,
+		lclient:  lclient,
 	}, nil
 
 }
