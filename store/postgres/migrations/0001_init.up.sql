@@ -19,7 +19,7 @@ INSERT INTO account (id, updated_at, address) VALUES ('internal:unknown', NOW(),
 
 -- ledger types
 CREATE TYPE ledger_status AS ENUM ('pending', 'completed', 'expired');
-CREATE TYPE ledger_type AS ENUM ('btc', 'ln');
+CREATE TYPE ledger_type AS ENUM ('btc', 'lightning');
 CREATE TYPE ledger_direction AS ENUM ('in', 'out');
 
 -- ledger table
@@ -34,7 +34,7 @@ CREATE TABLE public.ledger (
   direction ledger_direction,
   value BIGINT DEFAULT 0,
   memo text,
-  payment_request text
+  request text
 );
 
 ALTER TABLE ONLY public.ledger

@@ -6,8 +6,6 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-import "lnrpc/rpc.proto";
-
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
 service ThunderdomeRPC {
@@ -18,64 +16,28 @@ service ThunderdomeRPC {
         };
     }
 
-    // DecodePayReq passthrough to lnrpc DevocePayReq function
-    rpc DecodePayReq(lnrpc.PayReqString) returns (lnrpc.PayReq) {
+    // DecodeRequest
+    rpc Decode(DecodeRequest) returns (DecodeResponse) {
         option (google.api.http) = {
             post: "/decode"
             body: "*"
         };
     }
 
-    rpc AddInvoice(AddInvoiceRequest) returns (AddInvoiceResponse) {
+    rpc Create(CreateRequest) returns (CreateResponse) {
         option (google.api.http) = {
-            post: "/addinvoice"
+            post: "/create"
             body: "*"
         };
     }
 
-    rpc PayInvoice(PayInvoiceRequest) returns (PayInvoiceResponse) {
+    rpc Pay(PayRequest) returns (PayResponse) {
         option (google.api.http) = {
-            post: "/payinvoice"
+            post: "/pay"
             body: "*"
         };
     }
 
-    // rpc GetUserInvoices(GetInvoicesRequest) returns (GetInvoicesResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getinvoices"
-    //     };
-    // }
-
-    // rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getinfo"
-    //     };
-    // }
-
-    // rpc GetTxts(GetTxtsRequest) returns (GetTxtsResponse) {
-    //     option (google.api.http) = {
-    //         get: "/gettxs"
-    //     };
-    // }
-
-    // rpc GetPending(GetPendingRequest) returns (GetPendingResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getpending"
-    //     };
-    // }
-
-    // rpc CheckRouteInvoice(CheckRouteInvoiceRequest) returns (CheckRouteInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         get: "/checkrouteinvoice"
-    //     };
-    // }
-
-
-
-}
-
-message LoginRequest {
-    string login = 1;
 }
 
 message Account {
@@ -98,6 +60,7 @@ message LedgerRecord {
         PENDING = 0;
         COMPLETED = 1;
         EXPIRED = 2;
+        FAILED = 3;
     }
     Status status = 6;
     enum Type {
@@ -112,28 +75,52 @@ message LedgerRecord {
     Direction direction = 8;
     int64 value = 9;
     string memo = 10;
-    string payment_request = 11;
+    string request = 11;
 }
 
-message DecodePayReqRequest {
-    string pay_req = 1;
+message DecodeRequest {
+    string request = 1;
 }
 
-message AddInvoiceRequest {
+// These are copied from the lnrpc definition - we may eventually just include this
+message DecodeResponse {
+    string destination = 1 [(gogoproto.jsontag) = "destination"];
+    string payment_hash = 2 [(gogoproto.jsontag) = "payment_hash"];
+    int64 num_satoshis = 3 [(gogoproto.jsontag) = "num_satoshis"];
+    int64 timestamp = 4 [(gogoproto.jsontag) = "timestamp"];
+    int64 expiry = 5 [(gogoproto.jsontag) = "expiry"];
+    string description = 6 [(gogoproto.jsontag) = "description"];
+    string description_hash = 7 [(gogoproto.jsontag) = "description_hash"];
+    string fallback_addr = 8 [(gogoproto.jsontag) = "fallback_addr"];
+    int64 cltv_expiry = 9 [(gogoproto.jsontag) = "cltv_expiry"];
+    repeated RouteHint route_hints = 10 [(gogoproto.jsontag) = "route_hints"];
+}
+
+message RouteHint {
+    repeated HopHint hop_hints = 1 [(gogoproto.jsontag) = "hop_hints"];
+}
+
+message HopHint {
+    string node_id = 1 [(gogoproto.jsontag) = "node_id"];
+    uint64 chan_id = 2 [(gogoproto.jsontag) = "chan_id"];
+    uint32 fee_base_msat = 3 [(gogoproto.jsontag) = "fee_base_msat"];
+    uint32 fee_proportional_millionths = 4 [(gogoproto.jsontag) = "fee_proportional_millionths"];
+    uint32 cltv_expiry_delta = 5 [(gogoproto.jsontag) = "cltv_expiry_delta"];
+}
+
+message CreateRequest {
     string memo = 1;
     int64 value = 2;
 }
 
-message AddInvoiceResponse {
-    string pay_req = 1;
+message CreateResponse {
+    string request = 1;
 }
 
-message PayInvoiceRequest {
-    string invoice = 1;
+message PayRequest {
+    string request = 1;
     int64 value = 2;
 }
-message PayInvoiceResponse {
+message PayResponse {
     string error = 1;
 }
-
-

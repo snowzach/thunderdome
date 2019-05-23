@@ -55,7 +55,7 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 		// Fetch an unused address from the lightning node
 		address, err := s.lclient.NewAddress(ctx, &lnrpc.NewAddressRequest{
-			Type: lnrpc.AddressType_WITNESS_PUBKEY_HASH,
+			Type: lnrpc.AddressType_NESTED_PUBKEY_HASH,
 		})
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal, "New Address Error: %v", err)

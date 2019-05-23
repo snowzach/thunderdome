@@ -11,10 +11,9 @@ import (
 )
 
 type RPCStore interface {
-	AccountGetByID(ctx context.Context, id string) (*tdrpc.Account, error)
-	AccountSave(ctx context.Context, user *tdrpc.Account) (*tdrpc.Account, error)
-	// AddInvoice(ctx context.Context, userID string, paymentHash string) error
-	// GetAccountIDByPaymentHash(ctx context.Context, paymentHash string) (string, error)
+	AccountGetByID(context.Context, string) (*tdrpc.Account, error)
+	AccountSave(context.Context, *tdrpc.Account) (*tdrpc.Account, error)
+	UpsertLedgerRecord(context.Context, *tdrpc.LedgerRecord) error
 }
 
 type RPCServer struct {
