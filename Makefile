@@ -2,6 +2,7 @@ EXECUTABLE := api
 GITVERSION := $(shell git describe --dirty --always --tags --long)
 GOPATH ?= ${HOME}/go
 PACKAGENAME := $(shell go list -m -f '{{.Path}}')
+EMBEDDIR := embed
 MIGRATIONDIR := store/postgres/migrations
 MIGRATIONS :=  $(wildcard ${MIGRATIONDIR}/*.sql)
 TOOLS := ${GOPATH}/bin/go-bindata \
@@ -14,6 +15,8 @@ TOOLS := ${GOPATH}/bin/go-bindata \
 export PROTOBUF_INCLUDES = -I. -I/usr/include -I${GOPATH}/src -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
 PROTOS := ./tdrpc/tdrpc.pb.gw.go \
 	./server/rpc/version.pb.gw.go
+SWAGGERDOCS = ./tdrpc/tdrpc.swagger.json
+SWAGGER_VERSION = 3.20.8
 
 .PHONY: default
 default: ${EXECUTABLE}
@@ -50,6 +53,14 @@ ${GOPATH}/bin/wire:
 %.pb.go: %.proto
 	protoc ${PROTOBUF_INCLUDES} --gogoslick_out=paths=source_relative,plugins=grpc:. $*.proto
 
+${EMBEDDIR}/bindata.go: ${SWAGGERDOCS} embed/public/api-docs/index.html
+	# Copying swagger docs
+	mkdir -p embed/public/api-docs
+	cp $(SWAGGERDOCS) embed/public/api-docs
+	# Building bindata
+	go-bindata -o ${EMBEDDIR}/bindata.go -prefix ${EMBEDDIR} -pkg embed embed/public/...
+
+
 ${MIGRATIONDIR}/bindata.go: ${MIGRATIONS}
 	# Building bindata
 	go-bindata -o ${MIGRATIONDIR}/bindata.go -prefix ${MIGRATIONDIR} -pkg migrations ${MIGRATIONDIR}/*.sql
@@ -62,7 +73,7 @@ mocks: tools
 	mockery -dir ./gogrpcapi -name ThingStore
 
 .PHONY: ${EXECUTABLE}
-${EXECUTABLE}: tools ${PROTOS} cmd/wire_gen.go ${MIGRATIONDIR}/bindata.go
+${EXECUTABLE}: tools ${PROTOS} cmd/wire_gen.go ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go
 	# Compiling...
 	go build -ldflags "-X ${PACKAGENAME}/conf.Executable=${EXECUTABLE} -X ${PACKAGENAME}/conf.GitVersion=${GITVERSION}" -o ${EXECUTABLE}
 
@@ -74,3 +85,8 @@ test: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go mocks
 deps:
 	# Fetching dependancies...
 	go get -d -v # Adding -u here will break CI
+
+embed/public/swagger-ui/index.html:
+	# Downloading Swagger UI
+	mkdir -p embed/public/swagger-ui
+	curl -L https://github.com/swagger-api/swagger-ui/archive/v${SWAGGER_VERSION}.tar.gz | tar zx --strip-components 2 -C embed/public/swagger-ui swagger-ui-${SWAGGER_VERSION}/dist
