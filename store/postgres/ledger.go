@@ -358,7 +358,7 @@ func (c *Client) GetLedger(ctx context.Context, accountID string) ([]*tdrpc.Ledg
 func (c *Client) GetLedgerRecord(ctx context.Context, id string, direction tdrpc.LedgerRecord_Direction) (*tdrpc.LedgerRecord, error) {
 
 	var lr = new(tdrpc.LedgerRecord)
-	err := c.db.SelectContext(ctx, lr, `SELECT * FROM ledger WHERE id = $1 AND direciton = $2`, id, direction)
+	err := c.db.GetContext(ctx, lr, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, direction)
 	if err == sql.ErrNoRows {
 		return nil, store.ErrNotFound
 	} else if err != nil {

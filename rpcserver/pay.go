@@ -2,7 +2,6 @@ package rpcserver
 
 import (
 	"context"
-	"encoding/hex"
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -11,75 +10,6 @@ import (
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
-
-// DecodePayReq passes through decoding the pay request
-func (s *RPCServer) Decode(ctx context.Context, request *tdrpc.DecodeRequest) (*tdrpc.DecodeResponse, error) {
-
-	// Decode and return the PayRequest
-	pr, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: request.Request})
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert it to our type
-	return &tdrpc.DecodeResponse{
-		Destination:     pr.Destination,
-		PaymentHash:     pr.PaymentHash,
-		NumSatoshis:     pr.NumSatoshis,
-		Timestamp:       pr.Timestamp,
-		Expiry:          pr.Expiry,
-		Description:     pr.Description,
-		DescriptionHash: pr.DescriptionHash,
-		FallbackAddr:    pr.FallbackAddr,
-		CltvExpiry:      pr.CltvExpiry,
-		RouteHints:      []*tdrpc.RouteHint{}, // TODO: Decode route hints
-	}, err
-
-}
-
-// Create creates a payment request for the current user
-func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*tdrpc.CreateResponse, error) {
-
-	// Get the authenticated user from the context
-	account := getAccount(ctx)
-	if account == nil {
-		return nil, grpc.Errorf(codes.Internal, "Missing Account")
-	}
-
-	// Create the invoice
-	invoice, err := s.lclient.AddInvoice(ctx, &lnrpc.Invoice{
-		Memo:   request.Memo,
-		Value:  request.Value,
-		Expiry: 86400,
-	})
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
-	}
-
-	// Put it in the ledger
-	expiresAt := time.Now().UTC().Add(86400 * time.Second)
-	err = s.rpcStore.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
-		Id:        hex.EncodeToString(invoice.RHash),
-		AccountId: account.Id,
-		ExpiresAt: &expiresAt,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.LIGHTNING,
-		Direction: tdrpc.IN,
-		Value:     request.Value,
-		AddIndex:  invoice.AddIndex,
-		Memo:      request.Memo,
-		Request:   invoice.PaymentRequest,
-	})
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
-	}
-
-	// Return the payment request
-	return &tdrpc.CreateResponse{
-		Request: invoice.PaymentRequest,
-	}, nil
-
-}
 
 // Pay will pay a payment request
 func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.PayResponse, error) {
@@ -175,24 +105,4 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	return &tdrpc.PayResponse{
 		Result: lr,
 	}, nil
-}
-
-// Ledger will return the ledger for a user
-func (s *RPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) (*tdrpc.LedgerResponse, error) {
-
-	// Get the authenticated user from the context
-	account := getAccount(ctx)
-	if account == nil {
-		return nil, grpc.Errorf(codes.Internal, "Missing Account")
-	}
-
-	lrs, err := s.rpcStore.GetLedger(ctx, account.Id)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Error on GetLedger: %v", err)
-	}
-
-	return &tdrpc.LedgerResponse{
-		Ledger: lrs,
-	}, nil
-
 }
