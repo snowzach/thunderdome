@@ -2,6 +2,8 @@ module git.coinninja.net/backend/thunderdome
 
 require (
 	cloud.google.com/go v0.39.0 // indirect
+	github.com/btcsuite/btcd v0.0.0-20190426011420-63f50db2f70a
+	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/davecgh/go-spew v1.1.1
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/go-chi/chi v3.3.3+incompatible

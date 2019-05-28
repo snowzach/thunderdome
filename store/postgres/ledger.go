@@ -29,11 +29,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		}
 	}()
 
-	// Set the expired time if it's not
-	if time.Now().UTC().After(*lr.ExpiresAt) {
-		lr.Status = tdrpc.EXPIRED
-	}
-
 	// See if the ledger entry already exists
 	prevlr := new(tdrpc.LedgerRecord)
 	err = tx.GetContext(ctx, prevlr, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, lr.Id, lr.Direction)
@@ -43,7 +38,11 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		prevlr = nil
 	} else if err != nil {
 		return fmt.Errorf("Could not fetch existing LedgerRecord: %v", err)
-	} else {
+	}
+
+	c.logger.Debugw("ProcessLedgerRecord Delta", getLedgerDeltaLog(prevlr, lr)...)
+
+	if prevlr != nil {
 		// The previous transaction exists, validate that nothing of note has changed in the request
 		if prevlr.Type != lr.Type || prevlr.Direction != lr.Direction || prevlr.AccountId != lr.AccountId || prevlr.Request != lr.Request {
 			tx.Rollback()
@@ -365,5 +364,46 @@ func (c *Client) GetLedgerRecord(ctx context.Context, id string, direction tdrpc
 		return nil, err
 	}
 	return lr, nil
+
+}
+
+// Returns the difference in two ledger records suitable for logging
+func getLedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) []interface{} {
+
+	ret := make([]interface{}, 0)
+
+	if lr1 == nil || lr2 == nil {
+		return ret
+	}
+
+	if lr1.AccountId != lr2.AccountId {
+		ret = append(ret, "account_id", fmt.Sprintf("%v->%v", lr1.AccountId, lr2.AccountId))
+	}
+	if lr1.Status != lr2.Status {
+		ret = append(ret, "status", fmt.Sprintf("%v->%v", lr1.Status, lr2.Status))
+	}
+	if lr1.Type != lr2.Type {
+		ret = append(ret, "type", fmt.Sprintf("%v->%v", lr1.Type, lr2.Type))
+	}
+	if lr1.Direction != lr2.Direction {
+		ret = append(ret, "direction", fmt.Sprintf("%v->%v", lr1.Direction, lr2.Direction))
+	}
+	if lr1.Value != lr2.Value {
+		ret = append(ret, "value", fmt.Sprintf("%v->%v", lr1.Value, lr2.Value))
+	}
+	if lr1.AddIndex != lr2.AddIndex {
+		ret = append(ret, "add_index", fmt.Sprintf("%v->%v", lr1.AddIndex, lr2.AddIndex))
+	}
+	if lr1.Memo != lr2.Memo {
+		ret = append(ret, "memo", fmt.Sprintf("%v->%v", lr1.Memo, lr2.Memo))
+	}
+	if lr1.Request != lr2.Request {
+		ret = append(ret, "request", fmt.Sprintf("%v->%v", lr1.Request, lr2.Request))
+	}
+	if lr1.Error != lr2.Error {
+		ret = append(ret, "error", fmt.Sprintf("%v->%v", lr1.Error, lr2.Error))
+	}
+
+	return ret
 
 }
