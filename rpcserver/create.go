@@ -33,7 +33,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 
 	// Put it in the ledger
 	expiresAt := time.Now().UTC().Add(86400 * time.Second)
-	err = s.rpcStore.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
+	err = s.store.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
 		Id:        hex.EncodeToString(invoice.RHash),
 		AccountId: account.Id,
 		ExpiresAt: &expiresAt,

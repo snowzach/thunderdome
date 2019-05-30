@@ -46,7 +46,7 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	}
 
 	// See if we have an account already?
-	account, err := s.rpcStore.AccountGetByID(ctx, accountID)
+	account, err := s.store.AccountGetByID(ctx, accountID)
 	if err == store.ErrNotFound {
 
 		// Create a new account
@@ -63,7 +63,7 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 		// Save the account
 		account.Address = address.Address
-		account, err = s.rpcStore.AccountSave(ctx, account)
+		account, err = s.store.AccountSave(ctx, account)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal, "AccountSave Error: %v", err)
 		}

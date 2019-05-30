@@ -8,20 +8,12 @@ import (
 	"google.golang.org/grpc"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
-
-type RPCStore interface {
-	AccountGetByID(ctx context.Context, accountID string) (*tdrpc.Account, error)
-	AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error)
-	ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error
-	ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerRecord, error)
-	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
-	GetLedgerRecord(ctx context.Context, id string, direction tdrpc.LedgerRecord_Direction) (*tdrpc.LedgerRecord, error)
-}
 
 type RPCServer struct {
 	logger   *zap.SugaredLogger
-	rpcStore RPCStore
+	store    thunderdome.Store
 	myPubKey string
 	conn     *grpc.ClientConn
 	lclient  lnrpc.LightningClient
@@ -46,7 +38,7 @@ func getAccount(ctx context.Context) *tdrpc.Account {
 }
 
 // NewRPCServer creates the server
-func NewRPCServer(rpcStore RPCStore, conn *grpc.ClientConn) (*RPCServer, error) {
+func NewRPCServer(store thunderdome.Store, conn *grpc.ClientConn) (*RPCServer, error) {
 
 	// Fetch the node info to make sure we know our own identity for self-payments
 	lclient := lnrpc.NewLightningClient(conn)
@@ -58,7 +50,7 @@ func NewRPCServer(rpcStore RPCStore, conn *grpc.ClientConn) (*RPCServer, error) 
 	// Return the server
 	return &RPCServer{
 		logger:   zap.S().With("package", "rpcserver"),
-		rpcStore: rpcStore,
+		store:    store,
 		myPubKey: info.IdentityPubkey,
 		conn:     conn,
 		lclient:  lclient,

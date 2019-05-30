@@ -1,4 +1,4 @@
-package rpcserver
+package txmonitor
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-func (s *RPCServer) LightningMonitor() {
+func (txm *TXMonitor) MonitorLN() {
 
-	invmlogger := s.logger.With("package", "invmonitor")
+	invmlogger := txm.logger.With("package", "invmonitor")
 	ctx := context.Background()
 
 	// Connect to the transaction stream
-	invclient, err := s.lclient.SubscribeInvoices(context.Background(), &lnrpc.InvoiceSubscription{
+	invclient, err := txm.lclient.SubscribeInvoices(context.Background(), &lnrpc.InvoiceSubscription{
 		// TODO: We could start with the highest completed, not expired index
 		AddIndex:    1,
 		SettleIndex: 1,
@@ -47,7 +47,7 @@ func (s *RPCServer) LightningMonitor() {
 		paymentHash := hex.EncodeToString(invoice.RHash)
 
 		// Find the existing ledger record
-		lr, err := s.rpcStore.GetLedgerRecord(ctx, paymentHash, tdrpc.IN)
+		lr, err := txm.store.GetLedgerRecord(ctx, paymentHash, tdrpc.IN)
 		if err == store.ErrNotFound {
 			invmlogger.Errorw("Could not find incoming invoice", "payment_hash", paymentHash)
 			continue
@@ -60,7 +60,7 @@ func (s *RPCServer) LightningMonitor() {
 		lr.Value = invoice.AmtPaidSat
 
 		// Process the payment
-		err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
+		err = txm.store.ProcessLedgerRecord(ctx, lr)
 		if err != nil {
 			invmlogger.Errorw("ProcessLedgerRecord Error", "error", err, "payment_hash", paymentHash)
 			continue

@@ -171,8 +171,16 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 			}
 		}
 
-		// It completed, put the value into the balance
-		if lr.Status == tdrpc.COMPLETED {
+		// Pending incoming transactions
+		if lr.Status == tdrpc.PENDING {
+			_, err = tx.ExecContext(ctx, `UPDATE account SET balance_in = balance_in + $1 WHERE id = $2`, lr.Value, lr.AccountId)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("Could not process in new completed balance: %v", err)
+			}
+
+			// It completed, put the value into the balance
+		} else if lr.Status == tdrpc.COMPLETED {
 			_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 WHERE id = $2`, lr.Value, lr.AccountId)
 			if err != nil {
 				tx.Rollback()

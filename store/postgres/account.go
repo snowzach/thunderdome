@@ -22,6 +22,20 @@ func (c *Client) AccountGetByID(ctx context.Context, id string) (*tdrpc.Account,
 	return account, nil
 }
 
+// AccountGetByAddress fetches a account by address
+func (c *Client) AccountGetByAddress(ctx context.Context, address string) (*tdrpc.Account, error) {
+
+	account := new(tdrpc.Account)
+	err := c.db.GetContext(ctx, account, `SELECT * FROM account WHERE address = $1`, address)
+	if err == sql.ErrNoRows {
+		return nil, store.ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return account, nil
+}
+
 // AccountSave creates/updates a account
 func (c *Client) AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error) {
 

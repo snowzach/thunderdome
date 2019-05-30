@@ -56,7 +56,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	}
 
 	// Save the initial state - will do some sanity checking as well
-	err = s.rpcStore.ProcessLedgerRecord(ctx, lr)
+	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "%v", err)
 	}
@@ -65,7 +65,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	if pr.Destination == s.myPubKey {
 
 		// This is an internal payment, process the record
-		lr, err = s.rpcStore.ProcessInternal(ctx, pr.PaymentHash)
+		lr, err = s.store.ProcessInternal(ctx, pr.PaymentHash)
 		if err != nil {
 			return nil, grpc.Errorf(codes.Internal, "%v", err)
 		}
@@ -93,7 +93,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	}
 
 	// Update the status and the balance
-	if plrerr := s.rpcStore.ProcessLedgerRecord(ctx, lr); plrerr != nil {
+	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
 		return nil, grpc.Errorf(codes.Internal, "%v", plrerr)
 	}
 

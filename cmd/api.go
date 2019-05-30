@@ -26,8 +26,8 @@ var (
 				)
 			}
 
-			go rpcServer.BTCMonitor()
-			go rpcServer.LightningMonitor()
+			// go rpcServer.BTCMonitor()
+			// go rpcServer.LightningMonitor()
 
 			server, err := NewServer()
 			if err != nil {

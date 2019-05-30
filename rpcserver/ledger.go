@@ -18,7 +18,7 @@ func (s *RPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) (*
 		return nil, grpc.Errorf(codes.Internal, "Missing Account")
 	}
 
-	lrs, err := s.rpcStore.GetLedger(ctx, account.Id)
+	lrs, err := s.store.GetLedger(ctx, account.Id)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "Error on GetLedger: %v", err)
 	}

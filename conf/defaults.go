@@ -55,4 +55,12 @@ func init() {
 	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.macaroon", "admin.macaroon")
 
+	config.SetDefault("btc.host", "bitcoind")
+	config.SetDefault("btc.port", 8333)
+	config.SetDefault("btc.username", "bitcoinrpc")
+	config.SetDefault("btc.password", "bitcoinrpc")
+	config.SetDefault("btc.post_mode", true)
+	config.SetDefault("btc.disable_tls", true)
+	config.SetDefault("btc.chain", "mainnet")
+
 }

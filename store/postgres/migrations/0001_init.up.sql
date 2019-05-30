@@ -11,6 +11,9 @@ CREATE TABLE public.account (
   balance_out BIGINT DEFAULT 0
 );
 
+-- Allow lookup by address
+CREATE UNIQUE INDEX ix_account_address ON public.account USING btree(address);
+
 -- Create the unknown account that can be used to handle unaccounted for transactions
 INSERT INTO account (id, updated_at, address) VALUES ('internal:unknown', NOW(), 'unknown');
 

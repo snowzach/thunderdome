@@ -9,6 +9,10 @@ import (
 	"git.coinninja.net/backend/thunderdome/rpcserver"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
+	"git.coinninja.net/backend/thunderdome/thunderdome"
+	"git.coinninja.net/backend/thunderdome/txmonitor"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -34,29 +38,97 @@ func NewServer() (*server.Server, error) {
 }
 
 func NewRPCServer() (*rpcserver.RPCServer, error) {
-	rpcStore := NewRPCStore()
+	store := NewStore()
 	clientConn := NewLndGrpcClientConn()
-	rpcServer, err := rpcserver.NewRPCServer(rpcStore, clientConn)
+	rpcServer, err := rpcserver.NewRPCServer(store, clientConn)
 	if err != nil {
 		return nil, err
 	}
 	return rpcServer, nil
 }
 
+func NewTXMonitor() (*txmonitor.TXMonitor, error) {
+	store := NewStore()
+	clientConn := NewLndGrpcClientConn()
+	client := NewBTCRPCClient()
+	params := NewChainParams(client)
+	txMonitor, err := txmonitor.NewTXMonitor(store, clientConn, client, params)
+	if err != nil {
+		return nil, err
+	}
+	return txMonitor, nil
+}
+
 // wire.go:
 
-// NewRPCStore is the store for the RPCServer
-func NewRPCStore() rpcserver.RPCStore {
-	var rpcStore rpcserver.RPCStore
+// NewStore is the store for the application
+func NewStore() thunderdome.Store {
+	var store thunderdome.Store
 	var err error
 	switch viper.GetString("storage.type") {
 	case "postgres":
-		rpcStore, err = postgres.New()
+		store, err = postgres.New()
 	}
 	if err != nil {
 		logger.Fatalw("Database Error", "error", err)
 	}
-	return rpcStore
+	return store
+}
+
+func NewBTCRPCClient() *rpcclient.Client {
+
+	rpcc, err := rpcclient.New(&rpcclient.ConnConfig{
+		HTTPPostMode: viper.GetBool("btc.post_mode"),
+		DisableTLS:   viper.GetBool("btc.disable_tls"),
+		Host:         net.JoinHostPort(viper.GetString("btc.host"), viper.GetString("btc.port")),
+		User:         viper.GetString("btc.username"),
+		Pass:         viper.GetString("btc.password"),
+	}, nil)
+	if err != nil {
+		logger.Fatalf("error creating new btc client: %v", err)
+	}
+
+	_, err = rpcc.GetBlockChainInfo()
+	if err != nil {
+		logger.Fatalf("Could not GetBlockChainInfo from BTC RPC Server %v", err)
+	}
+
+	return rpcc
+
+}
+
+func NewChainParams(rpcc *rpcclient.Client) *chaincfg.Params {
+
+	// Create an array of chains such that we can pick the one we want
+	var chain *chaincfg.Params
+	chains := []*chaincfg.Params{
+		&chaincfg.MainNetParams,
+		&chaincfg.RegressionNetParams,
+		&chaincfg.SimNetParams,
+		&chaincfg.TestNet3Params,
+	}
+
+	for _, cp := range chains {
+		if viper.GetString("btc.chain") == cp.Name {
+			chain = cp
+			break
+		}
+	}
+	if chain == nil {
+		logger.Fatalf("Could not find chain %s", viper.GetString("btc.chain"))
+	}
+
+	blockChainInfo, err := rpcc.GetBlockChainInfo()
+	if err != nil {
+		logger.Fatalf("Could not GetBlockChainInfo from BTC RPC Server %v", err)
+	}
+
+	if blockChainInfo.Chain != chain.Name {
+		logger.Fatalf("Chain mismatch rpc:%s config:%s", blockChainInfo.Chain, chain.Name)
+	}
+
+	return chain
+
 }
 
 // NewLndGrpcClientConn creates a new GRPC connection to LND
