@@ -58,6 +58,8 @@ func (txm *TXMonitor) MonitorBTC() {
 // This will parse the transaction and add it to the ledger
 func (txm *TXMonitor) parseBTCTranaction(txHash string, confirmations int32) {
 
+	var foundTxOut bool
+
 	// Fetch the transaction via the JSON RPC
 	chHash, err := chainhash.NewHashFromStr(txHash)
 	if err != nil {
@@ -65,31 +67,19 @@ func (txm *TXMonitor) parseBTCTranaction(txHash string, confirmations int32) {
 		return
 	}
 
-	if confirmations > 5 {
+	// Get the raw transaction from the JSON RPC
+	rawTx, err := txm.rpcc.GetRawTransaction(chHash)
+	if err != nil {
 
-		tx, err := txm.rpcc.GetTransaction(chHash)
-		if err != nil {
-			txm.logger.Errorw("Error getting transaction tx:%s %v", txHash, err)
-			return
+		// It may not have hit the database yet, wait 2 seconds and try again
+		if confirmations == 0 {
+			time.Sleep(2 * time.Second)
+			rawTx, err = txm.rpcc.GetRawTransaction(chHash)
 		}
+	}
+	// We found the raw transaction
+	if err == nil {
 
-		for _, d := range tx.Details {
-			txm.logger.Infof("Details: account:%s, address:%s, amount:%f vout:%d", d.Account, d.Address, d.Amount, d.Vout)
-		}
-
-	} else {
-
-		// Get the raw transaction from the JSON RPC
-		rawTx, err := txm.rpcc.GetRawTransaction(chHash)
-		if err != nil {
-			txm.logger.Errorw("Error getting raw transaction tx:%s %v", txHash, err)
-			test, err := txm.rpcc.GetTransaction(chHash)
-			if err != nil {
-				txm.logger.Errorf("Error getting transaction tx:%s %v", txHash, err)
-			}
-			txm.logger.Info("TX %v", test)
-			return
-		}
 		// Convert it into the wire format
 		wTx := rawTx.MsgTx()
 
@@ -98,17 +88,20 @@ func (txm *TXMonitor) parseBTCTranaction(txHash string, confirmations int32) {
 
 			// Attempt to parse simple addresses out of the script
 			_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, &chaincfg.RegressionNetParams)
-			if err != nil { // Could not decode
+			if err != nil { // Could not decode, it's not one of ours
+				txm.logger.Errorw("Could not decode transaction script", "hash", txHash, "height", height)
 				continue
 			} else if len(addresses) != 1 {
+				txm.logger.Errorw("Multiple addresses found for transaction", "hash", txHash, "height", height)
 				continue
 			}
 
+			// Find the associated account
 			account, err := txm.store.AccountGetByAddress(context.Background(), addresses[0].String())
 			if err == store.ErrNotFound {
 				continue
 			} else if err != nil {
-				continue
+				txm.logger.Fatalw("AccountGetByAddress Error", "error", err)
 			}
 
 			// Convert it to a LedgerRecord
@@ -125,8 +118,66 @@ func (txm *TXMonitor) parseBTCTranaction(txHash string, confirmations int32) {
 			}
 
 			err = txm.store.ProcessLedgerRecord(context.Background(), lr)
+			if err != nil {
+				txm.logger.Fatalw("ProcessLedgerRecord Error", "error", err)
+			}
+
+			foundTxOut = true
+		}
+
+	} else {
+
+		txm.logger.Warn("GETTRANSACTION")
+
+		// At this point we have not found the transaction, check the blockchain history
+		tx, err := txm.rpcc.GetTransaction(chHash)
+		if err != nil {
+			txm.logger.Errorf("Could not find transaction: %s %v", txHash, err)
+			return
+		}
+
+		// Process the details
+		for _, d := range tx.Details {
+			// It's a payment to us
+			if d.Amount > 0 {
+				continue
+			}
+			txm.logger.Infof("Details: account:%s, address:%s, amount:%f vout:%d", d.Account, d.Address, d.Amount, d.Vout)
+
+			// Find the associated account
+			account, err := txm.store.AccountGetByAddress(context.Background(), d.Address)
+			if err == store.ErrNotFound {
+				continue
+			} else if err != nil {
+				txm.logger.Fatalw("AccountGetByAddress Error", "error", err)
+			}
+
+			// Convert it to a LedgerRecord
+			lr := &tdrpc.LedgerRecord{
+				Id:        fmt.Sprintf("%s:%d", txHash, d.Vout),
+				AccountId: account.Id,
+				Status:    tdrpc.PENDING,
+				Type:      tdrpc.BTC,
+				Direction: tdrpc.IN,
+				Value:     -int64(d.Amount * 100000000), // BTC -> Satoshi
+			}
+			if confirmations > 0 {
+				lr.Status = tdrpc.COMPLETED
+			}
+
+			err = txm.store.ProcessLedgerRecord(context.Background(), lr)
+			if err != nil {
+				txm.logger.Fatalw("ProcessLedgerRecord Error", "error", err)
+			}
+
+			foundTxOut = true
 
 		}
+	}
+
+	// We had this transaction but could not relate it to an account
+	if !foundTxOut {
+		txm.logger.Warnw("No account found for transaction", "hash", txHash)
 	}
 
 }

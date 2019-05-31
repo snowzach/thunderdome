@@ -7,6 +7,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/go-chi/chi v3.3.3+incompatible
+	github.com/go-chi/cors v1.0.0
 	github.com/go-chi/render v1.0.1
 	github.com/gogo/gateway v1.1.0
 	github.com/gogo/protobuf v1.2.1
