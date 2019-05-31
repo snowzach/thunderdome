@@ -38,6 +38,11 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		return nil, grpc.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
 	}
 
+	// Check for mangled amount
+	if pr.NumSatoshis < 0 || request.Value < 0 {
+		return nil, grpc.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
+	}
+
 	// If no value specified, pay the amount in the PayReq
 	if request.Value == 0 {
 		request.Value = pr.NumSatoshis

@@ -242,11 +242,29 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 		}
 	}()
 
+	lr, err := c.processInternal(ctx, tx, id)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("Commit Error: %v", err)
+	}
+
+	return lr, nil
+
+}
+
+func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*tdrpc.LedgerRecord, error) {
+
 	var sender, receiver tdrpc.LedgerRecord
 	internalID := id + thunderdome.InternalIdSuffix
 
 	// Get the receiver record
-	err = tx.GetContext(ctx, &receiver, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.IN)
+	err := tx.GetContext(ctx, &receiver, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.IN)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("Could not find receiver request")
 	} else if err != nil {
@@ -270,7 +288,6 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	receiver.Id = internalID
 	err = c.processLedgerRecord(ctx, tx, &receiver)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
@@ -278,14 +295,12 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	if time.Now().UTC().After(*sender.ExpiresAt) || time.Now().UTC().After(*receiver.ExpiresAt) {
 		_, err = tx.ExecContext(ctx, `UPDATE ledger SET status = $1 WHERE id = $2 OR id = $3`, tdrpc.EXPIRED, id, internalID)
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
 		// Commit the transaction and return the error
 		err = tx.Commit()
 		if err != nil {
-			tx.Rollback()
 			return nil, err
 		}
 
@@ -296,27 +311,23 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	var balance int64
 	err = tx.GetContext(ctx, &balance, `SELECT balance FROM account WHERE id = $1`, sender.AccountId)
 	if err != nil {
-		tx.Rollback()
 		return nil, fmt.Errorf("Could not get out new balance: %v", err)
 	}
 
 	// Check the balance is sufficient
 	if balance < sender.Value {
-		tx.Rollback()
 		return nil, store.ErrInsufficientFunds
 	}
 
 	// Update the sender balance_out
 	_, err = tx.ExecContext(ctx, `UPDATE account SET balance_out = balance_out - $1 WHERE id = $2`, sender.Value, sender.AccountId)
 	if err != nil {
-		tx.Rollback()
 		return nil, fmt.Errorf("Could not process sender balance_out: %v", err)
 	}
 
 	// Update the receiver balance
 	_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 WHERE id = $2`, sender.Value, receiver.AccountId)
 	if err != nil {
-		tx.Rollback()
 		return nil, fmt.Errorf("Could not process receiver balance: %v", err)
 	}
 
@@ -329,14 +340,6 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 		WHERE id = $3
 	`, tdrpc.COMPLETED, sender.Value, internalID)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	// Commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
