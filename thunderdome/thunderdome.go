@@ -6,6 +6,11 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
+const (
+	// InternalIdSuffix used to track internal transactions
+	InternalIdSuffix = ":int"
+)
+
 type Store interface {
 	AccountGetByID(ctx context.Context, accountID string) (*tdrpc.Account, error)
 	AccountGetByAddress(ctx context.Context, address string) (*tdrpc.Account, error)

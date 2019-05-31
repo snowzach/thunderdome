@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // ProcessLedgerRecord handles any balance transfer and changes to the ledger based on the status of the LedgerRecord
@@ -29,9 +32,29 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		}
 	}()
 
+	err = c.processLedgerRecord(ctx, tx, lr)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Commit the transaction
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("Commit Error: %v", err)
+	}
+
+	return nil
+
+}
+
+// This does the actual work but it allows you to nest it inside of another transaction
+func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc.LedgerRecord) error {
+
 	// See if the ledger entry already exists
 	prevlr := new(tdrpc.LedgerRecord)
-	err = tx.GetContext(ctx, prevlr, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, lr.Id, lr.Direction)
+	err := tx.GetContext(ctx, prevlr, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, lr.Id, lr.Direction)
 	if err == sql.ErrNoRows || (prevlr != nil && prevlr.Status == tdrpc.FAILED) {
 		// There is no previous record or the status is failed.
 		// We don't need to consider anything with the previous record
@@ -45,7 +68,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 	if prevlr != nil {
 		// The previous transaction exists, validate that nothing of note has changed in the request
 		if prevlr.Type != lr.Type || prevlr.Direction != lr.Direction || prevlr.AccountId != lr.AccountId || prevlr.Request != lr.Request {
-			tx.Rollback()
 			return fmt.Errorf("Existing Ledger Entry Mismatch %v:%v", prevlr, lr)
 		}
 
@@ -54,7 +76,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 			(prevlr.Status == tdrpc.COMPLETED && lr.Status != tdrpc.COMPLETED) ||
 			(prevlr.Status == tdrpc.EXPIRED && lr.Status != tdrpc.EXPIRED) ||
 			(prevlr.Status == tdrpc.PENDING && lr.Status == tdrpc.PENDING) {
-			tx.Rollback()
 			return fmt.Errorf("Invalid Status Transition %v->%v", prevlr.Status, lr.Status)
 		}
 
@@ -73,14 +94,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 				WHERE id = $6 AND direction = $7
 			`, lr.ExpiresAt, lr.Value, lr.Memo, lr.Request, lr.Error, lr.Id, lr.Direction)
 			if err != nil {
-				tx.Rollback()
-				return err
-			}
-
-			// Commit the transaction
-			err = tx.Commit()
-			if err != nil {
-				tx.Rollback()
 				return err
 			}
 
@@ -99,7 +112,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance_out = balance_out - $1 WHERE id = $2`, prevlr.Value, prevlr.AccountId)
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("Could not process out existing pending balance_out: %v", err)
 				}
 			}
@@ -108,7 +120,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 			if lr.Status == tdrpc.EXPIRED || lr.Status == tdrpc.FAILED {
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 WHERE id = $2`, prevlr.Value, prevlr.AccountId)
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("Could not process out existing failed/expired balance: %v", err)
 				}
 			}
@@ -119,7 +130,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 			var balance int64
 			err = tx.GetContext(ctx, &balance, `SELECT balance FROM account WHERE id = $1`, lr.AccountId)
 			if err != nil {
-				tx.Rollback()
 				return fmt.Errorf("Could not get out new balance: %v", err)
 			}
 
@@ -128,14 +138,12 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 
 				// Check to make sure we have enough funds to start this transaction
 				if balance < lr.Value {
-					tx.Rollback()
 					return store.ErrInsufficientFunds
 				}
 
 				// Put it in balance_out
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance - $1, balance_out = balance_out + $1 WHERE id = $2`, lr.Value, lr.AccountId)
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("Could not process out new pending balance_out: %v", err)
 				}
 
@@ -144,13 +152,11 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 
 				// Check to make sure we have enough funds - this should never really happen unless somehow made out of band
 				if balance < lr.Value {
-					tx.Rollback()
 					return store.ErrInsufficientFunds
 				}
 
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance - $1 WHERE id = $2`, lr.Value, lr.AccountId)
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("Could not process out new completed balance: %v", err)
 				}
 			}
@@ -165,7 +171,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 			if prevlr.Status == tdrpc.PENDING {
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance_in = balance_in - $1 WHERE id = $2`, prevlr.Value, prevlr.AccountId)
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("Could not process in new pending balance: %v", err)
 				}
 			}
@@ -175,7 +180,6 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		if lr.Status == tdrpc.PENDING {
 			_, err = tx.ExecContext(ctx, `UPDATE account SET balance_in = balance_in + $1 WHERE id = $2`, lr.Value, lr.AccountId)
 			if err != nil {
-				tx.Rollback()
 				return fmt.Errorf("Could not process in new completed balance: %v", err)
 			}
 
@@ -183,14 +187,12 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		} else if lr.Status == tdrpc.COMPLETED {
 			_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 WHERE id = $2`, lr.Value, lr.AccountId)
 			if err != nil {
-				tx.Rollback()
 				return fmt.Errorf("Could not process in new completed balance: %v", err)
 			}
 		}
 
 	} else {
 		// Not possible
-		tx.Rollback()
 		return fmt.Errorf("Unknown direction: %v", lr.Direction)
 	}
 
@@ -211,15 +213,7 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		RETURNING *
 	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.Value, lr.AddIndex, lr.Memo, lr.Request, lr.Error)
 	if err != nil {
-		tx.Rollback()
 		return fmt.Errorf("Could not process ledger: %v", err)
-	}
-
-	// Commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("Commit Error: %v", err)
 	}
 
 	// Replace the existing value with the modified one
@@ -249,6 +243,7 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	}()
 
 	var sender, receiver tdrpc.LedgerRecord
+	internalID := id + thunderdome.InternalIdSuffix
 
 	// Get the receiver record
 	err = tx.GetContext(ctx, &receiver, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.IN)
@@ -258,8 +253,8 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 		return nil, err
 	}
 
-	// Get the sender record
-	err = tx.GetContext(ctx, &sender, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.OUT)
+	// Get the sender record with the internal suffix that was added by the pay endpoint
+	err = tx.GetContext(ctx, &sender, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, internalID, tdrpc.OUT)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("Could not find sender request")
 	} else if err != nil {
@@ -271,9 +266,17 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 		return nil, fmt.Errorf("Invalid status sender:%s receiver:%s", sender.Status, receiver.Status)
 	}
 
+	// Since this is an internal payment, we will need to create a new IN record in case someone pays the payment request anyhow
+	receiver.Id = internalID
+	err = c.processLedgerRecord(ctx, tx, &receiver)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
 	// Set the expired time if it's not
 	if time.Now().UTC().After(*sender.ExpiresAt) || time.Now().UTC().After(*receiver.ExpiresAt) {
-		_, err = tx.ExecContext(ctx, `UPDATE ledger SET status = $1 WHERE id = $2`, tdrpc.EXPIRED, id)
+		_, err = tx.ExecContext(ctx, `UPDATE ledger SET status = $1 WHERE id = $2 OR id = $3`, tdrpc.EXPIRED, id, internalID)
 		if err != nil {
 			tx.Rollback()
 			return nil, err
@@ -324,7 +327,7 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 		status = $1,
 		value = $2
 		WHERE id = $3
-	`, tdrpc.COMPLETED, sender.Value, id)
+	`, tdrpc.COMPLETED, sender.Value, internalID)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -338,7 +341,7 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	}
 
 	// Get the updated sender record
-	err = c.db.GetContext(ctx, &sender, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.OUT)
+	err = c.db.GetContext(ctx, &sender, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, internalID, tdrpc.OUT)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("Could not find post sender request")
 	} else if err != nil {

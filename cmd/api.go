@@ -10,9 +10,13 @@ import (
 
 func init() {
 	rootCmd.AddCommand(apiCmd)
+
+	apiCmd.PersistentFlags().BoolVarP(&apiCmdTxMonitor, "txmonitor", "t", false, "Start the TXMonitr also")
 }
 
 var (
+	apiCmdTxMonitor bool
+
 	apiCmd = &cli.Command{
 		Use:   "api",
 		Short: "Start API",
@@ -46,6 +50,10 @@ var (
 				logger.Fatalw("Could not start server",
 					"error", err,
 				)
+			}
+
+			if apiCmdTxMonitor {
+				startTxMonitor()
 			}
 
 			<-conf.Stop.Chan() // Wait until StopChan

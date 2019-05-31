@@ -18,12 +18,7 @@ var (
 		Long:  `TX Monitor`,
 		Run: func(cmd *cli.Command, args []string) { // Initialize the databse
 
-			txm, err := NewTXMonitor()
-			if err != nil {
-				logger.Fatalw("Could not create TXMonitor", "error", err)
-			}
-
-			go txm.MonitorBTC()
+			startTxMonitor()
 
 			<-conf.Stop.Chan() // Wait until StopChan
 			conf.Stop.Wait()   // Wait until everyone cleans up
@@ -32,3 +27,13 @@ var (
 		},
 	}
 )
+
+func startTxMonitor() {
+	txm, err := NewTXMonitor()
+	if err != nil {
+		logger.Fatalw("Could not create TXMonitor", "error", err)
+	}
+
+	go txm.MonitorBTC()
+	go txm.MonitorLN()
+}

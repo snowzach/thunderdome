@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // Pay will pay a payment request
@@ -53,6 +54,11 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		Value:     request.Value,
 		Memo:      pr.Description,
 		Request:   request.Request,
+	}
+
+	// If this is a payment to someone else using this service, mark the outbound records as interal
+	if pr.Destination == s.myPubKey {
+		lr.Id += thunderdome.InternalIdSuffix
 	}
 
 	// Save the initial state - will do some sanity checking as well
