@@ -1,4 +1,4 @@
-EXECUTABLE := api
+EXECUTABLE := tdome
 GITVERSION := $(shell git describe --dirty --always --tags --long)
 GOPATH ?= ${HOME}/go
 PACKAGENAME := $(shell go list -m -f '{{.Path}}')

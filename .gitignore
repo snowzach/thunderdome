@@ -1,5 +1,6 @@
 .vscode
 api
+tdome
 mocks
 bindata.go
 server.crt
