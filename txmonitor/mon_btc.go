@@ -137,7 +137,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 
 		// Process the details
 		for _, d := range tx.Details {
-			// It's a payment to us
+			// It's a payment to us, for now we will ignore outgoing payments
 			if d.Amount > 0 {
 				continue
 			}

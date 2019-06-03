@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -28,7 +29,7 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
-			c.logger.Panic(r)
+			c.logger.Panic(string(debug.Stack()))
 		}
 	}()
 
@@ -87,12 +88,11 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 				UPDATE ledger SET
 				updated_at = NOW(),
 				expires_at = $1,
-				value = $2,
-				memo = $3,
-				request = $4,
-				error = $5
-				WHERE id = $6 AND direction = $7
-			`, lr.ExpiresAt, lr.Value, lr.Memo, lr.Request, lr.Error, lr.Id, lr.Direction)
+				memo = $2,
+				request = $3,
+				error = $4
+				WHERE id = $5 AND direction = $6
+			`, lr.ExpiresAt, lr.Memo, lr.Request, lr.Error, lr.Id, lr.Direction)
 			if err != nil {
 				return err
 			}
@@ -109,7 +109,6 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 
 			// It was previously pending, pull the reserved funds from balance_out
 			if prevlr.Status == tdrpc.PENDING {
-
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance_out = balance_out - $1 WHERE id = $2`, prevlr.Value, prevlr.AccountId)
 				if err != nil {
 					return fmt.Errorf("Could not process out existing pending balance_out: %v", err)
@@ -119,6 +118,12 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 			// It failed or expired - put the money back in balance
 			if lr.Status == tdrpc.EXPIRED || lr.Status == tdrpc.FAILED {
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 WHERE id = $2`, prevlr.Value, prevlr.AccountId)
+				if err != nil {
+					return fmt.Errorf("Could not process out existing failed/expired balance: %v", err)
+				}
+			} else if lr.Status == tdrpc.COMPLETED && prevlr.Value != lr.Value {
+				// If for some reason the settled balance was different from the pending balance, adjust to the completed value
+				_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 - $2 WHERE id = $3`, prevlr.Value, lr.Value, prevlr.AccountId)
 				if err != nil {
 					return fmt.Errorf("Could not process out existing failed/expired balance: %v", err)
 				}
@@ -238,7 +243,8 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
-			c.logger.Panic(r)
+			c.logger.Panic(string(debug.Stack()))
+
 		}
 	}()
 
@@ -284,11 +290,20 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 		return nil, fmt.Errorf("Invalid status sender:%s receiver:%s", sender.Status, receiver.Status)
 	}
 
+	// Make sure the status is right
+	if sender.Type != tdrpc.LIGHTNING || receiver.Type != tdrpc.LIGHTNING {
+		return nil, fmt.Errorf("Invalid type sender:%s receiver:%s", sender.Type, receiver.Type)
+	}
+
 	// Since this is an internal payment, we will need to create a new IN record in case someone pays the payment request anyhow
 	receiver.Id = internalID
 	err = c.processLedgerRecord(ctx, tx, &receiver)
 	if err != nil {
 		return nil, err
+	}
+
+	if sender.ExpiresAt == nil || receiver.ExpiresAt == nil {
+		return nil, fmt.Errorf("Invalid expiration time")
 	}
 
 	// Set the expired time if it's not
@@ -307,17 +322,7 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 		return nil, store.ErrRequestExpired
 	}
 
-	// Get the current balance from the sender
-	var balance int64
-	err = tx.GetContext(ctx, &balance, `SELECT balance FROM account WHERE id = $1`, sender.AccountId)
-	if err != nil {
-		return nil, fmt.Errorf("Could not get out new balance: %v", err)
-	}
-
-	// Check the balance is sufficient
-	if balance < sender.Value {
-		return nil, store.ErrInsufficientFunds
-	}
+	// The funds have already been placed into balance out by the pending request setting it up
 
 	// Update the sender balance_out
 	_, err = tx.ExecContext(ctx, `UPDATE account SET balance_out = balance_out - $1 WHERE id = $2`, sender.Value, sender.AccountId)

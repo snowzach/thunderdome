@@ -1,10 +1,17 @@
 package conf
 
 import (
+	"strings"
+
 	config "github.com/spf13/viper"
 )
 
 func init() {
+
+	// Sets up the config file, environment etc
+	config.SetTypeByDefaultValue(true)                      // If a default value is []string{"a"} an environment variable of "a b" will end up []string{"a","b"}
+	config.AutomaticEnv()                                   // Automatically use environment variables where available
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_")) // Environement variables use underscores instead of periods
 
 	// Logger Defaults
 	config.SetDefault("logger.level", "info")
@@ -44,6 +51,7 @@ func init() {
 	config.SetDefault("storage.host", "postgres")
 	config.SetDefault("storage.port", 5432)
 	config.SetDefault("storage.database", "thunderdome")
+	config.SetDefault("storage.database_test", "thunderdome_test")
 	config.SetDefault("storage.sslmode", "disable")
 	config.SetDefault("storage.retries", 5)
 	config.SetDefault("storage.sleep_between_retries", "7s")

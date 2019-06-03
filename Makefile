@@ -70,7 +70,7 @@ cmd/wire_gen.go: cmd/wire.go
 
 .PHONY: mocks
 mocks: tools
-	mockery -dir ./gogrpcapi -name ThingStore
+	mockery -dir ./thunderdome -name Store
 
 .PHONY: ${EXECUTABLE}
 ${EXECUTABLE}: tools ${PROTOS} cmd/wire_gen.go ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go
