@@ -28,21 +28,21 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 	// If we panic, roll the transaction back
 	defer func() {
 		if r := recover(); r != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			c.logger.Panic(string(debug.Stack()))
 		}
 	}()
 
 	err = c.processLedgerRecord(ctx, tx, lr)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 
 	// Commit the transaction
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("Commit Error: %v", err)
 	}
 
@@ -56,7 +56,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 	// See if the ledger entry already exists
 	prevlr := new(tdrpc.LedgerRecord)
 	err := tx.GetContext(ctx, prevlr, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, lr.Id, lr.Direction)
-	if err == sql.ErrNoRows || (prevlr != nil && prevlr.Status == tdrpc.FAILED) {
+	if err == sql.ErrNoRows || (err == nil && prevlr.Status == tdrpc.FAILED) {
 		// There is no previous record or the status is failed.
 		// We don't need to consider anything with the previous record
 		prevlr = nil
@@ -241,7 +241,7 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 	// If we panic, roll the transaction back
 	defer func() {
 		if r := recover(); r != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			c.logger.Panic(string(debug.Stack()))
 
 		}
@@ -249,13 +249,13 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 
 	lr, err := c.processInternal(ctx, tx, id)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, fmt.Errorf("Commit Error: %v", err)
 	}
 
@@ -362,7 +362,7 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 // GetLedger returns the ledger for a user
 func (c *Client) GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error) {
 
-	var lrs = make([]*tdrpc.LedgerRecord, 0, 0)
+	var lrs = make([]*tdrpc.LedgerRecord, 0)
 	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE account_id = $1`, accountID)
 	if err != nil {
 		return lrs, err
@@ -399,7 +399,7 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 	// If we panic, roll the transaction back
 	defer func() {
 		if r := recover(); r != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			c.logger.Panic(string(debug.Stack()))
 
 		}
@@ -421,7 +421,7 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 		return fmt.Errorf("Cannot rename record. Record already exists.")
 	} else if err == sql.ErrNoRows {
 		// We're good
-	} else if err != nil {
+	} else {
 		return err
 	}
 
@@ -433,7 +433,7 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 
 	err = tx.Commit()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("Commit Error: %v", err)
 	}
 

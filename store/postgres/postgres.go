@@ -32,6 +32,7 @@ func New() (*Client, error) {
 
 	logger := zap.S().With("package", "storage.postgres")
 
+	var createDb *sql.DB
 	var err error
 
 	var dbCreds string       // Regular credentials
@@ -81,7 +82,7 @@ func New() (*Client, error) {
 	}
 
 	for retries := config.GetInt("storage.retries"); retries > 0 && !conf.Stop.Bool(); retries-- {
-		createDb, err := sql.Open("postgres", "postgres://"+dbCreateCreds+dbURL+dbURLOptions)
+		createDb, err = sql.Open("postgres", "postgres://"+dbCreateCreds+dbURL+dbURLOptions)
 		// Attempt to create the database if it doesn't exist
 		if err == nil {
 			defer createDb.Close()

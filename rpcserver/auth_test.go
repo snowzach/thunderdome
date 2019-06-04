@@ -25,7 +25,7 @@ func TestAuthFuncOverride(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Bad Value
-	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "SOME BAD VALUE")), "test")
+	_, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "SOME BAD VALUE")), "test")
 	assert.NotNil(t, err)
 
 	pubKey := "123123123123132132132123131123123123123132132132123131123123123333"
@@ -36,7 +36,7 @@ func TestAuthFuncOverride(t *testing.T) {
 	mockLClient.On("NewAddress", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.NewAddressRequest")).Once().Return(&lnrpc.NewAddressResponse{Address: address}, nil)
 	mockStore.On("AccountSave", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.Account")).Once().
 		Return(func(ctx context.Context, a *tdrpc.Account) *tdrpc.Account { return a }, nil)
-	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", pubKey)), "test")
+	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", pubKey)), "test")
 	assert.Nil(t, err)
 	account := getAccount(ctx)
 	assert.NotNil(t, account)

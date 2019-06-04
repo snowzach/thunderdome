@@ -60,9 +60,7 @@ func (txm *TXMonitor) MonitorBTC() {
 // This will parse the transaction and add it to the ledger
 func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, confirmations int32) {
 
-	var foundTxOut bool
-
-	// Check to see if this is an outbound transaction we know about already
+	// Check to see if this has an outbound transaction we know about already
 	lrIn, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
 	if err == nil {
 		if confirmations > 0 && lrIn.Status != tdrpc.COMPLETED {
@@ -74,6 +72,8 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 		}
 		// On the insane chance we somehow paid another address in this wallet, let it continue to process
 	}
+
+	var foundTxIn bool
 
 	chHash, err := chainhash.NewHashFromStr(txHash)
 	if err != nil {
@@ -136,7 +136,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 				txm.logger.Fatalw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 			}
 
-			foundTxOut = true
+			foundTxIn = true
 		}
 
 	} else {
@@ -181,13 +181,13 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 				txm.logger.Fatalw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 			}
 
-			foundTxOut = true
+			foundTxIn = true
 
 		}
 	}
 
 	// We had this transaction but could not relate it to an account
-	if !foundTxOut {
+	if !foundTxIn {
 		txm.logger.Warnw("No account found for transaction", "monitor", "btc", "hash", txHash)
 	}
 

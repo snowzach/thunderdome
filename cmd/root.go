@@ -91,7 +91,9 @@ func initLogger() {
 func initProfiler() {
 	if config.GetBool("profiler.enabled") {
 		hostPort := net.JoinHostPort(config.GetString("profiler.host"), config.GetString("profiler.port"))
-		go http.ListenAndServe(hostPort, nil)
+		go func() {
+			_ = http.ListenAndServe(hostPort, nil)
+		}()
 		logger.Infof("Profiler enabled on http://%s", hostPort)
 	}
 }

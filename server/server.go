@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 // Server is the GRPC server
@@ -44,7 +45,7 @@ type Server struct {
 
 // This is the default authentication function, it's not actually going to get used because we will override it
 func authenticate(ctx context.Context) (context.Context, error) {
-	return nil, grpc.Errorf(codes.Unauthenticated, "Access denied")
+	return nil, status.Errorf(codes.Unauthenticated, "Access denied")
 }
 
 // When starting to listen, we will reigster gateway functions
@@ -267,7 +268,7 @@ func (el *errorLogger) Write(b []byte) (int, error) {
 // RenderOrErrInternal will render whatever you pass it (assuming it has Renderer) or prints an internal error
 func RenderOrErrInternal(w http.ResponseWriter, r *http.Request, d render.Renderer) {
 	if err := render.Render(w, r, d); err != nil {
-		render.Render(w, r, ErrInternal(err))
+		_ = render.Render(w, r, ErrInternal(err))
 		return
 	}
 }

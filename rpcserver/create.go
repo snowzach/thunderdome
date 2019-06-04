@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
@@ -18,15 +18,15 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, grpc.Errorf(codes.Internal, "Missing Account")
+		return nil, status.Errorf(codes.Internal, "Missing Account")
 	}
 
 	if request.Value < 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Invalid Value")
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid Value")
 	}
 
 	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 604800) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 604800")
+		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 604800")
 	}
 
 	// Create the invoice
@@ -36,7 +36,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 		Expiry: request.Expires,
 	})
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
+		return nil, status.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
 	}
 
 	// Put it in the ledger
@@ -54,7 +54,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 		Request:   invoice.PaymentRequest,
 	})
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
+		return nil, status.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
 	}
 
 	// Return the payment request

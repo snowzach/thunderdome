@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 	"git.coinninja.net/backend/thunderdome/thunderdome"
@@ -18,7 +18,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, grpc.Errorf(codes.Internal, "Missing Account")
+		return nil, status.Errorf(codes.Internal, "Missing Account")
 	}
 
 	// Decode the Request
@@ -30,17 +30,17 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	// Check for expiration
 	expiresAt := time.Unix(pr.Timestamp+pr.Expiry, 0)
 	if time.Now().UTC().After(expiresAt) {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Request is expired")
+		return nil, status.Errorf(codes.InvalidArgument, "Request is expired")
 	}
 
 	// Check for zero amount
 	if pr.NumSatoshis == 0 && request.Value == 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
+		return nil, status.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
 	}
 
 	// Check for mangled amount
 	if pr.NumSatoshis < 0 || request.Value < 0 {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
 	}
 
 	// If no value specified, pay the amount in the PayReq
@@ -69,7 +69,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	// Save the initial state - will do some sanity checking as well
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "%v", err)
+		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
 
 	// If this is a payment to someone else using this service, we transfer the balance internally
@@ -78,7 +78,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		// This is an internal payment, process the record
 		lr, err = s.store.ProcessInternal(ctx, pr.PaymentHash)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal, "%v", err)
+			return nil, status.Errorf(codes.Internal, "%v", err)
 		}
 
 		return &tdrpc.PayResponse{
@@ -105,12 +105,12 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 
 	// Update the status and the balance
 	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
-		return nil, grpc.Errorf(codes.Internal, "%v", plrerr)
+		return nil, status.Errorf(codes.Internal, "%v", plrerr)
 	}
 
 	// If there was an error, the ledger has been updated, return the error now
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, "Could not Pay: %v", err)
+		return nil, status.Errorf(codes.Internal, "Could not Pay: %v", err)
 	}
 
 	return &tdrpc.PayResponse{

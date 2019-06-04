@@ -5,9 +5,9 @@ import (
 	"regexp"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
@@ -26,13 +26,13 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return ctx, grpc.Errorf(codes.PermissionDenied, "Permission Denied")
+		return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
 	}
 
 	// The authorization header is the publickey
 	a := md.Get("authorization")
 	if len(a) != 1 {
-		return ctx, grpc.Errorf(codes.PermissionDenied, "Permission Denied")
+		return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
 	}
 
 	// The accountID will account for different methods of logging in, right now we support public key
@@ -42,7 +42,7 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 		accountID = AccountTypePubKey + ":" + a[0]
 		// PERFORM AUTH
 	} else {
-		return nil, grpc.Errorf(codes.InvalidArgument, "Invalid Login")
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid Login")
 	}
 
 	// See if we have an account already?
@@ -58,18 +58,18 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 			Type: lnrpc.AddressType_NESTED_PUBKEY_HASH,
 		})
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal, "New Address Error: %v", err)
+			return nil, status.Errorf(codes.Internal, "New Address Error: %v", err)
 		}
 
 		// Save the account
 		account.Address = address.Address
 		account, err = s.store.AccountSave(ctx, account)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Internal, "AccountSave Error: %v", err)
+			return nil, status.Errorf(codes.Internal, "AccountSave Error: %v", err)
 		}
 
 	} else if err != nil {
-		return ctx, grpc.Errorf(codes.Internal, "AccountGetByID Error: %v", err)
+		return ctx, status.Errorf(codes.Internal, "AccountGetByID Error: %v", err)
 	}
 
 	// Include the account in the context

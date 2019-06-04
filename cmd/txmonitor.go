@@ -22,7 +22,7 @@ var (
 
 			<-conf.Stop.Chan() // Wait until StopChan
 			conf.Stop.Wait()   // Wait until everyone cleans up
-			zap.L().Sync()     // Flush the logger
+			_ = zap.L().Sync() // Flush the logger
 
 		},
 	}
