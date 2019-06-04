@@ -10,13 +10,14 @@ option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
 service ThunderdomeRPC {
 
+    // Get/Create user account
     rpc GetAccount(google.protobuf.Empty) returns (Account) {
         option (google.api.http) = {
             get: "/account"
         };
     }
 
-    // DecodeRequest
+    // Decode a payment request
     rpc Decode(DecodeRequest) returns (DecodeResponse) {
         option (google.api.http) = {
             post: "/decode"
@@ -24,6 +25,7 @@ service ThunderdomeRPC {
         };
     }
 
+    // Create a payment request
     rpc Create(CreateRequest) returns (CreateResponse) {
         option (google.api.http) = {
             post: "/create"
@@ -31,6 +33,7 @@ service ThunderdomeRPC {
         };
     }
 
+    // Pay a request
     rpc Pay(PayRequest) returns (PayResponse) {
         option (google.api.http) = {
             post: "/pay"
@@ -38,76 +41,124 @@ service ThunderdomeRPC {
         };
     }
 
+    // Get request ledger
     rpc Ledger(LedgerRequest) returns (LedgerResponse) {
         option (google.api.http) = {
             get: "/ledger"
         };
     }
 
+    // Withdraw funds
+    rpc Withdraw(WithdrawRequest) returns (WithdrawResponse) {
+        option (google.api.http) = {
+            post: "/withdraw"
+            body: "*"
+        };
+    }
+
 }
 
+// Account
 message Account {
+    // Account Id
     string id = 1;
+    // Created at timestamp
     google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    // Update at timestamp
     google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    // The BTC address for the account
     string address = 4;
+    // The current balance
     int64 balance = 5  [(gogoproto.jsontag) = "balance"];
+    // The current pending incoming balance
     int64 balance_in = 6 [(gogoproto.jsontag) = "balance_in",(gogoproto.moretags) = "db:\"balance_in\""];
+    // The current pending outgoing balance
     int64 balance_out = 7 [(gogoproto.jsontag) = "balance_out",(gogoproto.moretags) = "db:\"balance_out\""];
 }
 
+// Ledger Record
 message LedgerRecord {
+    // The ID for the record. Lightning Payment Hash or BTC transaction
     string id = 1;
-    string account_id = 2 [(gogoproto.moretags) = "db:\"account_id\""];
+    // The user account associated with the request
+    string account_id = 2 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"account_id\""];
+    // Created at timestamp
     google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    // Update at timestamps
     google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    // Expires at timestamp
     google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"expires_at\""];
+    // Ledger Record Status
     enum Status {
         PENDING = 0;
         COMPLETED = 1;
         EXPIRED = 2;
         FAILED = 3;
     }
+    // The record status
     Status status = 6;
+    // Ledger Record Type
     enum Type {
         BTC = 0;
         LIGHTNING = 1;
     }
+    // The record type (BTC or LN)
     Type type = 7;
+    // Ledger Record Direction
     enum Direction {
         IN = 0;
         OUT = 1;
     }
+    // The direction of the transaction
     Direction direction = 8;
+    // The amount of the transaction
     int64 value = 9 [(gogoproto.jsontag) = "value"];
+    // The address index of the lightning request
     uint64 add_index = 10 [(gogoproto.jsontag) = "add_index",(gogoproto.moretags) = "db:\"add_index\""];
+    // An optional request memo
     string memo = 11 [(gogoproto.jsontag) = "memo"];;
+    // The lightning payment request
     string request = 12 [(gogoproto.jsontag) = "request"];
+    // Any error associated with the request
     string error = 13 [(gogoproto.jsontag) = "error"];
 }
 
+// Decode Request
 message DecodeRequest {
+    // The payment request to be decoded
     string request = 1;
 }
 
-// These are copied from the lnrpc definition - we may eventually just include this
+// Decode Response
 message DecodeResponse {
+    // Desintation Node
     string destination = 1 [(gogoproto.jsontag) = "destination"];
+    // Payment hash for the request
     string payment_hash = 2 [(gogoproto.jsontag) = "payment_hash"];
+    // The number of Satoshis
     int64 num_satoshis = 3 [(gogoproto.jsontag) = "num_satoshis"];
+    // The timestamp of the request
     int64 timestamp = 4 [(gogoproto.jsontag) = "timestamp"];
+    // The expiration of the request
     int64 expiry = 5 [(gogoproto.jsontag) = "expiry"];
+    // Optional description/memo of the request
     string description = 6 [(gogoproto.jsontag) = "description"];
+    // If the description is too long, a shorter hash of the description
     string description_hash = 7 [(gogoproto.jsontag) = "description_hash"];
+    // Fallback payment address
     string fallback_addr = 8 [(gogoproto.jsontag) = "fallback_addr"];
     int64 cltv_expiry = 9 [(gogoproto.jsontag) = "cltv_expiry"];
+    // Route hints
     repeated RouteHint route_hints = 10 [(gogoproto.jsontag) = "route_hints"];
 }
 
+// Route Hint
 message RouteHint {
+    // Hop Hints
     repeated HopHint hop_hints = 1 [(gogoproto.jsontag) = "hop_hints"];
 }
 
+// Hop Hint
 message HopHint {
     string node_id = 1 [(gogoproto.jsontag) = "node_id"];
     uint64 chan_id = 2 [(gogoproto.jsontag) = "chan_id"];
@@ -116,26 +167,60 @@ message HopHint {
     uint32 cltv_expiry_delta = 5 [(gogoproto.jsontag) = "cltv_expiry_delta"];
 }
 
+// Create Request
 message CreateRequest {
+    // An optional memo to include
     string memo = 1;
+    // The amount for the payment request. (Zero means no pre-set value)
     int64 value = 2;
+    // How long (in seconds) the payment request should be valid for
+    int64 expires = 3;
 }
 
+// Create Response
 message CreateResponse {
+    // The payment request string
     string request = 1;
 }
 
+// Pay Request
 message PayRequest {
+    // The payment request string
     string request = 1;
+    // The amount you wish to pay the payment request
     int64 value = 2;
 }
+
+// Pay Response
 message PayResponse {
+    // The pay request result
     LedgerRecord result = 1;    
 }
 
+// Ledger Request
 message LedgerRequest {
 }
 
+// Ledger Response
 message LedgerResponse {
+    // The ledger records
     repeated LedgerRecord ledger = 1;
+}
+
+// Withdraw Request
+message WithdrawRequest {
+    // The address to send funds to
+    string address = 1;
+    // The amount to send (in satoshis)
+    int64 value = 2;
+    // The target number of blocks this should be confirmed by
+    int32 target_blocks = 3;
+    // The number of satoshis per byte to assign for the transaction
+    int64 target_sats_per_byte = 4;
+}
+
+// Withdraw Response
+message WithdrawResponse {
+    // The withdraw request result
+    LedgerRecord result = 1;    
 }

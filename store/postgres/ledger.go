@@ -75,8 +75,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 		// Invalid status transitions
 		if ((prevlr.Status == tdrpc.EXPIRED || prevlr.Status == tdrpc.COMPLETED) && (lr.Status == tdrpc.PENDING || lr.Status == tdrpc.FAILED)) ||
 			(prevlr.Status == tdrpc.COMPLETED && lr.Status != tdrpc.COMPLETED) ||
-			(prevlr.Status == tdrpc.EXPIRED && lr.Status != tdrpc.EXPIRED) ||
-			(prevlr.Status == tdrpc.PENDING && lr.Status == tdrpc.PENDING) {
+			(prevlr.Status == tdrpc.EXPIRED && lr.Status != tdrpc.EXPIRED) {
 			return fmt.Errorf("Invalid Status Transition %v->%v", prevlr.Status, lr.Status)
 		}
 
@@ -383,6 +382,62 @@ func (c *Client) GetLedgerRecord(ctx context.Context, id string, direction tdrpc
 		return nil, err
 	}
 	return lr, nil
+
+}
+
+// UpdateLedgerRecordID returns the LedgerRecord
+func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error {
+
+	// Start a transaction
+	tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
+		Isolation: sql.LevelSerializable,
+	})
+	if err != nil {
+		return fmt.Errorf("Could not start transaction: %v", err)
+	}
+
+	// If we panic, roll the transaction back
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			c.logger.Panic(string(debug.Stack()))
+
+		}
+	}()
+
+	var temp int
+
+	// Make sure the ID exists
+	err = tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 LIMIT 1`, oldID)
+	if err == sql.ErrNoRows {
+		return store.ErrNotFound
+	} else if err != nil {
+		return err
+	}
+
+	// Make sure the newID doesn't exist
+	err = tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 LIMIT 1`, newID)
+	if err == nil {
+		return fmt.Errorf("Cannot rename record. Record already exists.")
+	} else if err == sql.ErrNoRows {
+		// We're good
+	} else if err != nil {
+		return err
+	}
+
+	// Rename the records
+	_, err = tx.ExecContext(ctx, `UPDATE ledger SET id = $1 WHERE id = $2`, newID, oldID)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("Commit Error: %v", err)
+	}
+
+	return nil
 
 }
 

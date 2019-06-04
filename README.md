@@ -70,6 +70,14 @@ LOGGER_LEVEL=debug
 | lnd.port                       | Lightning Node Port                                         | "10009"          |
 | lnd.tls_cert                   | Lightning Node Server TLS Cert                              | "tls.cert"       |
 | lnd.macaroon                   | Lightning Node Client Macaroon                              | "admin.macaroon" |
+| ---                            | ---                                                         | ---              |
+| btc.host                       | Bitcoin RPC Node Host                                       | "bitcoind"       |
+| btc.port                       | Bitcoin RPC Node Port                                       | "8333"           |
+| btc.username                   | Bitcoin RPC Username                                        | "bitcoinrpc"     |
+| btc.password                   | Bitcoin RPC Password                                        | "bitcoinrpc"     |
+| btc.post_mode                  | Bitcoin RPC Password                                        | true             |
+| btc.disable_tls                | Bitcoin RPC Password                                        | true             |
+| btc.chain                      | Bitcoin RPC Chain                                           | "mainnet"        |
 
 ## Data Storage
 Data is stored in a postgres database

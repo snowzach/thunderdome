@@ -21,11 +21,19 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 		return nil, grpc.Errorf(codes.Internal, "Missing Account")
 	}
 
+	if request.Value < 0 {
+		return nil, grpc.Errorf(codes.InvalidArgument, "Invalid Value")
+	}
+
+	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 604800) {
+		return nil, grpc.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 604800")
+	}
+
 	// Create the invoice
 	invoice, err := s.lclient.AddInvoice(ctx, &lnrpc.Invoice{
 		Memo:   request.Memo,
 		Value:  request.Value,
-		Expiry: 86400,
+		Expiry: request.Expires,
 	})
 	if err != nil {
 		return nil, grpc.Errorf(codes.Internal, "Could not AddInvoice: %v", err)

@@ -62,6 +62,19 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 
 	var foundTxOut bool
 
+	// Check to see if this is an outbound transaction we know about already
+	lrIn, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
+	if err == nil {
+		if confirmations > 0 && lrIn.Status != tdrpc.COMPLETED {
+			lrIn.Status = tdrpc.COMPLETED
+			err = txm.store.ProcessLedgerRecord(ctx, lrIn)
+			if err != nil {
+				txm.logger.Fatalw("ProcessLedgerRecord Out Error", "monitor", "btc", "error", err)
+			}
+		}
+		// On the insane chance we somehow paid another address in this wallet, let it continue to process
+	}
+
 	chHash, err := chainhash.NewHashFromStr(txHash)
 	if err != nil {
 		txm.logger.Errorw("Could not parse hash", "monitor", "btc", "hash", txHash, "error", err)

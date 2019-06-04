@@ -15,7 +15,8 @@ TOOLS := ${GOPATH}/bin/go-bindata \
 export PROTOBUF_INCLUDES = -I. -I/usr/include -I${GOPATH}/src -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
 PROTOS := ./tdrpc/tdrpc.pb.gw.go \
 	./server/rpc/version.pb.gw.go
-SWAGGERDOCS = ./tdrpc/tdrpc.swagger.json
+SWAGGERDOCS = ./tdrpc/tdrpc.swagger.json \
+	./server/rpc/version.swagger.json
 SWAGGER_VERSION = 3.20.8
 
 .PHONY: default
@@ -71,6 +72,7 @@ cmd/wire_gen.go: cmd/wire.go
 .PHONY: mocks
 mocks: tools
 	mockery -dir ./thunderdome -name Store
+	mockery -dir $(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd/lnrpc) -name LightningClient
 
 .PHONY: ${EXECUTABLE}
 ${EXECUTABLE}: tools ${PROTOS} cmd/wire_gen.go ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go

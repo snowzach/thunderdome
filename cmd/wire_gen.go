@@ -13,6 +13,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/txmonitor"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -40,7 +41,8 @@ func NewServer() (*server.Server, error) {
 func NewRPCServer() (*rpcserver.RPCServer, error) {
 	store := NewStore()
 	clientConn := NewLndGrpcClientConn()
-	rpcServer, err := rpcserver.NewRPCServer(store, clientConn)
+	lightningClient := NewLightningClient(clientConn)
+	rpcServer, err := rpcserver.NewRPCServer(store, lightningClient)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +131,10 @@ func NewChainParams(rpcc *rpcclient.Client) *chaincfg.Params {
 
 	return chain
 
+}
+
+func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
+	return lnrpc.NewLightningClient(conn)
 }
 
 // NewLndGrpcClientConn creates a new GRPC connection to LND

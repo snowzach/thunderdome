@@ -84,7 +84,8 @@
       // Build a system
       const ui = SwaggerUIBundle({
         urls: [
-          { url: "./tdrpc.swagger.json", name: "VersionRPC" }
+          { url: "tdrpc.swagger.json", name: "ThunderdomeRPC" },
+          { url: "version.swagger.json", name: "VersionRPC" }
         ],
         dom_id: '#swagger-ui',
         deepLinking: true,

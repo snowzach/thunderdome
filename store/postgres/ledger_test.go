@@ -393,3 +393,46 @@ func (suite *DBTestSuite) TestGetLedger() {
 	suite.Equal(lr22, lrtest)
 
 }
+
+func (suite *DBTestSuite) TestUpdateLedgerRecordID() {
+
+	// Create a test account
+	a1 := suite.newTestAccount("testuser1", 10)
+
+	err := suite.client.UpdateLedgerRecordID(suite.ctx, "abc", "123")
+	suite.NotNil(err)
+
+	lr := &tdrpc.LedgerRecord{
+		Id:        "tr1",
+		AccountId: a1.Id,
+		Status:    tdrpc.PENDING,
+		Type:      tdrpc.LIGHTNING,
+		Direction: tdrpc.OUT,
+		Value:     2,
+		Memo:      "memo-tr1",
+		Request:   "request-tr1",
+	}
+
+	err = suite.client.ProcessLedgerRecord(suite.ctx, lr)
+	suite.Nil(err)
+
+	// Sucess
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, "tr1", "tr2")
+	suite.Nil(err)
+
+	// Check to find it
+	lrAfter, err := suite.client.GetLedgerRecord(suite.ctx, "tr2", lr.Direction)
+	suite.Nil(err)
+	lr.Id = "tr2"
+	suite.Equal(lr, lrAfter)
+
+	// Create a third
+	lr.Id = "tr3"
+	err = suite.client.ProcessLedgerRecord(suite.ctx, lr)
+	suite.Nil(err)
+
+	// Already exists
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, "tr3", "tr2")
+	suite.NotNil(err)
+
+}

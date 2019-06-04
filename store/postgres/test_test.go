@@ -32,8 +32,6 @@ func (suite *DBTestSuite) SetupSuite() {
 	suite.logger = zap.S().With("package", "server")
 	suite.ctx = context.Background()
 
-	suite.logger.Error("ERROR")
-
 	// Create the database connection
 	var err error
 	suite.client, err = New()

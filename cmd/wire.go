@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/google/wire"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	config "github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -33,7 +34,7 @@ func NewServer() (*server.Server, error) {
 
 // NewRPCServer will create a new grpc/rest server on the webserver
 func NewRPCServer() (*rpcserver.RPCServer, error) {
-	wire.Build(rpcserver.NewRPCServer, NewStore, NewLndGrpcClientConn)
+	wire.Build(rpcserver.NewRPCServer, NewStore, NewLndGrpcClientConn, NewLightningClient)
 	return &rpcserver.RPCServer{}, nil
 }
 
@@ -115,6 +116,10 @@ func NewChainParams(rpcc *rpcclient.Client) *chaincfg.Params {
 
 	return chain
 
+}
+
+func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
+	return lnrpc.NewLightningClient(conn)
 }
 
 // NewLndGrpcClientConn creates a new GRPC connection to LND
