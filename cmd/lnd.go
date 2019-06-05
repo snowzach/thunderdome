@@ -69,6 +69,12 @@ var (
 			}
 			spew.Dump(g)
 
+			h, err := lclient.EstimateFee(context.Background(), &lnrpc.EstimateFeeRequest{AddrToAmount: map[string]int64{"2MyY384HGgJfBJv8DEUW1Kzpz9GnyYVc5VD": 50000}, TargetConf: 12})
+			if err != nil {
+				logger.Fatalw("Could not GetNetworkInfo", "error", err)
+			}
+			spew.Dump(h)
+
 		},
 	}
 )

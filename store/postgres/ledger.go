@@ -17,36 +17,45 @@ import (
 // ProcessLedgerRecord handles any balance transfer and changes to the ledger based on the status of the LedgerRecord
 func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error {
 
-	// Start a transaction
-	tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
-		Isolation: sql.LevelSerializable,
-	})
-	if err != nil {
-		return fmt.Errorf("Could not start transaction: %v", err)
-	}
+	for retries := 5; retries > 0; retries-- {
 
-	// If we panic, roll the transaction back
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			c.logger.Panic(string(debug.Stack()))
+		// Start a transaction
+		tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
+			Isolation: sql.LevelSerializable,
+		})
+		if err != nil {
+			return fmt.Errorf("Could not start transaction: %v", err)
 		}
-	}()
 
-	err = c.processLedgerRecord(ctx, tx, lr)
-	if err != nil {
-		_ = tx.Rollback()
-		return err
+		// If we panic, roll the transaction back
+		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				c.logger.Panic(string(debug.Stack()))
+			}
+		}()
+
+		err = c.processLedgerRecord(ctx, tx, lr)
+		if err != nil {
+			_ = tx.Rollback()
+			if IsTransactionError(err) {
+				c.logger.Warnf("TX Fail - Retries Left %d", retries)
+				continue
+			}
+			return err
+		}
+
+		// Commit the transaction
+		err = tx.Commit()
+		if err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("Commit Error: %v", err)
+		}
+
+		return nil
 	}
 
-	// Commit the transaction
-	err = tx.Commit()
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("Commit Error: %v", err)
-	}
-
-	return nil
+	return fmt.Errorf("Transaction failed, out of retries")
 
 }
 
@@ -230,36 +239,46 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 // ProcessInternal will process an payment between two accounts on this system
 func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerRecord, error) {
 
-	// Start a transaction
-	tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
-		Isolation: sql.LevelSerializable,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("Could not start transaction: %v", err)
-	}
+	for retries := 5; retries > 0; retries-- {
 
-	// If we panic, roll the transaction back
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			c.logger.Panic(string(debug.Stack()))
-
+		// Start a transaction
+		tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
+			Isolation: sql.LevelSerializable,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("Could not start transaction: %v", err)
 		}
-	}()
 
-	lr, err := c.processInternal(ctx, tx, id)
-	if err != nil {
-		_ = tx.Rollback()
-		return nil, err
+		// If we panic, roll the transaction back
+		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				c.logger.Panic(string(debug.Stack()))
+
+			}
+		}()
+
+		lr, err := c.processInternal(ctx, tx, id)
+		if err != nil {
+			_ = tx.Rollback()
+			if IsTransactionError(err) {
+				c.logger.Warnf("TX Fail - Retries Left %d", retries)
+				continue
+			}
+			return nil, err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("Commit Error: %v", err)
+		}
+
+		return lr, nil
+
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		_ = tx.Rollback()
-		return nil, fmt.Errorf("Commit Error: %v", err)
-	}
-
-	return lr, nil
+	return nil, fmt.Errorf("Transaction failed, out of retries")
 
 }
 
@@ -388,27 +407,55 @@ func (c *Client) GetLedgerRecord(ctx context.Context, id string, direction tdrpc
 // UpdateLedgerRecordID returns the LedgerRecord
 func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error {
 
-	// Start a transaction
-	tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
-		Isolation: sql.LevelSerializable,
-	})
-	if err != nil {
-		return fmt.Errorf("Could not start transaction: %v", err)
+	for retries := 5; retries > 0; retries-- {
+
+		// Start a transaction
+		tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
+			Isolation: sql.LevelSerializable,
+		})
+		if err != nil {
+			return fmt.Errorf("Could not start transaction: %v", err)
+		}
+
+		// If we panic, roll the transaction back
+		defer func() {
+			if r := recover(); r != nil {
+				_ = tx.Rollback()
+				c.logger.Panic(string(debug.Stack()))
+
+			}
+		}()
+
+		err = c.updateLedgerRecordID(ctx, tx, oldID, newID)
+		if err != nil {
+			_ = tx.Rollback()
+			if IsTransactionError(err) {
+				c.logger.Warnf("TX Fail - Retries Left %d", retries)
+				continue
+			}
+			return err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("Commit Error: %v", err)
+		}
+
+		return nil
+
 	}
 
-	// If we panic, roll the transaction back
-	defer func() {
-		if r := recover(); r != nil {
-			_ = tx.Rollback()
-			c.logger.Panic(string(debug.Stack()))
+	return fmt.Errorf("Transaction failed, out of retries")
 
-		}
-	}()
+}
+
+func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID string, newID string) error {
 
 	var temp int
 
 	// Make sure the ID exists
-	err = tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 LIMIT 1`, oldID)
+	err := tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 LIMIT 1`, oldID)
 	if err == sql.ErrNoRows {
 		return store.ErrNotFound
 	} else if err != nil {
@@ -429,12 +476,6 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 	_, err = tx.ExecContext(ctx, `UPDATE ledger SET id = $1 WHERE id = $2`, newID, oldID)
 	if err != nil {
 		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		_ = tx.Rollback()
-		return fmt.Errorf("Commit Error: %v", err)
 	}
 
 	return nil

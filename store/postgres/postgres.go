@@ -205,3 +205,8 @@ func New() (*Client, error) {
 	return c, nil
 
 }
+
+// Tells us if this is a transaction error
+func IsTransactionError(err error) bool {
+	return strings.Contains(err.Error(), "could not serialize access")
+}

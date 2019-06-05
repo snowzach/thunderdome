@@ -36,7 +36,7 @@ func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest
 
 	// If zero, set default blocks
 	if request.Blocks == 0 {
-		request.Blocks = config.GetInt32("tdome.default_withdraw_blocks")
+		request.Blocks = config.GetInt32("tdome.default_withdraw_target_blocks")
 	}
 
 	// Get the fee required
