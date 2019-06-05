@@ -7,8 +7,8 @@ MIGRATIONDIR := store/postgres/migrations
 MIGRATIONS :=  $(wildcard ${MIGRATIONDIR}/*.sql)
 TOOLS := ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/mockery \
-	${GOPATH}/src/github.com/golang/protobuf/proto \
-	${GOPATH}/bin/protoc-gen-go \
+	${GOPATH}/src/github.com/gogo/protobuf/proto \
+	${GOPATH}/bin/protoc-gen-gogoslick \
 	${GOPATH}/bin/protoc-gen-grpc-gateway \
 	${GOPATH}/bin/protoc-gen-swagger \
 	${GOPATH}/bin/wire
@@ -75,12 +75,12 @@ mocks: tools
 	mockery -dir $(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd/lnrpc) -name LightningClient
 
 .PHONY: ${EXECUTABLE}
-${EXECUTABLE}: tools ${PROTOS} cmd/wire_gen.go ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go
+${EXECUTABLE}: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go cmd/wire_gen.go
 	# Compiling...
 	go build -ldflags "-X ${PACKAGENAME}/conf.Executable=${EXECUTABLE} -X ${PACKAGENAME}/conf.GitVersion=${GITVERSION}" -o ${EXECUTABLE}
 
 .PHONY: test
-test: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go mocks
+test: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go cmd/wire_gen.go mocks
 	go test -cover ./...
 
 .PHONY: deps
