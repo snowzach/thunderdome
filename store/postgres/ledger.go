@@ -39,7 +39,7 @@ func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord
 		if err != nil {
 			_ = tx.Rollback()
 			if IsTransactionError(err) {
-				c.logger.Warnf("TX Fail - Retries Left %d", retries)
+				c.logger.Warnf("TX Fail: %v - Retries Left %d", err, retries)
 				continue
 			}
 			return err
@@ -262,7 +262,7 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 		if err != nil {
 			_ = tx.Rollback()
 			if IsTransactionError(err) {
-				c.logger.Warnf("TX Fail - Retries Left %d", retries)
+				c.logger.Warnf("TX Fail: %v - Retries Left %d", err, retries)
 				continue
 			}
 			return nil, err
@@ -430,7 +430,7 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 		if err != nil {
 			_ = tx.Rollback()
 			if IsTransactionError(err) {
-				c.logger.Warnf("TX Fail - Retries Left %d", retries)
+				c.logger.Warnf("TX Fail: %v - Retries Left %d", err, retries)
 				continue
 			}
 			return err
