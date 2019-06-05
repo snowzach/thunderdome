@@ -3,18 +3,23 @@ package rpcserver
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	config "github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 const (
 	AccountTypePubKey = "pubkey"
+
+	Meta
 )
 
 var (
@@ -24,22 +29,32 @@ var (
 // AuthFuncOverride will handle authentication
 func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 
+	// Get request metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
 	}
 
-	// The authorization header is the publickey
-	a := md.Get("authorization")
-	if len(a) != 1 {
+	// Get the user pubKeyString
+	pubKeyString := mdfirst(md, thunderdome.MetadataAuthPubKeyString)
+	if pubKeyString == "" {
+		return ctx, status.Errorf(codes.PermissionDenied, "Invalid Login")
+	}
+
+	// Get the timestamp and signature
+	ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
+	sig := mdfirst(md, thunderdome.MetadataAuthSignature)
+	if !config.GetBool("tdome.disable_auth") && (ts == "" || sig == "") {
 		return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
 	}
 
+	// Verify the signature
+
 	// The accountID will account for different methods of logging in, right now we support public key
 	var accountID string
-	if pubkeyRegexp.MatchString(a[0]) {
+	if pubkeyRegexp.MatchString(pubKeyString) {
 		// The account ID is prefix:value
-		accountID = AccountTypePubKey + ":" + a[0]
+		accountID = AccountTypePubKey + ":" + pubKeyString
 		// PERFORM AUTH
 	} else {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid Login")
@@ -75,4 +90,12 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	// Include the account in the context
 	return addAccount(ctx, account), nil
 
+}
+
+func mdfirst(md metadata.MD, key string) string {
+	val := md.Get(strings.ToLower(key))
+	if len(val) > 0 {
+		return val[0]
+	}
+	return ""
 }

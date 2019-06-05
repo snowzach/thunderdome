@@ -32,6 +32,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // Server is the GRPC server
@@ -207,7 +209,13 @@ func (s *Server) ListenAndServe() error {
 	grpcGatewayMux := gwruntime.NewServeMux(
 		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &grpcGatewayJSONpbMarshaler),
 		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) {
-			if header == "Another-Header" {
+			// Pass our headers
+			switch strings.ToLower(header) {
+			case thunderdome.MetadataAuthPubKeyString:
+				return header, true
+			case thunderdome.MetadataAuthSignature:
+				return header, true
+			case thunderdome.MetadataAuthTimestamp:
 				return header, true
 			}
 			return header, false

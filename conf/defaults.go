@@ -73,5 +73,6 @@ func init() {
 
 	config.SetDefault("tdome.min_withdraw", 40000)
 	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
+	config.SetDefault("tdome.disable_auth", false)
 
 }

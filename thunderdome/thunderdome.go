@@ -12,6 +12,11 @@ const (
 
 	// TempLedgerRecordIdPrefix is used to temporary store ledger record IDs
 	TempLedgerRecordIdPrefix = "temp:"
+
+	// These are the metadata fields that we will use to authenticate requests
+	MetadataAuthPubKeyString = "cn-auth-pubkeystring"
+	MetadataAuthSignature    = "cn-auth-signature"
+	MetadataAuthTimestamp    = "cn-auth-yimestamp"
 )
 
 type Store interface {
