@@ -214,9 +214,7 @@ message WithdrawRequest {
     // The amount to send (in satoshis)
     int64 value = 2;
     // The target number of blocks this should be confirmed by
-    int32 target_blocks = 3;
-    // The number of satoshis per byte to assign for the transaction
-    int64 target_sats_per_byte = 4;
+    int32 blocks = 3;
 }
 
 // Withdraw Response

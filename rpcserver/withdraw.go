@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
@@ -28,6 +29,25 @@ func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest
 		return nil, status.Errorf(codes.InvalidArgument, "Widthdraw value must be at least %d satoshis", config.GetInt64("tdome.min_withdraw"))
 	}
 
+	// Check the blocks value
+	if request.Blocks < 0 || request.Blocks > 144 {
+		return nil, status.Errorf(codes.InvalidArgument, "Blocks value must be between 0-%d", config.GetInt64("tdome.min_withdraw"))
+	}
+
+	// If zero, set default blocks
+	if request.Blocks == 0 {
+		request.Blocks = config.GetInt32("tdome.default_withdraw_blocks")
+	}
+
+	// Get the fee required
+	feeResponse, err := s.lclient.EstimateFee(ctx, &lnrpc.EstimateFeeRequest{
+		AddrToAmount: map[string]int64{request.Address: request.Value},
+		TargetConf:   request.Blocks,
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "Could not EstimateFee: %v", err)
+	}
+
 	// Generate a random hex string to use as a temporary identifier to reserve funds
 	randomID := make([]byte, 32)
 	if _, err := rand.Read(randomID); err != nil {
@@ -42,11 +62,12 @@ func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest
 		Status:    tdrpc.PENDING,
 		Type:      tdrpc.BTC,
 		Direction: tdrpc.OUT,
-		Value:     request.Value,
+		Value:     request.Value + feeResponse.FeeSat,
+		Memo:      fmt.Sprintf("Withdraw %d sats with %d sats fee", request.Value, feeResponse.FeeSat),
 	}
 
 	// Save the initial state - will do some sanity checking as well and preallocate funds
-	err := s.store.ProcessLedgerRecord(ctx, lr)
+	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "%v", err)
 	}
@@ -55,8 +76,7 @@ func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest
 	response, err := s.lclient.SendCoins(ctx, &lnrpc.SendCoinsRequest{
 		Addr:       request.Address,
 		Amount:     request.Value,
-		TargetConf: request.TargetBlocks,
-		SatPerByte: request.TargetSatsPerByte,
+		SatPerByte: feeResponse.FeerateSatPerByte,
 	})
 	if err != nil {
 		lr.Status = tdrpc.FAILED

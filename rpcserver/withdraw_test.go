@@ -39,6 +39,12 @@ func TestWithdraw(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// AddInvoice call
+	mockLClient.On("EstimateFee", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.EstimateFeeRequest")).Once().Return(
+		&lnrpc.EstimateFeeResponse{
+			FeeSat:            123,
+			FeerateSatPerByte: 12,
+		}, nil,
+	)
 	mockLClient.On("SendCoins", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.SendCoinsRequest")).Once().Return(
 		&lnrpc.SendCoinsResponse{
 			Txid: "abc1234",

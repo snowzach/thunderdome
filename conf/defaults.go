@@ -72,5 +72,6 @@ func init() {
 	config.SetDefault("btc.chain", "mainnet")
 
 	config.SetDefault("tdome.min_withdraw", 40000)
+	config.SetDefault("tdome.default_withdraw_blocks", 5)
 
 }
