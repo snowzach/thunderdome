@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
@@ -41,14 +42,21 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 		return ctx, status.Errorf(codes.PermissionDenied, "Invalid Login")
 	}
 
-	// Get the timestamp and signature
-	ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
-	sig := mdfirst(md, thunderdome.MetadataAuthSignature)
-	if !config.GetBool("tdome.disable_auth") && (ts == "" || sig == "") {
-		return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
-	}
+	// Perform authentication using the pubKeyString
+	if !config.GetBool("tdome.disable_auth") {
+		// Get the timestamp and signature
+		ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
+		sig := mdfirst(md, thunderdome.MetadataAuthSignature)
+		if ts == "" || sig == "" {
+			return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
+		}
 
-	// Verify the signature
+		// Verify the signature
+		err := ValidateTimestampSigntature(ts, pubKeyString, sig, time.Now())
+		if err != nil {
+			return ctx, status.Errorf(codes.PermissionDenied, err.Error())
+		}
+	}
 
 	// The accountID will account for different methods of logging in, right now we support public key
 	var accountID string

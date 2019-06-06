@@ -16,7 +16,7 @@ const (
 	// These are the metadata fields that we will use to authenticate requests
 	MetadataAuthPubKeyString = "cn-auth-pubkeystring"
 	MetadataAuthSignature    = "cn-auth-signature"
-	MetadataAuthTimestamp    = "cn-auth-yimestamp"
+	MetadataAuthTimestamp    = "cn-auth-timestamp"
 )
 
 type Store interface {
