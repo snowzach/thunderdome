@@ -6,16 +6,25 @@ import (
 	"io"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"git.coinninja.net/backend/thunderdome/conf"
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
 func (txm *TXMonitor) MonitorLN() {
 
-	ctx := context.Background()
+	// Handle shutting down
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-conf.Stop.Chan()
+		cancel()
+	}()
 
 	// Connect to the transaction stream
+	conf.Stop.Add(1)
 	invclient, err := txm.lclient.SubscribeInvoices(ctx, &lnrpc.InvoiceSubscription{
 		// TODO: We could start with the highest completed, not expired index
 		AddIndex:    1,
@@ -27,7 +36,7 @@ func (txm *TXMonitor) MonitorLN() {
 
 	txm.logger.Info("Listening for lightning transactions...", "monitor", "ln")
 
-	for {
+	for !conf.Stop.Bool() {
 
 		var handledTx bool
 
@@ -35,6 +44,10 @@ func (txm *TXMonitor) MonitorLN() {
 		invoice, err := invclient.Recv()
 		if err == io.EOF {
 			txm.logger.Fatalw("LightningMonitor EOF", "monitor", "ln")
+			continue
+		} else if status.Code(err) == codes.Canceled {
+			txm.logger.Info("LightningMonitor Shutting Down")
+			break
 		} else if err != nil {
 			txm.logger.Fatalw("LightningMonitor Failure", "monitor", "ln", "error", err)
 		}
@@ -58,7 +71,7 @@ func (txm *TXMonitor) MonitorLN() {
 			// Process the payment
 			err = txm.store.ProcessLedgerRecord(ctx, lr)
 			if err != nil {
-				txm.logger.Fatalw("ProcessLedgerRecord Out Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
+				txm.logger.Errorw("ProcessLedgerRecord Out Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
 				continue
 			}
 
@@ -79,7 +92,7 @@ func (txm *TXMonitor) MonitorLN() {
 			// Process the payment
 			err = txm.store.ProcessLedgerRecord(ctx, lr)
 			if err != nil {
-				txm.logger.Fatalw("ProcessLedgerRecord In Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
+				txm.logger.Errorw("ProcessLedgerRecord In Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
 				continue
 			}
 
@@ -94,5 +107,8 @@ func (txm *TXMonitor) MonitorLN() {
 		}
 
 	}
+
+	invclient.CloseSend()
+	conf.Stop.Done()
 
 }

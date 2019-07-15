@@ -58,10 +58,13 @@ func init() {
 	config.SetDefault("storage.max_connections", 80)
 	config.SetDefault("storage.wipe_confirm", false)
 
+	config.SetDefault("lnd.tls_insecure", false)
 	config.SetDefault("lnd.tls_cert", "tls.cert")
+	config.SetDefault("lnd.tls_host", "")
 	config.SetDefault("lnd.host", "lnd")
 	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.macaroon", "admin.macaroon")
+	config.SetDefault("lnd.unlock_password", "testtest")
 
 	config.SetDefault("btc.host", "bitcoind")
 	config.SetDefault("btc.port", 8333)
@@ -74,5 +77,7 @@ func init() {
 	config.SetDefault("tdome.min_withdraw", 40000)
 	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
 	config.SetDefault("tdome.disable_auth", false)
+	config.SetDefault("tdome.processing_fee_rate", 0.1)
+	config.SetDefault("tdome.network_fee_limit", 40000)
 
 }

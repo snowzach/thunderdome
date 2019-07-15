@@ -36,4 +36,5 @@ func startTxMonitor() {
 
 	go txm.MonitorBTC()
 	go txm.MonitorLN()
+	go txm.MonitorExpired()
 }

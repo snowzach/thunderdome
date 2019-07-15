@@ -6,6 +6,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"git.coinninja.net/backend/thunderdome/rpcserver"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
@@ -140,12 +141,21 @@ func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
 // NewLndGrpcClientConn creates a new GRPC connection to LND
 func NewLndGrpcClientConn() *grpc.ClientConn {
 
-	creds, err := credentials.NewClientTLSFromFile(viper.GetString("lnd.tls_cert"), viper.GetString("lnd.host"))
-	if err != nil {
-		logger.Fatalw("Could not load credentials", "error", err)
-	}
+	dialOptions := []grpc.DialOption{grpc.WithTimeout(10 * time.Second), grpc.WithBlock()}
 
-	dialOptions := []grpc.DialOption{grpc.WithTransportCredentials(creds), grpc.WithTimeout(10 * time.Second), grpc.WithBlock()}
+	if viper.GetBool("lnd.tls_insecure") {
+		creds := credentials.NewTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		})
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+	} else {
+
+		creds, err := credentials.NewClientTLSFromFile(viper.GetString("lnd.tls_cert"), viper.GetString("lnd.tls_host"))
+		if err != nil {
+			logger.Fatalw("Could not load credentials", "error", err)
+		}
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+	}
 
 	macBytes, err := ioutil.ReadFile(viper.GetString("lnd.macaroon"))
 	if err != nil {
@@ -162,7 +172,7 @@ func NewLndGrpcClientConn() *grpc.ClientConn {
 
 	conn, err := grpc.Dial(net.JoinHostPort(viper.GetString("lnd.host"), viper.GetString("lnd.port")), dialOptions...)
 	if err != nil {
-		logger.Fatalw("Could not connect to lnd", "error", err)
+		logger.Fatalw("Could not connect to lnd", "error", err, "host:port", net.JoinHostPort(viper.GetString("lnd.host"), viper.GetString("lnd.port")))
 	}
 
 	return conn
