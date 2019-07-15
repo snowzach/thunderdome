@@ -7,8 +7,8 @@ CREATE TABLE public.account (
   updated_at TIMESTAMP WITH TIME ZONE,
   address TEXT NOT NULL DEFAULT '',
   balance BIGINT DEFAULT 0,
-  balance_in BIGINT DEFAULT 0,
-  balance_out BIGINT DEFAULT 0
+  pending_in BIGINT DEFAULT 0,
+  pending_out BIGINT DEFAULT 0
 );
 
 -- Allow lookup by address
@@ -33,6 +33,8 @@ CREATE TABLE public.ledger (
   type ledger_type NOT NULL,
   direction ledger_direction NOT NULL,
   value BIGINT DEFAULT 0,
+  network_fee BIGINT DEFAULT 0,
+  processing_fee BIGINT DEFAULT 0,
   add_index BIGINT DEFAULT 0,
   memo text DEFAULT '',
   request text DEFAULT '',
@@ -45,3 +47,6 @@ ALTER TABLE ONLY public.ledger
 
 -- Our default listing format
 CREATE INDEX ix_ledger_account_id_status_updated_at ON public.ledger USING btree(account_id, status, updated_at);
+
+-- Expiration
+CREATE INDEX ix_ledger_status_expires_at ON public.ledger USING btree(status, expires_at);

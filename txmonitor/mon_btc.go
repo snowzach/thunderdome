@@ -10,7 +10,10 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"git.coinninja.net/backend/thunderdome/conf"
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
@@ -18,13 +21,22 @@ import (
 // MonitorBTC will spin up, search for existing transactions, and listen for incoming transactions
 func (txm *TXMonitor) MonitorBTC() {
 
-	ctx := context.Background()
+	// Handle shutting down
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		<-conf.Stop.Chan()
+		cancel()
+	}()
+
+	conf.Stop.Add(1)
+	var txclient lnrpc.Lightning_SubscribeTransactionsClient
+	var err error
 
 	// If we disconnect, loop and try again
-	for {
+	for !conf.Stop.Bool() {
 
 		// Connect to the transaction stream, subscribe to transactions
-		txclient, err := txm.lclient.SubscribeTransactions(ctx, &lnrpc.GetTransactionsRequest{})
+		txclient, err = txm.lclient.SubscribeTransactions(ctx, &lnrpc.GetTransactionsRequest{})
 		if err != nil {
 			txm.logger.Fatalw("Could not SubscribeTransactions", "error", err)
 		}
@@ -47,14 +59,28 @@ func (txm *TXMonitor) MonitorBTC() {
 			if err == io.EOF {
 				txm.logger.Errorw("TXM Closed Connection", "monitor", "btc")
 				break
+			} else if status.Code(err) == codes.Canceled {
+				txm.logger.Info("TXM Shutting Down")
+				break
+			} else if err != nil {
+				txm.logger.Errorw("TXM Error", "monitor", "btc", "error", err)
+				break
 			}
 			// Don't process a transaction until it has at least 1 confirmation
 			txm.logger.Infow("Processing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
 			txm.parseBTCTranaction(ctx, tx.TxHash, tx.NumConfirmations)
 		}
 
-		time.Sleep(10 * time.Second)
+		select {
+		case <-time.After(10 * time.Second):
+		case <-conf.Stop.Chan():
+		}
 	}
+
+	if txclient != nil {
+		txclient.CloseSend()
+	}
+	conf.Stop.Done()
 }
 
 // This will parse the transaction and add it to the ledger
@@ -133,7 +159,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 
 			err = txm.store.ProcessLedgerRecord(ctx, lr)
 			if err != nil {
-				txm.logger.Fatalw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
+				txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 			}
 
 			foundTxIn = true
@@ -144,7 +170,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 		// This checks farther back in history but gives more sparse details
 		tx, err := txm.rpcc.GetTransaction(chHash)
 		if err != nil {
-			txm.logger.Errorw("Could not find transaction", "monitor", "btc", "hash", txHash, "error", err)
+			txm.logger.Warnw("Could not find transaction", "monitor", "btc", "hash", txHash, "error", err)
 			return
 		}
 
@@ -178,7 +204,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 
 			err = txm.store.ProcessLedgerRecord(ctx, lr)
 			if err != nil {
-				txm.logger.Fatalw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
+				txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 			}
 
 			foundTxIn = true

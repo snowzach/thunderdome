@@ -2,8 +2,11 @@ package rpcserver
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
+	"time"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -12,6 +15,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/mocks"
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 func TestAuthFuncOverride(t *testing.T) {
@@ -25,19 +29,36 @@ func TestAuthFuncOverride(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Bad Value
-	_, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "SOME BAD VALUE")), "test")
+	_, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		thunderdome.MetadataAuthPubKeyString, "SOME BAD PUBKEY",
+		thunderdome.MetadataAuthSignature, "Bad Signature",
+		thunderdome.MetadataAuthTimestamp, time.Now().Format(time.RFC3339),
+	)), "test")
 	assert.NotNil(t, err)
 
-	pubKey := "123123123123132132132123131123123123123132132132123131123123123333"
-	address := "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm"
+	// Signature Stuff
+	key, err := NewKey()
+	assert.Nil(t, err)
+	pubKey := HexEncodedPublicKey(key)
+	timeString := time.Now().UTC().Format(time.RFC3339)
+	sig, err := key.Sign(chainhash.DoubleHashB([]byte(timeString)))
+	assert.Nil(t, err)
+	sigHexString := hex.EncodeToString(sig.Serialize())
 
 	// Not Found - creeate new account and address
 	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string")).Once().Return(nil, store.ErrNotFound)
+	address := "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm"
 	mockLClient.On("NewAddress", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.NewAddressRequest")).Once().Return(&lnrpc.NewAddressResponse{Address: address}, nil)
 	mockStore.On("AccountSave", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.Account")).Once().
 		Return(func(ctx context.Context, a *tdrpc.Account) *tdrpc.Account { return a }, nil)
-	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", pubKey)), "test")
+
+	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		thunderdome.MetadataAuthPubKeyString, pubKey,
+		thunderdome.MetadataAuthSignature, sigHexString,
+		thunderdome.MetadataAuthTimestamp, timeString,
+	)), "test")
 	assert.Nil(t, err)
+
 	account := getAccount(ctx)
 	assert.NotNil(t, account)
 	assert.Equal(t, AccountTypePubKey+":"+pubKey, account.Id)
@@ -45,7 +66,11 @@ func TestAuthFuncOverride(t *testing.T) {
 
 	// Make the request
 	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), account.Id).Once().Return(account, nil)
-	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", pubKey)), "test")
+	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		thunderdome.MetadataAuthPubKeyString, pubKey,
+		thunderdome.MetadataAuthSignature, sigHexString,
+		thunderdome.MetadataAuthTimestamp, timeString,
+	)), "test")
 	assert.Nil(t, err)
 	account = getAccount(ctx)
 	assert.NotNil(t, account)

@@ -71,9 +71,9 @@ message Account {
     // The current balance
     int64 balance = 5  [(gogoproto.jsontag) = "balance"];
     // The current pending incoming balance
-    int64 balance_in = 6 [(gogoproto.jsontag) = "balance_in",(gogoproto.moretags) = "db:\"balance_in\""];
+    int64 pending_in = 6 [(gogoproto.jsontag) = "pending_in",(gogoproto.moretags) = "db:\"pending_in\""];
     // The current pending outgoing balance
-    int64 balance_out = 7 [(gogoproto.jsontag) = "balance_out",(gogoproto.moretags) = "db:\"balance_out\""];
+    int64 pending_out = 7 [(gogoproto.jsontag) = "pending_out",(gogoproto.moretags) = "db:\"pending_out\""];
 }
 
 // Ledger Record
@@ -113,14 +113,18 @@ message LedgerRecord {
     Direction direction = 8;
     // The amount of the transaction
     int64 value = 9 [(gogoproto.jsontag) = "value"];
+    // The amount of the transaction
+    int64 network_fee = 10 [(gogoproto.jsontag) = "network_fee",(gogoproto.moretags) = "db:\"network_fee\""];
+    // The amount of the transaction
+    int64 processing_fee = 11 [(gogoproto.jsontag) = "processing_fee",(gogoproto.moretags) = "db:\"processing_fee\""];
     // The address index of the lightning request
-    uint64 add_index = 10 [(gogoproto.jsontag) = "add_index",(gogoproto.moretags) = "db:\"add_index\""];
+    uint64 add_index = 12 [(gogoproto.jsontag) = "add_index",(gogoproto.moretags) = "db:\"add_index\""];
     // An optional request memo
-    string memo = 11 [(gogoproto.jsontag) = "memo"];;
+    string memo = 13 [(gogoproto.jsontag) = "memo"];;
     // The lightning payment request
-    string request = 12 [(gogoproto.jsontag) = "request"];
+    string request = 14 [(gogoproto.jsontag) = "request"];
     // Any error associated with the request
-    string error = 13 [(gogoproto.jsontag) = "error"];
+    string error = 15 [(gogoproto.jsontag) = "error"];
 }
 
 // Decode Request

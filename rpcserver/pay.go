@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	config "github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -59,6 +60,28 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		Value:     request.Value,
 		Memo:      pr.Description,
 		Request:   request.Request,
+	}
+
+	// Calculate the processing fee
+	lr.ProcessingFee = int64((config.GetFloat64("tdome.processing_fee_rate") / 100.0) * float64(request.Value))
+
+	// If it's not another user using this service, calcuate the network fee
+	if pr.Destination != s.myPubKey {
+		routesResponse, err := s.lclient.QueryRoutes(ctx, &lnrpc.QueryRoutesRequest{
+			PubKey: pr.Destination,
+			Amt:    lr.Value + lr.ProcessingFee,
+		})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "%v", err)
+		} else if len(routesResponse.Routes) != 1 {
+			return nil, status.Errorf(codes.Internal, "did not get network route")
+		}
+		lr.NetworkFee = routesResponse.Routes[0].TotalFees
+	}
+
+	// Sanity check the network fee
+	if lr.NetworkFee > config.GetInt64("tdome.network_fee_limit") {
+		return nil, status.Errorf(codes.Internal, "network fee too large: %d", lr.NetworkFee)
 	}
 
 	// If this is a payment to someone else using this service, mark the outbound records as interal

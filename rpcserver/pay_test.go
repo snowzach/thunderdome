@@ -38,6 +38,13 @@ func TestPay(t *testing.T) {
 		Expiry:      time.Now().Add(time.Hour).Unix(),
 	}
 	mockLClient.On("DecodePayReq", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.PayReqString")).Once().Return(pr, nil)
+
+	// Route/Fee requests
+	route := &lnrpc.Route{
+		TotalFees: 123,
+	}
+	mockLClient.On("QueryRoutes", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.QueryRoutesRequest")).Once().Return(&lnrpc.QueryRoutesResponse{Routes: []*lnrpc.Route{route}}, nil)
+
 	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
 	mockLClient.On("SendPaymentSync", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.SendRequest")).Once().
 		Return(&lnrpc.SendResponse{}, nil)
@@ -49,15 +56,6 @@ func TestPay(t *testing.T) {
 		Value:   20,
 	})
 	assert.Nil(t, err)
-
-	// AddInvoice call
-	// // mockLClient.On("SendCoins", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.SendCoinsRequest")).Once().Return(
-	// // 	&lnrpc.SendCoinsResponse{
-	// // 		Txid: "abc1234",
-	// // 	}, nil,
-	// // )
-
-	// mockStore.On("UpdateLedgerRecordID", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Once().Return(nil)
 
 	mockStore.AssertExpectations(t)
 	mockLClient.AssertExpectations(t)

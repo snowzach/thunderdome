@@ -12,8 +12,8 @@ func (suite *DBTestSuite) newTestAccount(id string, balance int64) *tdrpc.Accoun
 		Id:         id,
 		Address:    "address:" + id,
 		Balance:    balance,
-		BalanceIn:  0,
-		BalanceOut: 0,
+		PendingIn:  0,
+		PendingOut: 0,
 	})
 	assert.Nil(suite.T(), err, "Could not create test account")
 
@@ -32,8 +32,8 @@ func (suite *DBTestSuite) TestAccount() {
 
 	// Update the balance
 	a1.Balance = 1000
-	a1.BalanceIn = 2000
-	a1.BalanceOut = 2000
+	a1.PendingIn = 2000
+	a1.PendingOut = 2000
 	_, err = suite.client.AccountSave(suite.ctx, a1)
 	suite.Nil(err)
 

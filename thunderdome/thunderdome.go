@@ -6,6 +6,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
+// Various Const Definitions
 const (
 	// InternalIdSuffix used to track internal transactions
 	InternalIdSuffix = ":int"
@@ -28,4 +29,5 @@ type Store interface {
 	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error
 	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
 	GetLedgerRecord(ctx context.Context, id string, direction tdrpc.LedgerRecord_Direction) (*tdrpc.LedgerRecord, error)
+	ExpireLedgerRequests(ctx context.Context) error
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"context"
 
 	"github.com/elazarl/go-bindata-assetfs"
 
@@ -28,4 +29,9 @@ func (s *Server) SetupRoutes() {
 		fs.ServeHTTP(w, r)
 	}))
 
+}
+
+// AuthFuncOverride any server related functions will not require auth
+func (s *Server) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, nil
 }

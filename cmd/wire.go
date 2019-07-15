@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"io/ioutil"
 	"net"
 	"time"
@@ -125,17 +126,24 @@ func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
 // NewLndGrpcClientConn creates a new GRPC connection to LND
 func NewLndGrpcClientConn() *grpc.ClientConn {
 
-	// Create the connection to lightning
-	creds, err := credentials.NewClientTLSFromFile(config.GetString("lnd.tls_cert"), config.GetString("lnd.host"))
-	if err != nil {
-		logger.Fatalw("Could not load credentials", "error", err)
-	}
-
 	// Dial options for use with the connection
 	dialOptions := []grpc.DialOption{
-		grpc.WithTransportCredentials(creds),
 		grpc.WithTimeout(10 * time.Second),
 		grpc.WithBlock(),
+	}
+
+	if config.GetBool("lnd.tls_insecure") {
+		creds := credentials.NewTLS(&tls.Config{
+			InsecureSkipVerify: true,
+		})
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+	} else {
+		// Create the connection to lightning
+		creds, err := credentials.NewClientTLSFromFile(config.GetString("lnd.tls_cert"), config.GetString("lnd.tls_host"))
+		if err != nil {
+			logger.Fatalw("Could not load credentials", "error", err)
+		}
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
 	}
 
 	macBytes, err := ioutil.ReadFile(config.GetString("lnd.macaroon"))
@@ -155,7 +163,7 @@ func NewLndGrpcClientConn() *grpc.ClientConn {
 	// Create the connection
 	conn, err := grpc.Dial(net.JoinHostPort(config.GetString("lnd.host"), config.GetString("lnd.port")), dialOptions...)
 	if err != nil {
-		logger.Fatalw("Could not connect to lnd", "error", err)
+		logger.Fatalw("Could not connect to lnd", "error", err, "host:port", net.JoinHostPort(config.GetString("lnd.host"), config.GetString("lnd.port")))
 	}
 
 	return conn
