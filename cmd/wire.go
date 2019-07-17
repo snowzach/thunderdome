@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"context"
 	"crypto/tls"
 	"io/ioutil"
 	"net"
@@ -17,7 +18,9 @@ import (
 	"github.com/lightningnetwork/lnd/macaroons"
 	config "github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 	macaroon "gopkg.in/macaroon.v2"
 
 	"git.coinninja.net/backend/thunderdome/rpcserver"
@@ -120,6 +123,21 @@ func NewChainParams(rpcc *rpcclient.Client) *chaincfg.Params {
 }
 
 func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
+
+	_, err := lnrpc.NewWalletUnlockerClient(conn).UnlockWallet(context.Background(), &lnrpc.UnlockWalletRequest{
+		WalletPassword: []byte(config.GetString("lnd.unlock_password")),
+	})
+	if err == nil {
+		logger.Info("Wallet Unlocked")
+		// Disconnect and reconnect
+		conn.Close()
+		conn = NewLndGrpcClientConn()
+	} else if status.Code(err) == codes.Unimplemented {
+		// Wallet is alreay unlocked
+	} else {
+		logger.Fatalf("Could not UnlockWallet: %v", err)
+	}
+
 	return lnrpc.NewLightningClient(conn)
 }
 
