@@ -54,13 +54,12 @@ ${GOPATH}/bin/wire:
 %.pb.go: %.proto
 	protoc ${PROTOBUF_INCLUDES} --gogoslick_out=paths=source_relative,plugins=grpc:. $*.proto
 
-${EMBEDDIR}/bindata.go: ${SWAGGERDOCS} embed/public/api-docs/index.html
+${EMBEDDIR}/bindata.go: ${SWAGGERDOCS} embed/public/api-docs/index.html embed/public/swagger-ui/index.html
 	# Copying swagger docs
 	mkdir -p embed/public/api-docs
 	cp $(SWAGGERDOCS) embed/public/api-docs
 	# Building bindata
 	go-bindata -o ${EMBEDDIR}/bindata.go -prefix ${EMBEDDIR} -pkg embed embed/public/...
-
 
 ${MIGRATIONDIR}/bindata.go: ${MIGRATIONS}
 	# Building bindata
