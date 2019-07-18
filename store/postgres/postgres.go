@@ -108,9 +108,9 @@ func New() (*Client, error) {
 			continue
 		}
 		logger.Infow("Creating database", "database", dbName)
-		return nil, fmt.Errorf("Could not create database %s: %s", dbName, err)
 		_, err = createDb.Exec(`CREATE DATABASE ` + dbName)
 		if err != nil {
+			return nil, fmt.Errorf("Could not create database %s: %s", dbName, err)
 		}
 		break
 	}
