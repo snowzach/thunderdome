@@ -74,18 +74,28 @@ func New() (*Server, error) {
 				ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 				next.ServeHTTP(ww, r)
 
+				// Don't log the version endpoint, it's too noisy
+				if r.RequestURI == "/version" {
+					return
+				}
+
 				latency := time.Since(start)
 
 				fields := []zapcore.Field{
 					zap.Int("status", ww.Status()),
 					zap.Duration("took", latency),
-					zap.String("remote", r.RemoteAddr),
 					zap.String("request", r.RequestURI),
 					zap.String("method", r.Method),
 					zap.String("package", "server.request"),
 				}
 				if requestID != "" {
 					fields = append(fields, zap.String("request-id", requestID))
+				}
+				// If we have an x-Forwarded-For header, use that for the remote
+				if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+					fields = append(fields, zap.String("remote", forwardedFor))
+				} else {
+					fields = append(fields, zap.String("remote", r.RemoteAddr))
 				}
 				zap.L().Info("API Request", fields...)
 			})
