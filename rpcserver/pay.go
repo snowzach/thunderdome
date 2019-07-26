@@ -92,7 +92,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	// Save the initial state - will do some sanity checking as well
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	// If this is a payment to someone else using this service, we transfer the balance internally
@@ -101,7 +101,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 		// This is an internal payment, process the record
 		lr, err = s.store.ProcessInternal(ctx, pr.PaymentHash)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "%v", err)
+			return nil, status.Errorf(codes.InvalidArgument, "%v", err)
 		}
 
 		return &tdrpc.PayResponse{
