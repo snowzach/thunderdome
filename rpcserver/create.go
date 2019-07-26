@@ -44,7 +44,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 	err = s.store.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
 		Id:        hex.EncodeToString(invoice.RHash),
 		AccountId: account.Id,
-		ExpiresAt: &expiresAt,
+		ExpiresAt: expiresAt,
 		Status:    tdrpc.PENDING,
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.IN,

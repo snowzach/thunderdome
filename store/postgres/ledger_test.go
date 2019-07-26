@@ -240,7 +240,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordInternal() {
 	lr1 := &tdrpc.LedgerRecord{
 		Id:        "tr1",
 		AccountId: a1.Id,
-		ExpiresAt: &expiresAt,
+		ExpiresAt: expiresAt,
 		Status:    tdrpc.PENDING,
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.IN,
@@ -261,7 +261,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordInternal() {
 	lr2 := &tdrpc.LedgerRecord{
 		Id:        "tr1" + thunderdome.InternalIdSuffix, // MUST INCLUDE INTERNAL SUFFIX FOR OUTBOUND
 		AccountId: a2.Id,
-		ExpiresAt: &expiresAt,
+		ExpiresAt: expiresAt,
 		Status:    tdrpc.FAILED,
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.OUT,

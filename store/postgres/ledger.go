@@ -320,12 +320,12 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 		return nil, err
 	}
 
-	if sender.ExpiresAt == nil || receiver.ExpiresAt == nil {
+	if sender.ExpiresAt.IsZero() || receiver.ExpiresAt.IsZero() {
 		return nil, fmt.Errorf("Invalid expiration time")
 	}
 
 	// Set the expired time if it's not
-	if time.Now().UTC().After(*sender.ExpiresAt) || time.Now().UTC().After(*receiver.ExpiresAt) {
+	if time.Now().UTC().After(sender.ExpiresAt) || time.Now().UTC().After(receiver.ExpiresAt) {
 		_, err = tx.ExecContext(ctx, `UPDATE ledger SET status = $1 WHERE id = $2 OR id = $3`, tdrpc.EXPIRED, id, internalID)
 		if err != nil {
 			return nil, err
