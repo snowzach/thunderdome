@@ -67,7 +67,7 @@ func init() {
 	config.SetDefault("lnd.unlock_password", "testtest")
 
 	config.SetDefault("btc.host", "bitcoind")
-	config.SetDefault("btc.port", 8333)
+	config.SetDefault("btc.port", 8332)
 	config.SetDefault("btc.username", "bitcoinrpc")
 	config.SetDefault("btc.password", "bitcoinrpc")
 	config.SetDefault("btc.post_mode", true)

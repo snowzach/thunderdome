@@ -63,9 +63,9 @@ message Account {
     // Account Id
     string id = 1;
     // Created at timestamp
-    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"created_at\""];
     // Update at timestamp
-    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"updated_at\""];
     // The BTC address for the account
     string address = 4;
     // The current balance
@@ -83,11 +83,11 @@ message LedgerRecord {
     // The user account associated with the request
     string account_id = 2 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"account_id\""];
     // Created at timestamp
-    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"created_at\""];
     // Update at timestamps
-    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"updated_at\""];
     // Expires at timestamp
-    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"expires_at\""];
+    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"expires_at\""];
     // Ledger Record Status
     enum Status {
         PENDING = 0;
