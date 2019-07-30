@@ -26,7 +26,7 @@ func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest
 
 	// Check for mangled amount
 	if request.Value < config.GetInt64("tdome.min_withdraw") {
-		return nil, status.Errorf(codes.InvalidArgument, "Widthdraw value must be at least %d satoshis", config.GetInt64("tdome.min_withdraw"))
+		return nil, status.Errorf(codes.InvalidArgument, "Withdraw value must be at least %d satoshis", config.GetInt64("tdome.min_withdraw"))
 	}
 
 	// Check the blocks value

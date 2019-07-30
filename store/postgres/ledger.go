@@ -212,19 +212,19 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 	// Upsert the data, capture the result
 	var ret tdrpc.LedgerRecord
 	err = tx.GetContext(ctx, &ret, `
-		INSERT INTO ledger (id, account_id, created_at, updated_at, expires_at, status, type, direction, value, add_index, memo, request, error)
-		VALUES($1, $2, NOW(), NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO ledger (id, account_id, created_at, updated_at, expires_at, status, type, direction, value, memo, request, error)
+		VALUES($1, $2, NOW(), NOW(), $3, $4, $5, $6, $7, $8, $9, $10)
 		ON CONFLICT (id, direction) DO UPDATE
 		SET
 		updated_at = NOW(),
 		expires_at = $3,
 		status = $4,
 		value = $7,
-		memo = $9,
-		request = $10,
-		error = $11
+		memo = $8,
+		request = $9,
+		error = $10
 		RETURNING *
-	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.ValueTotal(), lr.AddIndex, lr.Memo, lr.Request, lr.Error)
+	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.ValueTotal(), lr.Memo, lr.Request, lr.Error)
 	if err != nil {
 		return fmt.Errorf("Could not process ledger: %v", err)
 	}
@@ -320,12 +320,12 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 		return nil, err
 	}
 
-	if sender.ExpiresAt.IsZero() || receiver.ExpiresAt.IsZero() {
+	if sender.ExpiresAt == nil || sender.ExpiresAt.IsZero() || receiver.ExpiresAt == nil || receiver.ExpiresAt.IsZero() {
 		return nil, fmt.Errorf("Invalid expiration time")
 	}
 
 	// Set the expired time if it's not
-	if time.Now().UTC().After(sender.ExpiresAt) || time.Now().UTC().After(receiver.ExpiresAt) {
+	if time.Now().UTC().After(*sender.ExpiresAt) || time.Now().UTC().After(*receiver.ExpiresAt) {
 		_, err = tx.ExecContext(ctx, `UPDATE ledger SET status = $1 WHERE id = $2 OR id = $3`, tdrpc.EXPIRED, id, internalID)
 		if err != nil {
 			return nil, err
@@ -400,6 +400,7 @@ func (c *Client) GetLedgerRecord(ctx context.Context, id string, direction tdrpc
 	} else if err != nil {
 		return nil, err
 	}
+
 	return lr, nil
 
 }
@@ -539,9 +540,6 @@ func getLedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) []interface{} {
 	}
 	if lr1.ProcessingFee != lr2.ProcessingFee {
 		ret = append(ret, "value", fmt.Sprintf("%v->%v", lr1.ProcessingFee, lr2.ProcessingFee))
-	}
-	if lr1.AddIndex != lr2.AddIndex {
-		ret = append(ret, "add_index", fmt.Sprintf("%v->%v", lr1.AddIndex, lr2.AddIndex))
 	}
 	if lr1.Memo != lr2.Memo {
 		ret = append(ret, "memo", fmt.Sprintf("%v->%v", lr1.Memo, lr2.Memo))

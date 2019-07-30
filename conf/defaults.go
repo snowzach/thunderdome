@@ -39,10 +39,6 @@ func init() {
 	config.SetDefault("server.log_requests", true)
 	config.SetDefault("server.profiler_enabled", false)
 	config.SetDefault("server.profiler_path", "/debug")
-	// GRPC JSON Marshaler Options
-	config.SetDefault("server.rest.enums_as_ints", false)
-	config.SetDefault("server.rest.emit_defaults", true)
-	config.SetDefault("server.rest.orig_names", true)
 
 	// Database Settings
 	config.SetDefault("storage.type", "postgres")
@@ -79,5 +75,6 @@ func init() {
 	config.SetDefault("tdome.disable_auth", false)
 	config.SetDefault("tdome.processing_fee_rate", 0.1)
 	config.SetDefault("tdome.network_fee_limit", 40000)
+	config.SetDefault("tdome.default_request_expires", 86400)
 
 }

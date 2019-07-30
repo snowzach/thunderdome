@@ -35,7 +35,6 @@ CREATE TABLE public.ledger (
   value BIGINT DEFAULT 0,
   network_fee BIGINT DEFAULT 0,
   processing_fee BIGINT DEFAULT 0,
-  add_index BIGINT DEFAULT 0,
   memo text DEFAULT '',
   request text DEFAULT '',
   error text DEFAULT '',

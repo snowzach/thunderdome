@@ -53,7 +53,7 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	lr := &tdrpc.LedgerRecord{
 		Id:        pr.PaymentHash,
 		AccountId: account.Id,
-		ExpiresAt: expiresAt,
+		ExpiresAt: &expiresAt,
 		Status:    tdrpc.PENDING,
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.OUT,

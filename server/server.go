@@ -5,22 +5,22 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"log"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
-	"github.com/gogo/gateway"
-	"github.com/gogo/protobuf/jsonpb"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
+
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/snowzach/certtools"
 	"github.com/snowzach/certtools/autocert"
@@ -211,13 +211,8 @@ func (s *Server) ListenAndServe() error {
 	}
 
 	// Setup the GRPC gateway
-	grpcGatewayJSONpbMarshaler := gateway.JSONPb(jsonpb.Marshaler{
-		EnumsAsInts:  config.GetBool("server.rest.enums_as_ints"),
-		EmitDefaults: config.GetBool("server.rest.emit_defaults"),
-		OrigName:     config.GetBool("server.rest.orig_names"),
-	})
 	grpcGatewayMux := gwruntime.NewServeMux(
-		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &grpcGatewayJSONpbMarshaler),
+		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &JSONMarshaler{}),
 		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) {
 			// Pass our headers
 			switch strings.ToLower(header) {

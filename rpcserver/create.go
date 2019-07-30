@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	config "github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -28,6 +29,9 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 604800) {
 		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 604800")
 	}
+	if request.Expires == 0 {
+		request.Expires = config.GetInt64("tdome.default_request_expires")
+	}
 
 	// Create the invoice
 	invoice, err := s.lclient.AddInvoice(ctx, &lnrpc.Invoice{
@@ -39,17 +43,18 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 		return nil, status.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
 	}
 
+	// Get the expires time
+	expiresAt := time.Now().UTC().Add(time.Duration(request.Expires) * time.Second)
+
 	// Put it in the ledger
-	expiresAt := time.Now().UTC().Add(86400 * time.Second)
 	err = s.store.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
 		Id:        hex.EncodeToString(invoice.RHash),
 		AccountId: account.Id,
-		ExpiresAt: expiresAt,
+		ExpiresAt: &expiresAt,
 		Status:    tdrpc.PENDING,
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.IN,
 		Value:     request.Value,
-		AddIndex:  invoice.AddIndex,
 		Memo:      request.Memo,
 		Request:   invoice.PaymentRequest,
 	})
