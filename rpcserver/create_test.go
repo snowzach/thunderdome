@@ -47,7 +47,6 @@ func TestCreate(t *testing.T) {
 	mockLClient.On("AddInvoice", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.Invoice")).Once().Return(
 		&lnrpc.AddInvoiceResponse{
 			RHash:          []byte("asdfasdfasdf"),
-			AddIndex:       1,
 			PaymentRequest: "whutwhute",
 		}, nil,
 	)

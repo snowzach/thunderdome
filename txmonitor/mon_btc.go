@@ -86,6 +86,9 @@ func (txm *TXMonitor) MonitorBTC() {
 // This will parse the transaction and add it to the ledger
 func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, confirmations int32) {
 
+	var foundTxIn bool
+	var foundTxOut bool
+
 	// Check to see if this has an outbound transaction we know about already
 	lrIn, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
 	if err == nil {
@@ -98,8 +101,6 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 		}
 		// On the insane chance we somehow paid another address in this wallet, let it continue to process
 	}
-
-	var foundTxIn bool
 
 	chHash, err := chainhash.NewHashFromStr(txHash)
 	if err != nil {
@@ -117,103 +118,61 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 			rawTx, err = txm.rpcc.GetRawTransaction(chHash)
 		}
 	}
-	// We found the raw transaction
-	if err == nil {
+	if err != nil {
+		txm.logger.Errorw("Could not find transaction", "monitor", "btc", "hash", txHash, "error", err)
+		return
+	}
 
-		// Convert it into the wire format
-		wTx := rawTx.MsgTx()
+	// Convert it into the wire format
+	wTx := rawTx.MsgTx()
 
-		// Parse all of the outputs
-		for height, vout := range wTx.TxOut {
+	// Parse all of the outputs
+	for height, vout := range wTx.TxOut {
 
-			// Attempt to parse simple addresses out of the script
-			_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, &chaincfg.RegressionNetParams)
-			if err != nil { // Could not decode, it's not one of ours
-				txm.logger.Errorw("Could not decode transaction script", "monitor", "btc", "hash", txHash, "height", height)
-				continue
-			} else if len(addresses) != 1 {
-				txm.logger.Errorw("Multiple addresses found for transaction", "monitor", "btc", "hash", txHash, "height", height)
-				continue
-			}
-
-			// Find the associated account
-			account, err := txm.store.AccountGetByAddress(ctx, addresses[0].String())
-			if err == store.ErrNotFound {
-				continue
-			} else if err != nil {
-				txm.logger.Fatalw("AccountGetByAddress Error", "monitor", "btc", "error", err)
-			}
-
-			// Convert it to a LedgerRecord
-			lr := &tdrpc.LedgerRecord{
-				Id:        fmt.Sprintf("%s:%d", txHash, height),
-				AccountId: account.Id,
-				Status:    tdrpc.PENDING,
-				Type:      tdrpc.BTC,
-				Direction: tdrpc.IN,
-				Value:     vout.Value,
-			}
-			if confirmations > 0 {
-				lr.Status = tdrpc.COMPLETED
-			}
-
-			err = txm.store.ProcessLedgerRecord(ctx, lr)
-			if err != nil {
-				txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
-			}
-
-			foundTxIn = true
+		// Attempt to parse simple addresses out of the script
+		_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, &chaincfg.RegressionNetParams)
+		if err != nil { // Could not decode, it's not one of ours
+			txm.logger.Errorw("Could not decode ouput script", "monitor", "btc", "hash", txHash, "height", height)
+			continue
+		} else if vout.Value == 0 {
+			// No value, just skip it
+			continue
+		} else if len(addresses) != 1 {
+			txm.logger.Warnw("Could not determine output addresses. Skipping.", "monitor", "btc", "hash", txHash, "height", height, "addresses", len(addresses))
+			continue
 		}
 
-	} else {
+		// Find the associated account
+		account, err := txm.store.AccountGetByAddress(ctx, addresses[0].String())
+		if err == store.ErrNotFound {
+			continue
+		} else if err != nil {
+			txm.logger.Fatalw("AccountGetByAddress Error", "monitor", "btc", "error", err)
+		}
 
-		// This checks farther back in history but gives more sparse details
-		tx, err := txm.rpcc.GetTransaction(chHash)
+		// Convert it to a LedgerRecord
+		lr := &tdrpc.LedgerRecord{
+			Id:        fmt.Sprintf("%s:%d", txHash, height),
+			AccountId: account.Id,
+			Status:    tdrpc.PENDING,
+			Type:      tdrpc.BTC,
+			Direction: tdrpc.IN,
+			Value:     vout.Value,
+		}
+		if confirmations > 0 {
+			lr.Status = tdrpc.COMPLETED
+		}
+
+		err = txm.store.ProcessLedgerRecord(ctx, lr)
 		if err != nil {
-			txm.logger.Warnw("Could not find transaction", "monitor", "btc", "hash", txHash, "error", err)
-			return
+			txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 		}
 
-		// Process the details
-		for _, d := range tx.Details {
-			// It's a payment to us, for now we will ignore outgoing payments
-			if d.Amount > 0 {
-				continue
-			}
-
-			// Find the associated account
-			account, err := txm.store.AccountGetByAddress(ctx, d.Address)
-			if err == store.ErrNotFound {
-				continue
-			} else if err != nil {
-				txm.logger.Fatalw("AccountGetByAddress Error", "monitor", "btc", "error", err)
-			}
-
-			// Convert it to a LedgerRecord
-			lr := &tdrpc.LedgerRecord{
-				Id:        fmt.Sprintf("%s:%d", txHash, d.Vout),
-				AccountId: account.Id,
-				Status:    tdrpc.PENDING,
-				Type:      tdrpc.BTC,
-				Direction: tdrpc.IN,
-				Value:     -int64(d.Amount * 100000000), // BTC -> Satoshi
-			}
-			if confirmations > 0 {
-				lr.Status = tdrpc.COMPLETED
-			}
-
-			err = txm.store.ProcessLedgerRecord(ctx, lr)
-			if err != nil {
-				txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
-			}
-
-			foundTxIn = true
-
-		}
+		foundTxIn = true
 	}
 
 	// We had this transaction but could not relate it to an account
-	if !foundTxIn {
+	if !foundTxOut && !foundTxIn {
 		txm.logger.Warnw("No account found for transaction", "monitor", "btc", "hash", txHash)
 	}
 

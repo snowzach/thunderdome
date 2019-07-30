@@ -63,9 +63,9 @@ message Account {
     // Account Id
     string id = 1;
     // Created at timestamp
-    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
     // Update at timestamp
-    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
     // The BTC address for the account
     string address = 4;
     // The current balance
@@ -83,11 +83,11 @@ message LedgerRecord {
     // The user account associated with the request
     string account_id = 2 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"account_id\""];
     // Created at timestamp
-    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
     // Update at timestamps
-    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
     // Expires at timestamp
-    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.nullable) = false,(gogoproto.moretags) = "db:\"expires_at\""];
+    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"expires_at\""];
     // Ledger Record Status
     enum Status {
         PENDING = 0;
@@ -96,35 +96,33 @@ message LedgerRecord {
         FAILED = 3;
     }
     // The record status
-    Status status = 6;
+    Status status = 6 [(gogoproto.jsontag) = "status"];
     // Ledger Record Type
     enum Type {
         BTC = 0;
         LIGHTNING = 1;
     }
     // The record type (BTC or LN)
-    Type type = 7;
+    Type type = 7 [(gogoproto.jsontag) = "type"];
     // Ledger Record Direction
     enum Direction {
         IN = 0;
         OUT = 1;
     }
     // The direction of the transaction
-    Direction direction = 8;
+    Direction direction = 8 [(gogoproto.jsontag) = "direction"];
     // The amount of the transaction
     int64 value = 9 [(gogoproto.jsontag) = "value"];
     // The amount of the transaction
     int64 network_fee = 10 [(gogoproto.jsontag) = "network_fee",(gogoproto.moretags) = "db:\"network_fee\""];
     // The amount of the transaction
     int64 processing_fee = 11 [(gogoproto.jsontag) = "processing_fee",(gogoproto.moretags) = "db:\"processing_fee\""];
-    // The address index of the lightning request
-    uint64 add_index = 12 [(gogoproto.jsontag) = "add_index",(gogoproto.moretags) = "db:\"add_index\""];
     // An optional request memo
-    string memo = 13 [(gogoproto.jsontag) = "memo"];;
+    string memo = 12 [(gogoproto.jsontag) = "memo"];;
     // The lightning payment request
-    string request = 14 [(gogoproto.jsontag) = "request"];
+    string request = 13 [(gogoproto.jsontag) = "request"];
     // Any error associated with the request
-    string error = 15 [(gogoproto.jsontag) = "error"];
+    string error = 14 [(gogoproto.jsontag) = "error"];
 }
 
 // Decode Request
@@ -153,7 +151,7 @@ message DecodeResponse {
     string fallback_addr = 8 [(gogoproto.jsontag) = "fallback_addr"];
     int64 cltv_expiry = 9 [(gogoproto.jsontag) = "cltv_expiry"];
     // Route hints
-    repeated RouteHint route_hints = 10 [(gogoproto.jsontag) = "route_hints"];
+    repeated RouteHint route_hints = 10 [(gogoproto.jsontag) = "route_hints,omitempty"];
 }
 
 // Route Hint

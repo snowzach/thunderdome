@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	config "github.com/spf13/viper"
 	"go.uber.org/zap"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
@@ -47,11 +48,17 @@ func NewRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (*RPCS
 	}
 
 	// Return the server
-	return &RPCServer{
+	s := &RPCServer{
 		logger:   zap.S().With("package", "rpcserver"),
 		store:    store,
 		myPubKey: info.IdentityPubkey,
 		lclient:  lclient,
-	}, nil
+	}
+
+	if config.GetBool("tdome.disable_auth") {
+		s.logger.Warn("*** WARNING *** AUTH IS DISABLED *** WARNING ***")
+	}
+
+	return s, nil
 
 }
