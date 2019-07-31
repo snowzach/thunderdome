@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -19,11 +18,10 @@ type TXMonitor struct {
 	conn    *grpc.ClientConn
 	lclient lnrpc.LightningClient
 
-	rpcc  *rpcclient.Client
 	chain *chaincfg.Params
 }
 
-func NewTXMonitor(store thunderdome.Store, conn *grpc.ClientConn, rpcc *rpcclient.Client, chain *chaincfg.Params) (*TXMonitor, error) {
+func NewTXMonitor(store thunderdome.Store, conn *grpc.ClientConn, chain *chaincfg.Params) (*TXMonitor, error) {
 
 	// Fetch the node info to make sure we know our own identity for self-payments
 	lclient := lnrpc.NewLightningClient(conn)
@@ -40,7 +38,6 @@ func NewTXMonitor(store thunderdome.Store, conn *grpc.ClientConn, rpcc *rpcclien
 		conn:    conn,
 		lclient: lclient,
 
-		rpcc:  rpcc,
 		chain: chain,
 	}, nil
 

@@ -2,7 +2,8 @@ module git.coinninja.net/backend/thunderdome
 
 require (
 	cloud.google.com/go v0.41.0 // indirect
-	github.com/btcsuite/btcd v0.0.0-20190426011420-63f50db2f70a
+	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8
+	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/distribution v2.6.2+incompatible // indirect
 	github.com/docker/docker v1.13.1 // indirect
@@ -11,7 +12,6 @@ require (
 	github.com/go-chi/cors v1.0.0
 	github.com/go-chi/render v1.0.1
 	github.com/go-sql-driver/mysql v1.4.1 // indirect
-	github.com/gogo/gateway v1.1.0
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang-migrate/migrate/v4 v4.1.0
 	github.com/golang/protobuf v1.3.2
@@ -21,7 +21,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lib/pq v1.0.0
-	github.com/lightningnetwork/lnd v0.6.1-beta
+	github.com/lightningnetwork/lnd v0.7.1-beta
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
