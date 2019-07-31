@@ -2,13 +2,13 @@ package txmonitor
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -51,9 +51,15 @@ func (txm *TXMonitor) MonitorBTC() {
 
 		for _, tx := range txsDetails.Transactions {
 			txm.logger.Infow("Processing existing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
-			txm.parseBTCTranaction(ctx, tx.TxHash, tx.NumConfirmations)
+			rawTx, err := hex.DecodeString(tx.RawTxHex)
+			if err != nil {
+				txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
+				continue
+			}
+			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations)
 		}
 
+		// Main loop
 		for {
 			tx, err := txclient.Recv()
 			if err == io.EOF {
@@ -66,11 +72,18 @@ func (txm *TXMonitor) MonitorBTC() {
 				txm.logger.Errorw("TXM Error", "monitor", "btc", "error", err)
 				break
 			}
+
 			// Don't process a transaction until it has at least 1 confirmation
 			txm.logger.Infow("Processing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
-			txm.parseBTCTranaction(ctx, tx.TxHash, tx.NumConfirmations)
+			rawTx, err := hex.DecodeString(tx.RawTxHex)
+			if err != nil {
+				txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
+				continue
+			}
+			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations)
 		}
 
+		// We were disconnected, reconnect and try again
 		select {
 		case <-time.After(10 * time.Second):
 		case <-conf.Stop.Chan():
@@ -84,53 +97,38 @@ func (txm *TXMonitor) MonitorBTC() {
 }
 
 // This will parse the transaction and add it to the ledger
-func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, confirmations int32) {
+func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32) {
 
-	var foundTxIn bool
-	var foundTxOut bool
+	// Decode the transaction
+	tx, err := btcutil.NewTxFromBytes(rawTx)
+	if err != nil {
+		txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash")
+		return
+	}
+	txHash := tx.Hash().String() // Get txHash
+	wTx := tx.MsgTx()            // Convert to wire format
+
+	var foundTx bool
 
 	// Check to see if this has an outbound transaction we know about already
-	lrIn, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
+	lrOut, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
 	if err == nil {
-		if confirmations > 0 && lrIn.Status != tdrpc.COMPLETED {
-			lrIn.Status = tdrpc.COMPLETED
-			err = txm.store.ProcessLedgerRecord(ctx, lrIn)
+		if confirmations > 0 && lrOut.Status != tdrpc.COMPLETED {
+			lrOut.Status = tdrpc.COMPLETED
+			err = txm.store.ProcessLedgerRecord(ctx, lrOut)
 			if err != nil {
 				txm.logger.Fatalw("ProcessLedgerRecord Out Error", "monitor", "btc", "error", err)
 			}
 		}
 		// On the insane chance we somehow paid another address in this wallet, let it continue to process
+		foundTx = true
 	}
-
-	chHash, err := chainhash.NewHashFromStr(txHash)
-	if err != nil {
-		txm.logger.Errorw("Could not parse hash", "monitor", "btc", "hash", txHash, "error", err)
-		return
-	}
-
-	// Get the raw transaction from the JSON RPC - this is generally mempool transactions or more recent
-	rawTx, err := txm.rpcc.GetRawTransaction(chHash)
-	if err != nil {
-
-		// It may not have hit the database yet, wait 2 seconds and try again
-		if confirmations == 0 {
-			time.Sleep(2 * time.Second)
-			rawTx, err = txm.rpcc.GetRawTransaction(chHash)
-		}
-	}
-	if err != nil {
-		txm.logger.Errorw("Could not find transaction", "monitor", "btc", "hash", txHash, "error", err)
-		return
-	}
-
-	// Convert it into the wire format
-	wTx := rawTx.MsgTx()
 
 	// Parse all of the outputs
 	for height, vout := range wTx.TxOut {
 
 		// Attempt to parse simple addresses out of the script
-		_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, &chaincfg.RegressionNetParams)
+		_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, txm.chain)
 		if err != nil { // Could not decode, it's not one of ours
 			txm.logger.Errorw("Could not decode ouput script", "monitor", "btc", "hash", txHash, "height", height)
 			continue
@@ -168,11 +166,11 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, txHash string, con
 			txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 		}
 
-		foundTxIn = true
+		foundTx = true
 	}
 
 	// We had this transaction but could not relate it to an account
-	if !foundTxOut && !foundTxIn {
+	if !foundTx {
 		txm.logger.Warnw("No account found for transaction", "monitor", "btc", "hash", txHash)
 	}
 

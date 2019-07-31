@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/google/wire"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -44,7 +43,7 @@ func NewRPCServer() (*rpcserver.RPCServer, error) {
 
 // NewTXMonitor will create a new BTC and LN transaction monitor
 func NewTXMonitor() (*txmonitor.TXMonitor, error) {
-	wire.Build(txmonitor.NewTXMonitor, NewStore, NewLndGrpcClientConn, NewChainParams, NewBTCRPCClient)
+	wire.Build(txmonitor.NewTXMonitor, NewStore, NewLndGrpcClientConn, NewChainParams)
 	return &txmonitor.TXMonitor{}, nil
 }
 
@@ -62,31 +61,7 @@ func NewStore() thunderdome.Store {
 	return store
 }
 
-func NewBTCRPCClient() *rpcclient.Client {
-
-	// create new client instance
-	rpcc, err := rpcclient.New(&rpcclient.ConnConfig{
-		HTTPPostMode: config.GetBool("btc.post_mode"),
-		DisableTLS:   config.GetBool("btc.disable_tls"),
-		Host:         net.JoinHostPort(config.GetString("btc.host"), config.GetString("btc.port")),
-		User:         config.GetString("btc.username"),
-		Pass:         config.GetString("btc.password"),
-	}, nil)
-	if err != nil {
-		logger.Fatalf("error creating new btc client: %v", err)
-	}
-
-	// Run a GetInfo request to validate connectivity
-	_, err = rpcc.GetBlockChainInfo()
-	if err != nil {
-		logger.Fatalf("Could not GetBlockChainInfo from BTC RPC Server %v", err)
-	}
-
-	return rpcc
-
-}
-
-func NewChainParams(rpcc *rpcclient.Client) *chaincfg.Params {
+func NewChainParams() *chaincfg.Params {
 
 	// Create an array of chains such that we can pick the one we want
 	var chain *chaincfg.Params
@@ -105,17 +80,6 @@ func NewChainParams(rpcc *rpcclient.Client) *chaincfg.Params {
 	}
 	if chain == nil {
 		logger.Fatalf("Could not find chain %s", config.GetString("btc.chain"))
-	}
-
-	// Run a GetBlockChainInfo request to validate connectivity
-	blockChainInfo, err := rpcc.GetBlockChainInfo()
-	if err != nil {
-		logger.Fatalf("Could not GetBlockChainInfo from BTC RPC Server %v", err)
-	}
-
-	// Make sure the chain our rpc is on is the same chain we are working with
-	if blockChainInfo.Chain != chain.Name {
-		logger.Fatalf("Chain mismatch rpc:%s config:%s", blockChainInfo.Chain, chain.Name)
 	}
 
 	return chain
