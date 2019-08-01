@@ -81,6 +81,11 @@ LOGGER_LEVEL=debug
 | ---                                  | ---                                                              | ---              |
 | tdome.min_withdraw                   | Minimum amount of satoshis for a withdraw                        | 40000            |
 | tdome.default_withdraw_target_blocks | The default number of target blocks for confirmation on withdraw | 6                |
+| tdome.disable_auth                   | Should authentication be disabled                                | false            |
+| tdome.processing_fee_rate            | The percentage fee charged for a withdraw 0.1 = 0.1%             | 0.1              |
+| tdome.network_fee_limit              | The limit we will accept for a withdraw fee                      | 40000            |
+| tdome.default_request_expires        | How long a payment request is good for (seconds)                 | 86400            |
+| tdome.create_generic_secret          | A secret that can be used to generic payment requests            | "" = disabled    |
 
 ## Data Storage
 Data is stored in a postgres database

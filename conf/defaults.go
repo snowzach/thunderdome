@@ -76,5 +76,7 @@ func init() {
 	config.SetDefault("tdome.processing_fee_rate", 0.1)
 	config.SetDefault("tdome.network_fee_limit", 40000)
 	config.SetDefault("tdome.default_request_expires", 86400)
+	config.SetDefault("tdome.create_generic_secret", "") // If left blank, it cannot be used
+	config.SetDefault("tdome.create_generic_expiration", 172800)
 
 }

@@ -56,6 +56,12 @@ service ThunderdomeRPC {
         };
     }
 
+    // Create a generic payment request with no value. If one exist already, return that.
+    rpc CreateGenerated(google.protobuf.Empty) returns (CreateResponse) {
+        option (google.api.http) = {
+            get: "/create"
+        };
+    }
 }
 
 // Account
@@ -111,18 +117,22 @@ message LedgerRecord {
     }
     // The direction of the transaction
     Direction direction = 8 [(gogoproto.jsontag) = "direction"];
+    // Is this a generated request
+    bool generated = 9 [(gogoproto.jsontag) = "generated"];
     // The amount of the transaction
-    int64 value = 9 [(gogoproto.jsontag) = "value"];
+    int64 value = 10 [(gogoproto.jsontag) = "value"];
     // The amount of the transaction
-    int64 network_fee = 10 [(gogoproto.jsontag) = "network_fee",(gogoproto.moretags) = "db:\"network_fee\""];
+    int64 network_fee = 11 [(gogoproto.jsontag) = "network_fee",(gogoproto.moretags) = "db:\"network_fee\""];
     // The amount of the transaction
-    int64 processing_fee = 11 [(gogoproto.jsontag) = "processing_fee",(gogoproto.moretags) = "db:\"processing_fee\""];
+    int64 processing_fee = 12 [(gogoproto.jsontag) = "processing_fee",(gogoproto.moretags) = "db:\"processing_fee\""];
+    // The address index of the lightning request
+    uint64 add_index = 13 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"add_index\""];
     // An optional request memo
-    string memo = 12 [(gogoproto.jsontag) = "memo"];;
+    string memo = 14 [(gogoproto.jsontag) = "memo"];;
     // The lightning payment request
-    string request = 13 [(gogoproto.jsontag) = "request"];
+    string request = 15 [(gogoproto.jsontag) = "request"];
     // Any error associated with the request
-    string error = 14 [(gogoproto.jsontag) = "error"];
+    string error = 16 [(gogoproto.jsontag) = "error"];
 }
 
 // Decode Request

@@ -85,6 +85,9 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 		if ((prevlr.Status == tdrpc.EXPIRED || prevlr.Status == tdrpc.COMPLETED) && (lr.Status == tdrpc.PENDING || lr.Status == tdrpc.FAILED)) ||
 			// Completed is a final state always
 			(prevlr.Status == tdrpc.COMPLETED && lr.Status != tdrpc.COMPLETED) {
+			if prevlr.Status == tdrpc.COMPLETED {
+				return fmt.Errorf("already processed/paid")
+			}
 			return fmt.Errorf("Invalid Status Transition %v->%v", prevlr.Status, lr.Status)
 		}
 
@@ -212,19 +215,19 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 	// Upsert the data, capture the result
 	var ret tdrpc.LedgerRecord
 	err = tx.GetContext(ctx, &ret, `
-		INSERT INTO ledger (id, account_id, created_at, updated_at, expires_at, status, type, direction, value, memo, request, error)
-		VALUES($1, $2, NOW(), NOW(), $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO ledger (id, account_id, created_at, updated_at, expires_at, status, type, direction, generated, value, add_index, memo, request, error)
+		VALUES($1, $2, NOW(), NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		ON CONFLICT (id, direction) DO UPDATE
 		SET
 		updated_at = NOW(),
 		expires_at = $3,
 		status = $4,
-		value = $7,
-		memo = $8,
-		request = $9,
-		error = $10
+		value = $8,
+		memo = $10,
+		request = $11,
+		error = $12
 		RETURNING *
-	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.ValueTotal(), lr.Memo, lr.Request, lr.Error)
+	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.Generated, lr.ValueTotal(), lr.AddIndex, lr.Memo, lr.Request, lr.Error)
 	if err != nil {
 		return fmt.Errorf("Could not process ledger: %v", err)
 	}
@@ -405,6 +408,34 @@ func (c *Client) GetLedgerRecord(ctx context.Context, id string, direction tdrpc
 
 }
 
+// GetActiveGeneratedLightningLedgerRequest returns a lightning request that is not paid, active and with the generic flag
+func (c *Client) GetActiveGeneratedLightningLedgerRequest(ctx context.Context, accountID string) (*tdrpc.LedgerRecord, error) {
+
+	var lr = new(tdrpc.LedgerRecord)
+	// Find the newest pending ledger record for lightning inbound where generated = true that will expire in more than an hour
+	// But that also does not have an internal payment made to it (in case someone pays it externally)
+	err := c.db.GetContext(ctx, lr, `
+		SELECT * FROM ledger WHERE
+		account_id = $1 AND
+		status = $2 AND
+		type = $3 AND
+		direction = $4 AND
+		generated = true AND
+		expires_at > NOW() + INTERVAL '1 HOUR' AND
+		NOT EXISTS (SELECT 1 FROM ledger AS li WHERE li.id = CONCAT(ledger.id, '`+thunderdome.InternalIdSuffix+`'))
+		ORDER BY expires_at DESC
+		LIMIT 1
+	`, accountID, tdrpc.PENDING, tdrpc.LIGHTNING, tdrpc.IN)
+	if err == sql.ErrNoRows {
+		return nil, store.ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return lr, nil
+
+}
+
 // UpdateLedgerRecordID returns the LedgerRecord
 func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error {
 
@@ -529,6 +560,9 @@ func getLedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) []interface{} {
 	if lr1.Type != lr2.Type {
 		ret = append(ret, "type", fmt.Sprintf("%v->%v", lr1.Type, lr2.Type))
 	}
+	if lr1.Generated != lr2.Generated {
+		ret = append(ret, "generated", fmt.Sprintf("%v->%v", lr1.Generated, lr2.Generated))
+	}
 	if lr1.Direction != lr2.Direction {
 		ret = append(ret, "direction", fmt.Sprintf("%v->%v", lr1.Direction, lr2.Direction))
 	}
@@ -540,6 +574,9 @@ func getLedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) []interface{} {
 	}
 	if lr1.ProcessingFee != lr2.ProcessingFee {
 		ret = append(ret, "value", fmt.Sprintf("%v->%v", lr1.ProcessingFee, lr2.ProcessingFee))
+	}
+	if lr1.AddIndex != lr2.AddIndex {
+		ret = append(ret, "add_index", fmt.Sprintf("%v->%v", lr1.AddIndex, lr2.AddIndex))
 	}
 	if lr1.Memo != lr2.Memo {
 		ret = append(ret, "memo", fmt.Sprintf("%v->%v", lr1.Memo, lr2.Memo))

@@ -42,19 +42,24 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 		return ctx, status.Errorf(codes.PermissionDenied, "Invalid Login")
 	}
 
-	// Perform authentication using the pubKeyString
-	if !config.GetBool("tdome.disable_auth") {
-		// Get the timestamp and signature
-		ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
-		sig := mdfirst(md, thunderdome.MetadataAuthSignature)
-		if ts == "" || sig == "" {
-			return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
-		}
+	// Get the timestamp and signature
+	ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
+	sig := mdfirst(md, thunderdome.MetadataAuthSignature)
 
-		// Verify the signature
-		err := ValidateTimestampSigntature(ts, pubKeyString, sig, time.Now())
-		if err != nil {
-			return ctx, status.Errorf(codes.PermissionDenied, err.Error())
+	// If we're calling the CreateGeneric endpoint and the sig is set to the create_generic_secret we can skip auth
+	// If the secret is not set, the CreateGeneric endpoint cannot be called
+	// This allows trusted sources, like btc-api to generate invoices
+	if fullMethodName != "/tdrpc.ThunderdomeRPC/CreateGeneric" || sig != config.GetString("tdome.create_generic_secret") || config.GetString("tdome.create_generic_secret") == "" {
+		// If auth is disabled
+		if !config.GetBool("tdome.disable_auth") {
+			if ts == "" || sig == "" {
+				return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
+			}
+			// Verify the signature
+			err := ValidateTimestampSigntature(ts, pubKeyString, sig, time.Now())
+			if err != nil {
+				return ctx, status.Errorf(codes.PermissionDenied, err.Error())
+			}
 		}
 	}
 
