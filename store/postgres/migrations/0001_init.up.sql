@@ -32,9 +32,11 @@ CREATE TABLE public.ledger (
   status ledger_status NOT NULL,
   type ledger_type NOT NULL,
   direction ledger_direction NOT NULL,
+  generated BOOLEAN NOT NULL DEFAULT false,
   value BIGINT DEFAULT 0,
   network_fee BIGINT DEFAULT 0,
   processing_fee BIGINT DEFAULT 0,
+  add_index BIGINT DEFAULT 0,
   memo text DEFAULT '',
   request text DEFAULT '',
   error text DEFAULT '',
@@ -49,3 +51,6 @@ CREATE INDEX ix_ledger_account_id_status_updated_at ON public.ledger USING btree
 
 -- Expiration
 CREATE INDEX ix_ledger_status_expires_at ON public.ledger USING btree(status, expires_at);
+
+-- Add an index for finding generic ledger records
+CREATE INDEX ix_ledger_generated_status_expires_at ON public.ledger USING btree(generated, status, expires_at);
