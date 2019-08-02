@@ -79,7 +79,7 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 		// If the endpoint is the CreateGeneratedEndpoint we do not want to auto-create an account. Just return a not found error
 		if fullMethodName == tdrpc.CreateGeneratedEndpoint {
-			return ctx, status.Errorf(codes.Unavailable, "account does not exist")
+			return ctx, status.Errorf(codes.NotFound, "account does not exist")
 		}
 
 		// Create a new account

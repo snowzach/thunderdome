@@ -10,6 +10,7 @@ import (
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/lnrpc"
+	config "github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -56,7 +57,7 @@ func (txm *TXMonitor) MonitorBTC() {
 				txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations)
+			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
 		}
 
 		// Main loop
@@ -80,7 +81,7 @@ func (txm *TXMonitor) MonitorBTC() {
 				txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations)
+			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
 		}
 
 		// We were disconnected, reconnect and try again
@@ -97,7 +98,7 @@ func (txm *TXMonitor) MonitorBTC() {
 }
 
 // This will parse the transaction and add it to the ledger
-func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32) {
+func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, txFee int64) {
 
 	// Decode the transaction
 	tx, err := btcutil.NewTxFromBytes(rawTx)
@@ -146,6 +147,15 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 			continue
 		} else if err != nil {
 			txm.logger.Fatalw("AccountGetByAddress Error", "monitor", "btc", "error", err)
+		}
+
+		// Handle fee free topup
+		if config.GetBool("tdome.topup_fee_free") {
+			if feeLimit := config.GetInt64("tdome.topup_fee_free_limit"); txFee > feeLimit {
+				txFee = feeLimit
+			}
+			vout.Value += txFee
+			txFee = 0 // Make sure if this tx somehow pays multiple people we don't double up the fee
 		}
 
 		// Convert it to a LedgerRecord
