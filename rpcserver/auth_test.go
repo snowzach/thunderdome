@@ -46,13 +46,29 @@ func TestAuthFuncOverride(t *testing.T) {
 	sigHexString := hex.EncodeToString(sig.Serialize())
 
 	// Not Found - creeate new account and address
-	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string")).Once().Return(nil, store.ErrNotFound)
+	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
+	// Valid information but CreatedGenerated endpoint should return error
+	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		thunderdome.MetadataAuthPubKeyString, pubKey,
+		thunderdome.MetadataAuthSignature, sigHexString,
+		thunderdome.MetadataAuthTimestamp, timeString,
+	)), tdrpc.CreateGeneratedEndpoint)
+	assert.NotNil(t, err)
+
+	// Valid information to other endpoint should return a new account
+	key, err = NewKey()
+	assert.Nil(t, err)
+	pubKey = HexEncodedPublicKey(key)
+	timeString = time.Now().UTC().Format(time.RFC3339)
+	sig, err = key.Sign(chainhash.DoubleHashB([]byte(timeString)))
+	assert.Nil(t, err)
+	sigHexString = hex.EncodeToString(sig.Serialize())
 	address := "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm"
+	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
 	mockLClient.On("NewAddress", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.NewAddressRequest")).Once().Return(&lnrpc.NewAddressResponse{Address: address}, nil)
 	mockStore.On("AccountSave", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.Account")).Once().
 		Return(func(ctx context.Context, a *tdrpc.Account) *tdrpc.Account { return a }, nil)
-
-	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 		thunderdome.MetadataAuthPubKeyString, pubKey,
 		thunderdome.MetadataAuthSignature, sigHexString,
 		thunderdome.MetadataAuthTimestamp, timeString,

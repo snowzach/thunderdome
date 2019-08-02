@@ -49,7 +49,7 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	// If we're calling the CreateGeneric endpoint and the sig is set to the create_generic_secret we can skip auth
 	// If the secret is not set, the CreateGeneric endpoint cannot be called
 	// This allows trusted sources, like btc-api to generate invoices
-	if fullMethodName != "/tdrpc.ThunderdomeRPC/CreateGeneric" || sig != config.GetString("tdome.create_generic_secret") || config.GetString("tdome.create_generic_secret") == "" {
+	if fullMethodName != tdrpc.CreateGeneratedEndpoint || sig != config.GetString("tdome.create_generic_secret") || config.GetString("tdome.create_generic_secret") == "" {
 		// If auth is disabled
 		if !config.GetBool("tdome.disable_auth") {
 			if ts == "" || sig == "" {
@@ -76,6 +76,11 @@ func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	// See if we have an account already?
 	account, err := s.store.AccountGetByID(ctx, accountID)
 	if err == store.ErrNotFound {
+
+		// If the endpoint is the CreateGeneratedEndpoint we do not want to auto-create an account. Just return a not found error
+		if fullMethodName == tdrpc.CreateGeneratedEndpoint {
+			return ctx, status.Errorf(codes.Unavailable, "account does not exist")
+		}
 
 		// Create a new account
 		account = new(tdrpc.Account)

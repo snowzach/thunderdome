@@ -56,7 +56,7 @@ service ThunderdomeRPC {
         };
     }
 
-    // Create a generic payment request with no value. If one exist already, return that.
+    // Create a auto-generated payment request with no value. If one exist already, return that.
     rpc CreateGenerated(google.protobuf.Empty) returns (CreateResponse) {
         option (google.api.http) = {
             get: "/create"
