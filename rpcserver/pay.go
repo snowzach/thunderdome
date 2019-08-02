@@ -51,19 +51,17 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 
 	// Build the ledger record
 	lr := &tdrpc.LedgerRecord{
-		Id:        pr.PaymentHash,
-		AccountId: account.Id,
-		ExpiresAt: &expiresAt,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.LIGHTNING,
-		Direction: tdrpc.OUT,
-		Value:     request.Value,
-		Memo:      pr.Description,
-		Request:   request.Request,
+		Id:            pr.PaymentHash,
+		AccountId:     account.Id,
+		ExpiresAt:     &expiresAt,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.OUT,
+		Value:         request.Value,
+		ProcessingFee: int64((config.GetFloat64("tdome.processing_fee_rate") / 100.0) * float64(request.Value)),
+		Memo:          pr.Description,
+		Request:       request.Request,
 	}
-
-	// Calculate the processing fee
-	lr.ProcessingFee = int64((config.GetFloat64("tdome.processing_fee_rate") / 100.0) * float64(request.Value))
 
 	// If it's not another user using this service, calcuate the network fee
 	if pr.Destination != s.myPubKey {
@@ -125,6 +123,8 @@ func (s *RPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.
 	} else {
 		lr.Status = tdrpc.COMPLETED
 	}
+
+	// TODO: Determine if route taken was not the same as the quoted route and account for fee difference
 
 	// Update the status and the balance
 	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {

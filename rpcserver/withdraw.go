@@ -57,13 +57,15 @@ func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest
 
 	// Build the temporary ledger record
 	lr := &tdrpc.LedgerRecord{
-		Id:        tempLedgerRecordID,
-		AccountId: account.Id,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.BTC,
-		Direction: tdrpc.OUT,
-		Value:     request.Value + feeResponse.FeeSat,
-		Memo:      fmt.Sprintf("Withdraw %d sats with %d sats fee", request.Value, feeResponse.FeeSat),
+		Id:            tempLedgerRecordID,
+		AccountId:     account.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.BTC,
+		Direction:     tdrpc.OUT,
+		Value:         request.Value,
+		NetworkFee:    feeResponse.FeeSat,
+		ProcessingFee: int64((config.GetFloat64("tdome.withdraw_fee_rate") / 100.0) * float64(request.Value)),
+		Memo:          fmt.Sprintf("Withdraw %d sats with %d sats fee", request.Value, feeResponse.FeeSat),
 	}
 
 	// Save the initial state - will do some sanity checking as well and preallocate funds
