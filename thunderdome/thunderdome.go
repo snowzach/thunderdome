@@ -2,34 +2,33 @@ package thunderdome
 
 import (
 	"context"
-	"regexp"
-
-	"github.com/lightningnetwork/lnd/lnrpc"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-var (
-	uuidRegexp   = regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
-	pubkeyRegexp = regexp.MustCompile("^[a-f0-9]{66}$")
+// Various Const Definitions
+const (
+	// InternalIdSuffix used to track internal transactions
+	InternalIdSuffix = ":int"
+
+	// TempLedgerRecordIdPrefix is used to temporary store ledger record IDs
+	TempLedgerRecordIdPrefix = "temp:"
+
+	// These are the metadata fields that we will use to authenticate requests
+	MetadataAuthPubKeyString = "cn-auth-pubkeystring"
+	MetadataAuthSignature    = "cn-auth-signature"
+	MetadataAuthTimestamp    = "cn-auth-timestamp"
 )
 
 type Store interface {
-	UserGetByID(ctx context.Context, id string) (*tdrpc.User, error)
-	UserGetByLogin(ctx context.Context, login string) (*tdrpc.User, error)
-	UserSave(ctx context.Context, user *tdrpc.User) (*tdrpc.User, error)
-}
-
-type Server struct {
-	store   Store
-	lclient lnrpc.LightningClient
-}
-
-func NewServer(store Store, lclient lnrpc.LightningClient) (*Server, error) {
-
-	return &Server{
-		store:   store,
-		lclient: lclient,
-	}, nil
-
+	AccountGetByID(ctx context.Context, accountID string) (*tdrpc.Account, error)
+	AccountGetByAddress(ctx context.Context, address string) (*tdrpc.Account, error)
+	AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error)
+	ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error
+	ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerRecord, error)
+	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error
+	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
+	GetLedgerRecord(ctx context.Context, id string, direction tdrpc.LedgerRecord_Direction) (*tdrpc.LedgerRecord, error)
+	GetActiveGeneratedLightningLedgerRequest(ctx context.Context, accountID string) (*tdrpc.LedgerRecord, error)
+	ExpireLedgerRequests(ctx context.Context) error
 }

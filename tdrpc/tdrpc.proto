@@ -2,92 +2,235 @@ syntax="proto3";
 package tdrpc;
 
 import "google/api/annotations.proto";
-// import "google/protobuf/empty.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
-service TdomeRPC {
+service ThunderdomeRPC {
 
-    rpc Login(LoginRequest) returns (User) {
+    // Get/Create user account
+    rpc GetAccount(google.protobuf.Empty) returns (Account) {
         option (google.api.http) = {
-            post: "/login"
+            get: "/account"
+        };
+    }
+
+    // Decode a payment request
+    rpc Decode(DecodeRequest) returns (DecodeResponse) {
+        option (google.api.http) = {
+            post: "/decode"
             body: "*"
         };
     }
 
-    // rpc AddInvoice(AddInvoiceRequest) returns (AddInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         post: "/addinvoice"
-    //         body: "*"
-    //     };
-    // }
+    // Create a payment request
+    rpc Create(CreateRequest) returns (CreateResponse) {
+        option (google.api.http) = {
+            post: "/create"
+            body: "*"
+        };
+    }
 
-    // rpc PayInvoice(PayInvoiceRequest) returns (PayInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         post: "/payinvoice"
-    //         body: "*"
-    //     };
-    // }
+    // Pay a request
+    rpc Pay(PayRequest) returns (PayResponse) {
+        option (google.api.http) = {
+            post: "/pay"
+            body: "*"
+        };
+    }
 
-    // rpc GetBTC(GetBTCRequest) returns (GetBTCResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getbtc"
-    //     };
-    // }
+    // Get request ledger
+    rpc Ledger(LedgerRequest) returns (LedgerResponse) {
+        option (google.api.http) = {
+            get: "/ledger"
+        };
+    }
 
-    // rpc Balance(BalanceRequest) returns (BalanceResponse) {
-    //     option (google.api.http) = {
-    //         get: "/balance"
-    //     };
-    // }
+    // Withdraw funds
+    rpc Withdraw(WithdrawRequest) returns (WithdrawResponse) {
+        option (google.api.http) = {
+            post: "/withdraw"
+            body: "*"
+        };
+    }
 
-    // rpc GetInfo(GetInfoRequest) returns (GetInfoResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getinfo"
-    //     };
-    // }
-
-    // rpc GetTxts(GetTxtsRequest) returns (GetTxtsResponse) {
-    //     option (google.api.http) = {
-    //         get: "/gettxs"
-    //     };
-    // }
-
-    // rpc GetUserInvoices(GetUserInvoicesRequest) returns (GetUserInvoicesResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getuserinvoices"
-    //     };
-    // }
-
-    // rpc GetPending(GetPendingRequest) returns (GetPendingResponse) {
-    //     option (google.api.http) = {
-    //         get: "/getpending"
-    //     };
-    // }
-
-    // rpc DecodeInvoice(DecodeInvoiceRequest) returns (DecodeInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         get: "/decodeinvoice"
-    //     };
-    // }
-
-    // rpc CheckRouteInvoice(CheckRouteInvoiceRequest) returns (CheckRouteInvoiceResponse) {
-    //     option (google.api.http) = {
-    //         get: "/checkrouteinvoice"
-    //     };
-    // }
-
-
-
+    // Create a auto-generated payment request with no value. If one exist already, return that.
+    rpc CreateGenerated(google.protobuf.Empty) returns (CreateResponse) {
+        option (google.api.http) = {
+            get: "/create"
+        };
+    }
 }
 
-message LoginRequest {
-    string login = 1;
-}
-
-message User {
+// Account
+message Account {
+    // Account Id
     string id = 1;
-    string login = 2;
-    string address = 3;
-    int64 balance = 4;
+    // Created at timestamp
+    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    // Update at timestamp
+    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    // The BTC address for the account
+    string address = 4;
+    // The current balance
+    int64 balance = 5  [(gogoproto.jsontag) = "balance"];
+    // The current pending incoming balance
+    int64 pending_in = 6 [(gogoproto.jsontag) = "pending_in",(gogoproto.moretags) = "db:\"pending_in\""];
+    // The current pending outgoing balance
+    int64 pending_out = 7 [(gogoproto.jsontag) = "pending_out",(gogoproto.moretags) = "db:\"pending_out\""];
+}
+
+// Ledger Record
+message LedgerRecord {
+    // The ID for the record. Lightning Payment Hash or BTC transaction
+    string id = 1;
+    // The user account associated with the request
+    string account_id = 2 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"account_id\""];
+    // Created at timestamp
+    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    // Update at timestamps
+    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    // Expires at timestamp
+    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"expires_at\""];
+    // Ledger Record Status
+    enum Status {
+        PENDING = 0;
+        COMPLETED = 1;
+        EXPIRED = 2;
+        FAILED = 3;
+    }
+    // The record status
+    Status status = 6 [(gogoproto.jsontag) = "status"];
+    // Ledger Record Type
+    enum Type {
+        BTC = 0;
+        LIGHTNING = 1;
+    }
+    // The record type (BTC or LN)
+    Type type = 7 [(gogoproto.jsontag) = "type"];
+    // Ledger Record Direction
+    enum Direction {
+        IN = 0;
+        OUT = 1;
+    }
+    // The direction of the transaction
+    Direction direction = 8 [(gogoproto.jsontag) = "direction"];
+    // Is this a generated request
+    bool generated = 9 [(gogoproto.jsontag) = "-"];
+    // The amount of the transaction
+    int64 value = 10 [(gogoproto.jsontag) = "value"];
+    // The amount of the transaction
+    int64 network_fee = 11 [(gogoproto.jsontag) = "network_fee",(gogoproto.moretags) = "db:\"network_fee\""];
+    // The amount of the transaction
+    int64 processing_fee = 12 [(gogoproto.jsontag) = "processing_fee",(gogoproto.moretags) = "db:\"processing_fee\""];
+    // The address index of the lightning request
+    uint64 add_index = 13 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"add_index\""];
+    // An optional request memo
+    string memo = 14 [(gogoproto.jsontag) = "memo"];;
+    // The lightning payment request
+    string request = 15 [(gogoproto.jsontag) = "request"];
+    // Any error associated with the request
+    string error = 16 [(gogoproto.jsontag) = "error"];
+}
+
+// Decode Request
+message DecodeRequest {
+    // The payment request to be decoded
+    string request = 1;
+}
+
+// Decode Response
+message DecodeResponse {
+    // Desintation Node
+    string destination = 1 [(gogoproto.jsontag) = "destination"];
+    // Payment hash for the request
+    string payment_hash = 2 [(gogoproto.jsontag) = "payment_hash"];
+    // The number of Satoshis
+    int64 num_satoshis = 3 [(gogoproto.jsontag) = "num_satoshis"];
+    // The timestamp of the request
+    int64 timestamp = 4 [(gogoproto.jsontag) = "timestamp"];
+    // The expiration of the request
+    int64 expiry = 5 [(gogoproto.jsontag) = "expiry"];
+    // Optional description/memo of the request
+    string description = 6 [(gogoproto.jsontag) = "description"];
+    // If the description is too long, a shorter hash of the description
+    string description_hash = 7 [(gogoproto.jsontag) = "description_hash"];
+    // Fallback payment address
+    string fallback_addr = 8 [(gogoproto.jsontag) = "fallback_addr"];
+    int64 cltv_expiry = 9 [(gogoproto.jsontag) = "cltv_expiry"];
+    // Route hints
+    repeated RouteHint route_hints = 10 [(gogoproto.jsontag) = "route_hints,omitempty"];
+}
+
+// Route Hint
+message RouteHint {
+    // Hop Hints
+    repeated HopHint hop_hints = 1 [(gogoproto.jsontag) = "hop_hints"];
+}
+
+// Hop Hint
+message HopHint {
+    string node_id = 1 [(gogoproto.jsontag) = "node_id"];
+    uint64 chan_id = 2 [(gogoproto.jsontag) = "chan_id"];
+    uint32 fee_base_msat = 3 [(gogoproto.jsontag) = "fee_base_msat"];
+    uint32 fee_proportional_millionths = 4 [(gogoproto.jsontag) = "fee_proportional_millionths"];
+    uint32 cltv_expiry_delta = 5 [(gogoproto.jsontag) = "cltv_expiry_delta"];
+}
+
+// Create Request
+message CreateRequest {
+    // An optional memo to include
+    string memo = 1;
+    // The amount for the payment request. (Zero means no pre-set value)
+    int64 value = 2;
+    // How long (in seconds) the payment request should be valid for
+    int64 expires = 3;
+}
+
+// Create Response
+message CreateResponse {
+    // The payment request string
+    string request = 1;
+}
+
+// Pay Request
+message PayRequest {
+    // The payment request string
+    string request = 1;
+    // The amount you wish to pay the payment request
+    int64 value = 2;
+}
+
+// Pay Response
+message PayResponse {
+    // The pay request result
+    LedgerRecord result = 1;    
+}
+
+// Ledger Request
+message LedgerRequest {
+}
+
+// Ledger Response
+message LedgerResponse {
+    // The ledger records
+    repeated LedgerRecord ledger = 1;
+}
+
+// Withdraw Request
+message WithdrawRequest {
+    // The address to send funds to
+    string address = 1;
+    // The amount to send (in satoshis)
+    int64 value = 2;
+    // The target number of blocks this should be confirmed by
+    int32 blocks = 3;
+}
+
+// Withdraw Response
+message WithdrawResponse {
+    // The withdraw request result
+    LedgerRecord result = 1;    
 }

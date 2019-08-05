@@ -1,5 +1,6 @@
 .vscode
 api
+tdome
 mocks
 bindata.go
 server.crt
@@ -7,5 +8,6 @@ server.key
 *.pb.go
 *.pb.gw.go
 *.swagger.json
+embed/public/swagger-ui
 
 

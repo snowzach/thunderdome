@@ -8,6 +8,7 @@ option go_package = "git.coinninja.net/backend/thunderdome/server/rpc";
 
 service VersionRPC {
 
+    // Get the version
     rpc Version(google.protobuf.Empty) returns (VersionResponse) {
         option (google.api.http) = {
             get: "/version"
@@ -16,6 +17,8 @@ service VersionRPC {
 
 }
 
+// Version Response
 message VersionResponse {
+    // The version
     string version = 1;
 }

@@ -32,6 +32,7 @@ func New() (*Client, error) {
 
 	logger := zap.S().With("package", "storage.postgres")
 
+	var createDb *sql.DB
 	var err error
 
 	var dbCreds string       // Regular credentials
@@ -81,7 +82,7 @@ func New() (*Client, error) {
 	}
 
 	for retries := config.GetInt("storage.retries"); retries > 0 && !conf.Stop.Bool(); retries-- {
-		createDb, err := sql.Open("postgres", "postgres://"+dbCreateCreds+dbURL+dbURLOptions)
+		createDb, err = sql.Open("postgres", "postgres://"+dbCreateCreds+dbURL+"/postgres"+dbURLOptions)
 		// Attempt to create the database if it doesn't exist
 		if err == nil {
 			defer createDb.Close()
@@ -109,7 +110,7 @@ func New() (*Client, error) {
 		logger.Infow("Creating database", "database", dbName)
 		_, err = createDb.Exec(`CREATE DATABASE ` + dbName)
 		if err != nil {
-			return nil, fmt.Errorf("Could not create database: %s", err)
+			return nil, fmt.Errorf("Could not create database %s: %s", dbName, err)
 		}
 		break
 	}
@@ -120,8 +121,8 @@ func New() (*Client, error) {
 	// If we caught the stop flag while sleeping
 	if conf.Stop.Bool() {
 		return nil, fmt.Errorf("Database connection aborted")
-	}
 
+	}
 	// Still not connected?
 	if err != nil {
 		return nil, fmt.Errorf("Could not connect to database: %s", err)
@@ -203,4 +204,9 @@ func New() (*Client, error) {
 
 	return c, nil
 
+}
+
+// Tells us if this is a transaction error
+func IsTransactionError(err error) bool {
+	return strings.Contains(err.Error(), "could not serialize access")
 }

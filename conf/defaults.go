@@ -1,10 +1,17 @@
 package conf
 
 import (
+	"strings"
+
 	config "github.com/spf13/viper"
 )
 
 func init() {
+
+	// Sets up the config file, environment etc
+	config.SetTypeByDefaultValue(true)                      // If a default value is []string{"a"} an environment variable of "a b" will end up []string{"a","b"}
+	config.AutomaticEnv()                                   // Automatically use environment variables where available
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_")) // Environement variables use underscores instead of periods
 
 	// Logger Defaults
 	config.SetDefault("logger.level", "info")
@@ -32,10 +39,6 @@ func init() {
 	config.SetDefault("server.log_requests", true)
 	config.SetDefault("server.profiler_enabled", false)
 	config.SetDefault("server.profiler_path", "/debug")
-	// GRPC JSON Marshaler Options
-	config.SetDefault("server.rest.enums_as_ints", false)
-	config.SetDefault("server.rest.emit_defaults", true)
-	config.SetDefault("server.rest.orig_names", true)
 
 	// Database Settings
 	config.SetDefault("storage.type", "postgres")
@@ -44,15 +47,39 @@ func init() {
 	config.SetDefault("storage.host", "postgres")
 	config.SetDefault("storage.port", 5432)
 	config.SetDefault("storage.database", "thunderdome")
+	config.SetDefault("storage.database_test", "thunderdome_test")
 	config.SetDefault("storage.sslmode", "disable")
 	config.SetDefault("storage.retries", 5)
 	config.SetDefault("storage.sleep_between_retries", "7s")
 	config.SetDefault("storage.max_connections", 80)
 	config.SetDefault("storage.wipe_confirm", false)
 
+	config.SetDefault("lnd.tls_insecure", false)
 	config.SetDefault("lnd.tls_cert", "tls.cert")
+	config.SetDefault("lnd.tls_host", "")
 	config.SetDefault("lnd.host", "lnd")
-	config.SetDefault("lnd.port", "10009")
+	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.macaroon", "admin.macaroon")
+	config.SetDefault("lnd.unlock_password", "testtest")
+
+	config.SetDefault("btc.host", "bitcoind")
+	config.SetDefault("btc.port", 8332)
+	config.SetDefault("btc.username", "bitcoinrpc")
+	config.SetDefault("btc.password", "bitcoinrpc")
+	config.SetDefault("btc.post_mode", true)
+	config.SetDefault("btc.disable_tls", true)
+	config.SetDefault("btc.chain", "mainnet")
+
+	config.SetDefault("tdome.min_withdraw", 40000)
+	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
+	config.SetDefault("tdome.disable_auth", false)
+	config.SetDefault("tdome.processing_fee_rate", 0.0)
+	config.SetDefault("tdome.withdraw_fee_rate", 1.0)
+	config.SetDefault("tdome.network_fee_limit", 40000)
+	config.SetDefault("tdome.topup_fee_free", false)
+	config.SetDefault("tdome.topup_fee_free_limit", 40000)
+	config.SetDefault("tdome.default_request_expires", 86400)
+	config.SetDefault("tdome.create_generic_secret", "") // If left blank, it cannot be used
+	config.SetDefault("tdome.create_generic_expiration", 172800)
 
 }

@@ -1,0 +1,13 @@
+tdome
+server.crt
+server.key
+**/bindata.go
+**/*.pb.go
+**/*.pb.gw.go
+**/*.swagger.json
+.vscode
+.vscode/**
+mocks
+mocks/**
+embed/public/swagger-ui
+embed/public/swagger-ui/**

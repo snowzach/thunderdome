@@ -5,19 +5,22 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"log"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
+
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/snowzach/certtools"
 	"github.com/snowzach/certtools/autocert"
@@ -25,8 +28,12 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
+
+	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // Server is the GRPC server
@@ -36,6 +43,11 @@ type Server struct {
 	server     *http.Server
 	grpcServer *grpc.Server
 	gwRegFuncs []gwRegFunc
+}
+
+// This is the default authentication function, it's not actually going to get used because we will override it
+func authenticate(ctx context.Context) (context.Context, error) {
+	return nil, status.Errorf(codes.Unauthenticated, "Access denied")
 }
 
 // When starting to listen, we will reigster gateway functions
@@ -62,12 +74,16 @@ func New() (*Server, error) {
 				ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 				next.ServeHTTP(ww, r)
 
+				// Don't log the version endpoint, it's too noisy
+				if r.RequestURI == "/version" {
+					return
+				}
+
 				latency := time.Since(start)
 
 				fields := []zapcore.Field{
 					zap.Int("status", ww.Status()),
 					zap.Duration("took", latency),
-					zap.String("remote", r.RemoteAddr),
 					zap.String("request", r.RequestURI),
 					zap.String("method", r.Method),
 					zap.String("package", "server.request"),
@@ -75,14 +91,33 @@ func New() (*Server, error) {
 				if requestID != "" {
 					fields = append(fields, zap.String("request-id", requestID))
 				}
+				// If we have an x-Forwarded-For header, use that for the remote
+				if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+					fields = append(fields, zap.String("remote", forwardedFor))
+				} else {
+					fields = append(fields, zap.String("remote", r.RemoteAddr))
+				}
 				zap.L().Info("API Request", fields...)
 			})
 		})
 	}
 
+	// CORS Config
+	r.Use(cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{http.MethodHead, http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}).Handler)
+
 	// GRPC Interceptors
-	streamInterceptors := []grpc.StreamServerInterceptor{}
-	unaryInterceptors := []grpc.UnaryServerInterceptor{}
+	streamInterceptors := []grpc.StreamServerInterceptor{
+		grpc_auth.StreamServerInterceptor(authenticate),
+	}
+	unaryInterceptors := []grpc.UnaryServerInterceptor{
+		grpc_auth.UnaryServerInterceptor(authenticate),
+	}
 
 	// GRPC Server Options
 	serverOptions := []grpc.ServerOption{
@@ -176,12 +211,22 @@ func (s *Server) ListenAndServe() error {
 	}
 
 	// Setup the GRPC gateway
-	grpcGatewayJSONpbMarshaler := gwruntime.JSONPb(jsonpb.Marshaler{
-		EnumsAsInts:  config.GetBool("server.rest.enums_as_ints"),
-		EmitDefaults: config.GetBool("server.rest.emit_defaults"),
-		OrigName:     config.GetBool("server.rest.orig_names"),
-	})
-	grpcGatewayMux := gwruntime.NewServeMux(gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &grpcGatewayJSONpbMarshaler))
+	grpcGatewayMux := gwruntime.NewServeMux(
+		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &JSONMarshaler{}),
+		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) {
+			// Pass our headers
+			switch strings.ToLower(header) {
+			case thunderdome.MetadataAuthPubKeyString:
+				return header, true
+			case thunderdome.MetadataAuthSignature:
+				return header, true
+			case thunderdome.MetadataAuthTimestamp:
+				return header, true
+			}
+			return header, false
+		}),
+	)
+
 	// If the main router did not find and endpoint, pass it to the grpcGateway
 	s.router.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		grpcGatewayMux.ServeHTTP(w, r)
@@ -236,7 +281,7 @@ func (el *errorLogger) Write(b []byte) (int, error) {
 // RenderOrErrInternal will render whatever you pass it (assuming it has Renderer) or prints an internal error
 func RenderOrErrInternal(w http.ResponseWriter, r *http.Request, d render.Renderer) {
 	if err := render.Render(w, r, d); err != nil {
-		render.Render(w, r, ErrInternal(err))
+		_ = render.Render(w, r, ErrInternal(err))
 		return
 	}
 }
