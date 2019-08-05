@@ -28,8 +28,8 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid Value")
 	}
 
-	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 604800) {
-		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 604800")
+	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 7776000) {
+		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 7776000")
 	}
 	if request.Expires == 0 {
 		request.Expires = config.GetInt64("tdome.default_request_expires")
