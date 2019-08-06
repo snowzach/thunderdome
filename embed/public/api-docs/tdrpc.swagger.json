@@ -1,0 +1,522 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "tdrpc/tdrpc.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/account": {
+      "get": {
+        "summary": "Get/Create user account",
+        "operationId": "GetAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcAccount"
+            }
+          }
+        },
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/create": {
+      "get": {
+        "summary": "Create a auto-generated payment request with no value. If one exist already, return that.",
+        "operationId": "CreateGenerated",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcCreateResponse"
+            }
+          }
+        },
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      },
+      "post": {
+        "summary": "Create a payment request",
+        "operationId": "Create",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcCreateResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tdrpcCreateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/decode": {
+      "post": {
+        "summary": "Decode a payment request",
+        "operationId": "Decode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcDecodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tdrpcDecodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/ledger": {
+      "get": {
+        "summary": "Get request ledger",
+        "operationId": "Ledger",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcLedgerResponse"
+            }
+          }
+        },
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/pay": {
+      "post": {
+        "summary": "Pay a request",
+        "operationId": "Pay",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcPayResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tdrpcPayRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/withdraw": {
+      "post": {
+        "summary": "Withdraw funds",
+        "operationId": "Withdraw",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcWithdrawResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tdrpcWithdrawRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "LedgerRecordDirection": {
+      "type": "string",
+      "enum": [
+        "IN",
+        "OUT"
+      ],
+      "default": "IN",
+      "title": "Ledger Record Direction"
+    },
+    "LedgerRecordStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "COMPLETED",
+        "EXPIRED",
+        "FAILED"
+      ],
+      "default": "PENDING",
+      "title": "Ledger Record Status"
+    },
+    "tdrpcAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Account Id"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created at timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Update at timestamp"
+        },
+        "address": {
+          "type": "string",
+          "title": "The BTC address for the account"
+        },
+        "balance": {
+          "type": "string",
+          "format": "int64",
+          "title": "The current balance"
+        },
+        "pending_in": {
+          "type": "string",
+          "format": "int64",
+          "title": "The current pending incoming balance"
+        },
+        "pending_out": {
+          "type": "string",
+          "format": "int64",
+          "title": "The current pending outgoing balance"
+        }
+      },
+      "title": "Account"
+    },
+    "tdrpcCreateRequest": {
+      "type": "object",
+      "properties": {
+        "memo": {
+          "type": "string",
+          "title": "An optional memo to include"
+        },
+        "value": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount for the payment request. (Zero means no pre-set value)"
+        },
+        "expires": {
+          "type": "string",
+          "format": "int64",
+          "title": "How long (in seconds) the payment request should be valid for"
+        }
+      },
+      "title": "Create Request"
+    },
+    "tdrpcCreateResponse": {
+      "type": "object",
+      "properties": {
+        "request": {
+          "type": "string",
+          "title": "The payment request string"
+        }
+      },
+      "title": "Create Response"
+    },
+    "tdrpcDecodeRequest": {
+      "type": "object",
+      "properties": {
+        "request": {
+          "type": "string",
+          "title": "The payment request to be decoded"
+        }
+      },
+      "title": "Decode Request"
+    },
+    "tdrpcDecodeResponse": {
+      "type": "object",
+      "properties": {
+        "destination": {
+          "type": "string",
+          "title": "Desintation Node"
+        },
+        "payment_hash": {
+          "type": "string",
+          "title": "Payment hash for the request"
+        },
+        "num_satoshis": {
+          "type": "string",
+          "format": "int64",
+          "title": "The number of Satoshis"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "The timestamp of the request"
+        },
+        "expiry": {
+          "type": "string",
+          "format": "int64",
+          "title": "The expiration of the request"
+        },
+        "description": {
+          "type": "string",
+          "title": "Optional description/memo of the request"
+        },
+        "description_hash": {
+          "type": "string",
+          "title": "If the description is too long, a shorter hash of the description"
+        },
+        "fallback_addr": {
+          "type": "string",
+          "title": "Fallback payment address"
+        },
+        "cltv_expiry": {
+          "type": "string",
+          "format": "int64"
+        },
+        "route_hints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tdrpcRouteHint"
+          },
+          "title": "Route hints"
+        }
+      },
+      "title": "Decode Response"
+    },
+    "tdrpcHopHint": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string"
+        },
+        "chan_id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "fee_base_msat": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fee_proportional_millionths": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "cltv_expiry_delta": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "title": "Hop Hint"
+    },
+    "tdrpcLedgerRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The ID for the record. Lightning Payment Hash or BTC transaction"
+        },
+        "account_id": {
+          "type": "string",
+          "title": "The user account associated with the request"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created at timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Update at timestamps"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Expires at timestamp"
+        },
+        "status": {
+          "$ref": "#/definitions/LedgerRecordStatus",
+          "title": "The record status"
+        },
+        "type": {
+          "$ref": "#/definitions/tdrpcLedgerRecordType",
+          "title": "The record type (BTC or LN)"
+        },
+        "direction": {
+          "$ref": "#/definitions/LedgerRecordDirection",
+          "title": "The direction of the transaction"
+        },
+        "generated": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Is this a generated request"
+        },
+        "value": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount of the transaction"
+        },
+        "network_fee": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount of the transaction"
+        },
+        "processing_fee": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount of the transaction"
+        },
+        "add_index": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The address index of the lightning request"
+        },
+        "memo": {
+          "type": "string",
+          "title": "An optional request memo"
+        },
+        "request": {
+          "type": "string",
+          "title": "The lightning payment request"
+        },
+        "error": {
+          "type": "string",
+          "title": "Any error associated with the request"
+        }
+      },
+      "title": "Ledger Record"
+    },
+    "tdrpcLedgerRecordType": {
+      "type": "string",
+      "enum": [
+        "BTC",
+        "LIGHTNING"
+      ],
+      "default": "BTC",
+      "title": "Ledger Record Type"
+    },
+    "tdrpcLedgerResponse": {
+      "type": "object",
+      "properties": {
+        "ledger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tdrpcLedgerRecord"
+          },
+          "title": "The ledger records"
+        }
+      },
+      "title": "Ledger Response"
+    },
+    "tdrpcPayRequest": {
+      "type": "object",
+      "properties": {
+        "request": {
+          "type": "string",
+          "title": "The payment request string"
+        },
+        "value": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount you wish to pay the payment request"
+        }
+      },
+      "title": "Pay Request"
+    },
+    "tdrpcPayResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/tdrpcLedgerRecord",
+          "title": "The pay request result"
+        }
+      },
+      "title": "Pay Response"
+    },
+    "tdrpcRouteHint": {
+      "type": "object",
+      "properties": {
+        "hop_hints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tdrpcHopHint"
+          },
+          "title": "Hop Hints"
+        }
+      },
+      "title": "Route Hint"
+    },
+    "tdrpcWithdrawRequest": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "title": "The address to send funds to"
+        },
+        "value": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount to send (in satoshis)"
+        },
+        "blocks": {
+          "type": "integer",
+          "format": "int32",
+          "title": "The target number of blocks this should be confirmed by"
+        }
+      },
+      "title": "Withdraw Request"
+    },
+    "tdrpcWithdrawResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/tdrpcLedgerRecord",
+          "title": "The withdraw request result"
+        }
+      },
+      "title": "Withdraw Response"
+    }
+  }
+}
