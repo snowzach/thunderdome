@@ -54,21 +54,13 @@ func init() {
 	config.SetDefault("storage.max_connections", 80)
 	config.SetDefault("storage.wipe_confirm", false)
 
+	config.SetDefault("lnd.host", "lnd")
+	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.tls_insecure", false)
 	config.SetDefault("lnd.tls_cert", "tls.cert")
 	config.SetDefault("lnd.tls_host", "")
-	config.SetDefault("lnd.host", "lnd")
-	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.macaroon", "admin.macaroon")
 	config.SetDefault("lnd.unlock_password", "testtest")
-
-	config.SetDefault("btc.host", "bitcoind")
-	config.SetDefault("btc.port", 8332)
-	config.SetDefault("btc.username", "bitcoinrpc")
-	config.SetDefault("btc.password", "bitcoinrpc")
-	config.SetDefault("btc.post_mode", true)
-	config.SetDefault("btc.disable_tls", true)
-	config.SetDefault("btc.chain", "mainnet")
 
 	config.SetDefault("tdome.min_withdraw", 40000)
 	config.SetDefault("tdome.default_withdraw_target_blocks", 6)

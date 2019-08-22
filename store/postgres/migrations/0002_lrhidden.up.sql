@@ -1,0 +1,3 @@
+ALTER TABLE ledger
+    ADD COLUMN hidden BOOLEAN NOT NULL DEFAULT false;
+

@@ -8,6 +8,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
 
+option (gogoproto.enum_stringer_all) = false;
+
 service ThunderdomeRPC {
 
     // Get/Create user account
@@ -133,6 +135,8 @@ message LedgerRecord {
     string request = 15 [(gogoproto.jsontag) = "request"];
     // Any error associated with the request
     string error = 16 [(gogoproto.jsontag) = "error"];
+    // Used to hide records that are duplicates
+    bool hidden = 17 [(gogoproto.jsontag) = "-"];
 }
 
 // Decode Request
@@ -211,6 +215,13 @@ message PayResponse {
 
 // Ledger Request
 message LedgerRequest {
+    // Filter values (status, type, direction, request, generated, hidden)
+    map<string, string> filter = 1;
+    // After filtering for creattion time
+    google.protobuf.Timestamp after = 2 [(gogoproto.stdtime) = true];
+    // Offset, Limit for pagination
+    int32 start = 3;
+    int32 count = 4;
 }
 
 // Ledger Response

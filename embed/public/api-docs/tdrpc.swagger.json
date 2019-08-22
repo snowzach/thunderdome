@@ -113,6 +113,31 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "after",
+            "description": "After filtering for creattion time.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "start",
+            "description": "Offset, Limit for pagination.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
         "tags": [
           "ThunderdomeRPC"
         ]
@@ -424,6 +449,11 @@
         "error": {
           "type": "string",
           "title": "Any error associated with the request"
+        },
+        "hidden": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Used to hide records that are duplicates"
         }
       },
       "title": "Ledger Record"

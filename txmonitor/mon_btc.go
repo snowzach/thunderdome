@@ -141,6 +141,8 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 			continue
 		}
 
+		txm.logger.Debugw("Processing TxOut", "height", height, "addresses", addresses[0].String(), "value", vout.Value)
+
 		// Find the associated account
 		account, err := txm.store.AccountGetByAddress(ctx, addresses[0].String())
 		if err == store.ErrNotFound {
