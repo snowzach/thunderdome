@@ -1,62 +1,61 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	_ "git.coinninja.net/backend/thunderdome/conf"
 	"git.coinninja.net/backend/thunderdome/mocks"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-func TestDecode(t *testing.T) {
+func TestPay(t *testing.T) {
 
 	// Mocks
 	mockStore := new(mocks.Store)
 	mockLClient := new(mocks.LightningClient)
 	mockLClient.On("GetInfo", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.GetInfoRequest")).Once().Return(&lnrpc.GetInfoResponse{IdentityPubkey: "testing"}, nil)
 	// RPC Server
-	s, err := NewRPCServer(mockStore, mockLClient)
+	s, err := NewTDRPCServer(mockStore, mockLClient)
 	assert.Nil(t, err)
 
 	// Bootstrap authentication
 	account := &tdrpc.Account{
 		Id:      "123123123123132132132123131123123123123132132132123131123123123333",
 		Address: "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm",
+		Balance: 10,
 	}
 	ctx := addAccount(context.Background(), account)
 
-	// This is what lnd returns
+	// Decoded payment request
 	pr := &lnrpc.PayReq{
 		Destination: "test",
+		Expiry:      time.Now().Add(time.Hour).Unix(),
 	}
-
-	// This is what we expect
-	tdrpcPayReq := &tdrpc.DecodeResponse{
-		Destination:     pr.Destination,
-		PaymentHash:     pr.PaymentHash,
-		NumSatoshis:     pr.NumSatoshis,
-		Timestamp:       pr.Timestamp,
-		Expiry:          pr.Expiry,
-		Description:     pr.Description,
-		DescriptionHash: pr.DescriptionHash,
-		FallbackAddr:    pr.FallbackAddr,
-		CltvExpiry:      pr.CltvExpiry,
-		RouteHints:      []*tdrpc.RouteHint{}, // TODO: Decode route hints
-	}
-
-	// AddInvoice call
 	mockLClient.On("DecodePayReq", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.PayReqString")).Once().Return(pr, nil)
 
-	// Make the request
-	response, err := s.Decode(ctx, &tdrpc.DecodeRequest{
-		Request: "lnbcrt100n1pw0ry32pp537g0nunvpgv0xvuqdejl0j6nsykt7s4mrxkflfv97272xln6xtcsdqjfpjkcmr0yptk7unvvscqzpgxqyz5vql9vf88y47hnx9pfk6nu54e0zhh9rfmluqk8xq7jckyahltcm24gjps4mjje7ceznxsve5jum9lkrq28sjyqgxh8pp3xq7atf6d3pkhsp53kfed",
+	// Route/Fee requests
+	route := &lnrpc.Route{
+		TotalFees: 123,
+	}
+	mockLClient.On("QueryRoutes", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.QueryRoutesRequest")).Once().Return(&lnrpc.QueryRoutesResponse{Routes: []*lnrpc.Route{route}}, nil)
+
+	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
+	mockLClient.On("SendPaymentSync", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.SendRequest")).Once().
+		Return(&lnrpc.SendResponse{}, nil)
+	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
+
+	// Insufficient funds
+	_, err = s.Pay(ctx, &tdrpc.PayRequest{
+		Request: "somerequest",
+		Value:   20,
 	})
 	assert.Nil(t, err)
-	assert.Equal(t, tdrpcPayReq, response)
 
 	mockStore.AssertExpectations(t)
 	mockLClient.AssertExpectations(t)

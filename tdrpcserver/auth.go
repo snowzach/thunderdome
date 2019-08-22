@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -28,7 +28,7 @@ var (
 )
 
 // AuthFuncOverride will handle authentication
-func (s *RPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 
 	// Get request metadata
 	md, ok := metadata.FromIncomingContext(ctx)

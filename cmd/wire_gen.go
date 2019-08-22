@@ -8,12 +8,12 @@ package cmd
 import (
 	"context"
 	"crypto/tls"
-	"git.coinninja.net/backend/thunderdome/rpcserver"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
+	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/tdrpcserver"
 	"git.coinninja.net/backend/thunderdome/thunderdome"
 	"git.coinninja.net/backend/thunderdome/txmonitor"
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/spf13/viper"
@@ -41,22 +41,21 @@ func NewServer() (*server.Server, error) {
 	return serverServer, nil
 }
 
-func NewRPCServer() (*rpcserver.RPCServer, error) {
+func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
 	store := NewStore()
 	clientConn := NewLndGrpcClientConn()
 	lightningClient := NewLightningClient(clientConn)
-	rpcServer, err := rpcserver.NewRPCServer(store, lightningClient)
+	thunderdomeRPCServer, err := tdrpcserver.NewTDRPCServer(store, lightningClient)
 	if err != nil {
 		return nil, err
 	}
-	return rpcServer, nil
+	return thunderdomeRPCServer, nil
 }
 
 func NewTXMonitor() (*txmonitor.TXMonitor, error) {
 	store := NewStore()
 	clientConn := NewLndGrpcClientConn()
-	params := NewChainParams()
-	txMonitor, err := txmonitor.NewTXMonitor(store, clientConn, params)
+	txMonitor, err := txmonitor.NewTXMonitor(store, clientConn)
 	if err != nil {
 		return nil, err
 	}
@@ -77,31 +76,6 @@ func NewStore() thunderdome.Store {
 		logger.Fatalw("Database Error", "error", err)
 	}
 	return store
-}
-
-func NewChainParams() *chaincfg.Params {
-
-	// Create an array of chains such that we can pick the one we want
-	var chain *chaincfg.Params
-	chains := []*chaincfg.Params{
-		&chaincfg.MainNetParams,
-		&chaincfg.RegressionNetParams,
-		&chaincfg.SimNetParams,
-		&chaincfg.TestNet3Params,
-	}
-
-	for _, cp := range chains {
-		if viper.GetString("btc.chain") == cp.Name {
-			chain = cp
-			break
-		}
-	}
-	if chain == nil {
-		logger.Fatalf("Could not find chain %s", viper.GetString("btc.chain"))
-	}
-
-	return chain
-
 }
 
 func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {

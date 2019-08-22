@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 )
 
 // Pay will pay a payment request
-func (s *RPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest) (*tdrpc.WithdrawResponse, error) {
+func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawRequest) (*tdrpc.WithdrawResponse, error) {
 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)

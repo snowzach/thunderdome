@@ -11,7 +11,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/google/wire"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -22,9 +21,10 @@ import (
 	"google.golang.org/grpc/status"
 	macaroon "gopkg.in/macaroon.v2"
 
-	"git.coinninja.net/backend/thunderdome/rpcserver"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
+	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/tdrpcserver"
 	"git.coinninja.net/backend/thunderdome/thunderdome"
 	"git.coinninja.net/backend/thunderdome/txmonitor"
 )
@@ -35,15 +35,15 @@ func NewServer() (*server.Server, error) {
 	return &server.Server{}, nil
 }
 
-// NewRPCServer will create a new grpc/rest server on the webserver
-func NewRPCServer() (*rpcserver.RPCServer, error) {
-	wire.Build(rpcserver.NewRPCServer, NewStore, NewLndGrpcClientConn, NewLightningClient)
-	return &rpcserver.RPCServer{}, nil
+// NewTDRPCServer will create a new grpc/rest server on the webserver
+func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
+	wire.Build(tdrpcserver.NewTDRPCServer, NewStore, NewLndGrpcClientConn, NewLightningClient)
+	return nil, nil
 }
 
 // NewTXMonitor will create a new BTC and LN transaction monitor
 func NewTXMonitor() (*txmonitor.TXMonitor, error) {
-	wire.Build(txmonitor.NewTXMonitor, NewStore, NewLndGrpcClientConn, NewChainParams)
+	wire.Build(txmonitor.NewTXMonitor, NewStore, NewLndGrpcClientConn)
 	return &txmonitor.TXMonitor{}, nil
 }
 
@@ -59,31 +59,6 @@ func NewStore() thunderdome.Store {
 		logger.Fatalw("Database Error", "error", err)
 	}
 	return store
-}
-
-func NewChainParams() *chaincfg.Params {
-
-	// Create an array of chains such that we can pick the one we want
-	var chain *chaincfg.Params
-	chains := []*chaincfg.Params{
-		&chaincfg.MainNetParams,
-		&chaincfg.RegressionNetParams,
-		&chaincfg.SimNetParams,
-		&chaincfg.TestNet3Params,
-	}
-	// Find the selected chain
-	for _, cp := range chains {
-		if config.GetString("btc.chain") == cp.Name {
-			chain = cp
-			break
-		}
-	}
-	if chain == nil {
-		logger.Fatalf("Could not find chain %s", config.GetString("btc.chain"))
-	}
-
-	return chain
-
 }
 
 func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {

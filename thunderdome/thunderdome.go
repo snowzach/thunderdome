@@ -2,6 +2,7 @@ package thunderdome
 
 import (
 	"context"
+	"time"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
@@ -27,7 +28,7 @@ type Store interface {
 	ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error
 	ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerRecord, error)
 	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error
-	GetLedger(ctx context.Context, accountID string) ([]*tdrpc.LedgerRecord, error)
+	GetLedger(ctx context.Context, accountID string, filters map[string]string, after time.Time, offset int, limit int) ([]*tdrpc.LedgerRecord, error)
 	GetLedgerRecord(ctx context.Context, id string, direction tdrpc.LedgerRecord_Direction) (*tdrpc.LedgerRecord, error)
 	GetActiveGeneratedLightningLedgerRequest(ctx context.Context, accountID string) (*tdrpc.LedgerRecord, error)
 	ExpireLedgerRequests(ctx context.Context) error

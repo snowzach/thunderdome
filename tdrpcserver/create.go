@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 )
 
 // Create creates a payment request for the current user
-func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*tdrpc.CreateResponse, error) {
+func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*tdrpc.CreateResponse, error) {
 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
@@ -73,7 +73,7 @@ func (s *RPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) (*
 }
 
 // CreateGenerated makes a payment request with no value. If one exists already, it will be returned.
-func (s *RPCServer) CreateGenerated(ctx context.Context, _ *emptypb.Empty) (*tdrpc.CreateResponse, error) {
+func (s *tdRPCServer) CreateGenerated(ctx context.Context, _ *emptypb.Empty) (*tdrpc.CreateResponse, error) {
 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
