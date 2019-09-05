@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 )
 
 // GetAccount will return the account
-func (s *RPCServer) GetAccount(ctx context.Context, _ *emptypb.Empty) (*tdrpc.Account, error) {
+func (s *tdRPCServer) GetAccount(ctx context.Context, _ *emptypb.Empty) (*tdrpc.Account, error) {
 
 	// The authentication function will upsert the account and include it in the request context
 	account := getAccount(ctx)

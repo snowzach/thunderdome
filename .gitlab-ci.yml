@@ -5,6 +5,10 @@ variables:
   DOCKER_HOST: tcp://127.0.0.1:2375
   DOCKER_TLS_CERTDIR: ""
 
+# Login for git
+before_script:
+  - echo -e "machine git.coinninja.net\nlogin gitlab-ci-token\npassword ${CI_JOB_TOKEN}" > $HOME/.netrc
+
 cache:
   paths:
     - .cache
@@ -85,7 +89,7 @@ stages:
 
 test:
   stage: test
-  image: golang:1.12-alpine3.9
+  image: golang:1.13-alpine3.10
   services:
     - name: postgres:9.6
       alias: postgresdb
@@ -98,9 +102,9 @@ test:
     - apk add --update-cache make git protobuf protobuf-dev curl
     - mkdir -p .cache
     - export GOPATH="$CI_PROJECT_DIR/.cache"
-    - cat /etc/hosts
+    - export GOPRIVATE=git.coinninja.net
     - export PATH=$PATH:$GOPATH/bin
-    - timeout -t 60 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 5432
+    - timeout 60 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 5432
     - CGO_ENABLED=0 make test
 
 latest:

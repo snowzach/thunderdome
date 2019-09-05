@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
-type RPCServer struct {
+type tdRPCServer struct {
 	logger   *zap.SugaredLogger
 	store    thunderdome.Store
 	myPubKey string
@@ -39,8 +39,14 @@ func getAccount(ctx context.Context) *tdrpc.Account {
 	return nil
 }
 
-// NewRPCServer creates the server
-func NewRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (*RPCServer, error) {
+// NewTDRPCServer creates the server
+func NewTDRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (tdrpc.ThunderdomeRPCServer, error) {
+
+	return newTDRPCServer(store, lclient)
+
+}
+
+func newTDRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (*tdRPCServer, error) {
 
 	info, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
 	if err != nil {
@@ -48,8 +54,8 @@ func NewRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (*RPCS
 	}
 
 	// Return the server
-	s := &RPCServer{
-		logger:   zap.S().With("package", "rpcserver"),
+	s := &tdRPCServer{
+		logger:   zap.S().With("package", "tdrpc"),
 		store:    store,
 		myPubKey: info.IdentityPubkey,
 		lclient:  lclient,

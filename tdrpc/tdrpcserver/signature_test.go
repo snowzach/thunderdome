@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 // This file is copied from backend/btc-api/common/signature
 

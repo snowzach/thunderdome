@@ -1,0 +1,275 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "tdrpc/adminrpc.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/admin/accounts": {
+      "get": {
+        "summary": "GetUser Accounts",
+        "operationId": "Accounts",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/tdrpcAdminAccountsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "offset",
+            "description": "Offset, Limit for pagination.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "limit",
+            "description": "TEST.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "AdminRPC"
+        ]
+      }
+    },
+    "/admin/ledger": {
+      "get": {
+        "summary": "Decode a payment request",
+        "operationId": "Ledger",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/tdrpcLedgerResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "after",
+            "description": "After filtering for creattion time.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "offset",
+            "description": "Offset, Limit for pagination.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "limit",
+            "description": "TEST.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "AdminRPC"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "LedgerRecordDirection": {
+      "type": "string",
+      "enum": [
+        "IN",
+        "OUT"
+      ],
+      "default": "IN",
+      "title": "Ledger Record Direction"
+    },
+    "LedgerRecordStatus": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "COMPLETED",
+        "EXPIRED",
+        "FAILED"
+      ],
+      "default": "PENDING",
+      "title": "Ledger Record Status"
+    },
+    "tdrpcAccount": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "TEST"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created at timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Update at timestamp"
+        },
+        "address": {
+          "type": "string",
+          "title": "The BTC address for the account"
+        },
+        "balance": {
+          "type": "integer",
+          "format": "int64",
+          "title": "The current balance"
+        },
+        "pending_in": {
+          "type": "integer",
+          "format": "int64",
+          "title": "The current pending incoming balance"
+        },
+        "pending_out": {
+          "type": "integer",
+          "format": "int64",
+          "title": "The current pending outgoing balance"
+        }
+      },
+      "title": "Account"
+    },
+    "tdrpcAdminAccountsResponse": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tdrpcAccount"
+          },
+          "title": "The list of accounts"
+        }
+      }
+    },
+    "tdrpcLedgerRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The ID for the record. Lightning Payment Hash or BTC transaction"
+        },
+        "account_id": {
+          "type": "string",
+          "title": "The user account associated with the request"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created at timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Update at timestamps"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Expires at timestamp"
+        },
+        "status": {
+          "$ref": "#/definitions/LedgerRecordStatus",
+          "title": "The record status"
+        },
+        "type": {
+          "$ref": "#/definitions/tdrpcLedgerRecordType",
+          "title": "The record type (BTC or LN)"
+        },
+        "direction": {
+          "$ref": "#/definitions/LedgerRecordDirection",
+          "title": "The direction of the transaction"
+        },
+        "generated": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Is this a generated request"
+        },
+        "value": {
+          "type": "integer",
+          "format": "int64",
+          "title": "The amount of the transaction"
+        },
+        "network_fee": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount of the transaction"
+        },
+        "processing_fee": {
+          "type": "string",
+          "format": "int64",
+          "title": "The amount of the transaction"
+        },
+        "add_index": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The address index of the lightning request"
+        },
+        "memo": {
+          "type": "string",
+          "title": "An optional request memo"
+        },
+        "request": {
+          "type": "string",
+          "title": "The lightning payment request"
+        },
+        "error": {
+          "type": "string",
+          "title": "Any error associated with the request"
+        },
+        "hidden": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Used to hide records that are duplicates"
+        }
+      },
+      "title": "Ledger Record"
+    },
+    "tdrpcLedgerRecordType": {
+      "type": "string",
+      "enum": [
+        "BTC",
+        "LIGHTNING"
+      ],
+      "default": "BTC",
+      "title": "Ledger Record Type"
+    },
+    "tdrpcLedgerResponse": {
+      "type": "object",
+      "properties": {
+        "ledger": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tdrpcLedgerRecord"
+          },
+          "title": "The ledger records"
+        }
+      },
+      "title": "Ledger Response"
+    }
+  }
+}

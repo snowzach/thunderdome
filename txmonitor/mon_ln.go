@@ -108,7 +108,7 @@ func (txm *TXMonitor) MonitorLN() {
 
 	}
 
-	invclient.CloseSend()
+	_ = invclient.CloseSend()
 	conf.Stop.Done()
 
 }

@@ -68,16 +68,11 @@ LOGGER_LEVEL=debug
 | ---                                  | ---                                                              | ---              |
 | lnd.host                             | Lightning Node Host                                              | "lnd"            |
 | lnd.port                             | Lightning Node Port                                              | "10009"          |
+| lnd.tls_insecure                     | Ignore any tls issues when connecting to lnd                     | false            |
 | lnd.tls_cert                         | Lightning Node Server TLS Cert                                   | "tls.cert"       |
+| lnd.tls_host                         | Hostname to use for insecure tls                                 | ""               |
 | lnd.macaroon                         | Lightning Node Client Macaroon                                   | "admin.macaroon" |
-| ---                                  | ---                                                              | ---              |
-| btc.host                             | Bitcoin RPC Node Host                                            | "bitcoind"       |
-| btc.port                             | Bitcoin RPC Node Port                                            | "8333"           |
-| btc.username                         | Bitcoin RPC Username                                             | "bitcoinrpc"     |
-| btc.password                         | Bitcoin RPC Password                                             | "bitcoinrpc"     |
-| btc.post_mode                        | Bitcoin RPC Password                                             | true             |
-| btc.disable_tls                      | Bitcoin RPC Password                                             | true             |
-| btc.chain                            | Bitcoin RPC Chain                                                | "mainnet"        |
+| lnd.unlock_password                  | The password to unlock the lnd wallet                            | "testtest"       |
 | ---                                  | ---                                                              | ---              |
 | tdome.min_withdraw                   | Minimum amount of satoshis for a withdraw                        | 40000            |
 | tdome.default_withdraw_target_blocks | The default number of target blocks for confirmation on withdraw | 6                |

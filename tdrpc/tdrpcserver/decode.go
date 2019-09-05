@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 
 // DecodePayReq passes through decoding the pay request
-func (s *RPCServer) Decode(ctx context.Context, request *tdrpc.DecodeRequest) (*tdrpc.DecodeResponse, error) {
+func (s *tdRPCServer) Decode(ctx context.Context, request *tdrpc.DecodeRequest) (*tdrpc.DecodeResponse, error) {
 
 	// Decode and return the PayRequest
 	pr, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: request.Request})

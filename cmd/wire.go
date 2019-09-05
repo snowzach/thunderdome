@@ -11,7 +11,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg"
+	"git.coinninja.net/backend/cnauth"
 	"github.com/google/wire"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -22,9 +22,11 @@ import (
 	"google.golang.org/grpc/status"
 	macaroon "gopkg.in/macaroon.v2"
 
-	"git.coinninja.net/backend/thunderdome/rpcserver"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
+	"git.coinninja.net/backend/thunderdome/tdrpc"
+	"git.coinninja.net/backend/thunderdome/tdrpc/adminrpcserver"
+	"git.coinninja.net/backend/thunderdome/tdrpc/tdrpcserver"
 	"git.coinninja.net/backend/thunderdome/thunderdome"
 	"git.coinninja.net/backend/thunderdome/txmonitor"
 )
@@ -35,16 +37,24 @@ func NewServer() (*server.Server, error) {
 	return &server.Server{}, nil
 }
 
-// NewRPCServer will create a new grpc/rest server on the webserver
-func NewRPCServer() (*rpcserver.RPCServer, error) {
-	wire.Build(rpcserver.NewRPCServer, NewStore, NewLndGrpcClientConn, NewLightningClient)
-	return &rpcserver.RPCServer{}, nil
+// NewTDRPCServer will create a new grpc/rest server on the webserver
+func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
+	wire.Build(tdrpcserver.NewTDRPCServer, NewStore, NewLndGrpcClientConn, NewLightningClient)
+	return nil, nil
+}
+
+// NewTDRPCServer will create a new grpc/rest server on the webserver
+func NewAdminRPCServer() (tdrpc.AdminRPCServer, error) {
+	wire.Build(adminrpcserver.NewAdminRPCServer, NewStore, NewCNAuthClient)
+	return nil, nil
 }
 
 // NewTXMonitor will create a new BTC and LN transaction monitor
 func NewTXMonitor() (*txmonitor.TXMonitor, error) {
-	wire.Build(txmonitor.NewTXMonitor, NewStore, NewLndGrpcClientConn, NewChainParams)
-	return &txmonitor.TXMonitor{}, nil
+	store := NewStore()
+	lndConn := NewLndGrpcClientConn()
+	bloccConn := NewBloccClientConn()
+	return txmonitor.NewTXMonitor(store, lndConn, bloccConn)
 }
 
 // NewStore is the store for the application
@@ -59,31 +69,6 @@ func NewStore() thunderdome.Store {
 		logger.Fatalw("Database Error", "error", err)
 	}
 	return store
-}
-
-func NewChainParams() *chaincfg.Params {
-
-	// Create an array of chains such that we can pick the one we want
-	var chain *chaincfg.Params
-	chains := []*chaincfg.Params{
-		&chaincfg.MainNetParams,
-		&chaincfg.RegressionNetParams,
-		&chaincfg.SimNetParams,
-		&chaincfg.TestNet3Params,
-	}
-	// Find the selected chain
-	for _, cp := range chains {
-		if config.GetString("btc.chain") == cp.Name {
-			chain = cp
-			break
-		}
-	}
-	if chain == nil {
-		logger.Fatalf("Could not find chain %s", config.GetString("btc.chain"))
-	}
-
-	return chain
-
 }
 
 func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
@@ -146,6 +131,62 @@ func NewLndGrpcClientConn() *grpc.ClientConn {
 	conn, err := grpc.Dial(net.JoinHostPort(config.GetString("lnd.host"), config.GetString("lnd.port")), dialOptions...)
 	if err != nil {
 		logger.Fatalw("Could not connect to lnd", "error", err, "host:port", net.JoinHostPort(config.GetString("lnd.host"), config.GetString("lnd.port")))
+	}
+
+	return conn
+
+}
+
+func NewCNAuthClient() (*cnauth.Client, error) {
+
+	if config.GetBool("tdome.disable_auth") {
+		return nil, nil
+	}
+
+	client, err := cnauth.New(context.Background(), config.GetString("tdome.firebase_credentials_file"))
+	if err != nil {
+		logger.Fatalw("Could not create firebase auth client", "error", err, "credentials_file", config.GetString("tdome.firebase_credentials_file"))
+	}
+
+	return client, nil
+
+}
+
+func NewBloccClientConn() *grpc.ClientConn {
+
+	// We only need the blocc client when topup_instant is enabled so we can verify input transactions are confirmed
+	if !config.GetBool("tdome.topup_instant") {
+		return nil
+	}
+
+	// Dial options for use with the connection
+	dialOptions := []grpc.DialOption{
+		grpc.WithTimeout(10 * time.Second),
+		grpc.WithBlock(),
+	}
+
+	if config.GetBool("blocc.tls") {
+		if config.GetBool("blocc.tls_insecure") {
+			creds := credentials.NewTLS(&tls.Config{
+				InsecureSkipVerify: true,
+			})
+			dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+		} else {
+			// Create the connection to lightning
+			creds, err := credentials.NewClientTLSFromFile(config.GetString("blocc.tls_cert"), config.GetString("blocc.tls_host"))
+			if err != nil {
+				logger.Fatalw("Could not load credentials", "error", err)
+			}
+			dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+		}
+	} else {
+		dialOptions = append(dialOptions, grpc.WithInsecure())
+	}
+
+	// Create the connection
+	conn, err := grpc.Dial(net.JoinHostPort(config.GetString("blocc.host"), config.GetString("blocc.port")), dialOptions...)
+	if err != nil {
+		logger.Fatalw("Could not connect to blocc", "error", err, "host:port", net.JoinHostPort(config.GetString("blocc.host"), config.GetString("blocc.port")))
 	}
 
 	return conn

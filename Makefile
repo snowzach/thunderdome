@@ -12,11 +12,13 @@ TOOLS := ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/protoc-gen-grpc-gateway \
 	${GOPATH}/bin/protoc-gen-swagger \
 	${GOPATH}/bin/wire
-export PROTOBUF_INCLUDES = -I. -I/usr/include -I${GOPATH}/src -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
-PROTOS := ./tdrpc/tdrpc.pb.gw.go \
-	./server/rpc/version.pb.gw.go
-SWAGGERDOCS = ./tdrpc/tdrpc.swagger.json \
-	./server/rpc/version.swagger.json
+export PROTOBUF_INCLUDES = -I. -I/usr/include -I${GOPATH}/src -I$(shell go list -e -f '{{.Dir}}' .) -I$(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd) -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../ -I$(shell go list -e -f '{{.Dir}}' github.com/grpc-ecosystem/grpc-gateway/runtime)/../third_party/googleapis
+PROTOS := ./server/rpc/version.pb.gw.go \
+	./tdrpc/tdrpc.pb.gw.go \
+	./tdrpc/adminrpc.pb.gw.go
+SWAGGERDOCS = ./server/rpc/version.swagger.json \
+	./tdrpc/tdrpc.swagger.json \
+	./tdrpc/adminrpc.swagger.json
 SWAGGER_VERSION = 3.20.8
 
 .PHONY: default

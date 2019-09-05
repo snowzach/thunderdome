@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func TestGetAccount(t *testing.T) {
 	mockLClient := new(mocks.LightningClient)
 	mockLClient.On("GetInfo", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.GetInfoRequest")).Once().Return(&lnrpc.GetInfoResponse{IdentityPubkey: "testing"}, nil)
 	// RPC Server
-	s, err := NewRPCServer(mockStore, mockLClient)
+	s, err := NewTDRPCServer(mockStore, mockLClient)
 	assert.Nil(t, err)
 
 	// Create a sample account and put it into the context for the call

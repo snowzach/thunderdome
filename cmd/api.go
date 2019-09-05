@@ -23,15 +23,19 @@ var (
 		Long:  `Start API`,
 		Run: func(cmd *cli.Command, args []string) { // Initialize the databse
 
-			rpcServer, err := NewRPCServer()
+			tdrpcServer, err := NewTDRPCServer()
 			if err != nil {
-				logger.Fatalw("Could not create rpcserver",
+				logger.Fatalw("Could not create tdrpcserver",
 					"error", err,
 				)
 			}
 
-			// go rpcServer.BTCMonitor()
-			// go rpcServer.LightningMonitor()
+			adminServer, err := NewAdminRPCServer()
+			if err != nil {
+				logger.Fatalw("Could not create adminrpcserver",
+					"error", err,
+				)
+			}
 
 			server, err := NewServer()
 			if err != nil {
@@ -41,8 +45,12 @@ var (
 			}
 
 			// Register the RPC server and it's GRPC Gateway for when it starts
-			tdrpc.RegisterThunderdomeRPCServer(server.GRPCServer(), rpcServer)
+			tdrpc.RegisterThunderdomeRPCServer(server.GRPCServer(), tdrpcServer)
 			server.GWReg(tdrpc.RegisterThunderdomeRPCHandlerFromEndpoint)
+
+			// Register the admin server
+			tdrpc.RegisterAdminRPCServer(server.GRPCServer(), adminServer)
+			server.GWReg(tdrpc.RegisterAdminRPCHandlerFromEndpoint)
 
 			// Start it up
 			err = server.ListenAndServe()

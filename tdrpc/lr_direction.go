@@ -72,3 +72,16 @@ func (direction *LedgerRecord_Direction) UnmarshalJSON(in []byte) error {
 	return fmt.Errorf("Unknown direction %s", in)
 
 }
+
+// String implements the stringer interface
+func (direction LedgerRecord_Direction) String() string {
+
+	switch direction {
+	case IN:
+		return "in"
+	case OUT:
+		return "out"
+	}
+
+	return "unknown"
+}

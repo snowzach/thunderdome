@@ -88,3 +88,20 @@ func (status *LedgerRecord_Status) UnmarshalJSON(in []byte) error {
 	return fmt.Errorf("Unknown status %s", in)
 
 }
+
+// String implements the stringer interface
+func (status LedgerRecord_Status) String() string {
+
+	switch status {
+	case PENDING:
+		return "pending"
+	case COMPLETED:
+		return "completed"
+	case EXPIRED:
+		return "expired"
+	case FAILED:
+		return "failed"
+	}
+
+	return "unknown"
+}

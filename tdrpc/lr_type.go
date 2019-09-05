@@ -72,3 +72,16 @@ func (t *LedgerRecord_Type) UnmarshalJSON(in []byte) error {
 	return fmt.Errorf("Unknown type %s", in)
 
 }
+
+// String implements the stringer interface
+func (t LedgerRecord_Type) String() string {
+
+	switch t {
+	case BTC:
+		return "btc"
+	case LIGHTNING:
+		return "lightning"
+	}
+
+	return "unknown"
+}

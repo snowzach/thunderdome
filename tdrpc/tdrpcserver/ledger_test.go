@@ -1,4 +1,4 @@
-package rpcserver
+package tdrpcserver
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func TestLedger(t *testing.T) {
 	mockLClient := new(mocks.LightningClient)
 	mockLClient.On("GetInfo", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.GetInfoRequest")).Once().Return(&lnrpc.GetInfoResponse{IdentityPubkey: "testing"}, nil)
 	// RPC Server
-	s, err := NewRPCServer(mockStore, mockLClient)
+	s, err := NewTDRPCServer(mockStore, mockLClient)
 	assert.Nil(t, err)
 
 	// Bootstrap authentication
@@ -38,7 +38,7 @@ func TestLedger(t *testing.T) {
 		},
 	}
 
-	mockStore.On("GetLedger", mock.AnythingOfType("*context.valueCtx"), account.Id).Once().Return(lrs, nil)
+	mockStore.On("GetLedger", mock.AnythingOfType("*context.valueCtx"), map[string]string{"account_id": account.Id, "hidden": "false"}, mock.AnythingOfType("time.Time"), 0, 0).Once().Return(lrs, nil)
 
 	// Make the request
 	response, err := s.Ledger(ctx, &tdrpc.LedgerRequest{})

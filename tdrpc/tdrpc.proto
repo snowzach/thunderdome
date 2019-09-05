@@ -5,8 +5,67 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "protoc-gen-swagger/options/annotations.proto";
 
 option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
+
+option (gogoproto.enum_stringer_all) = false;
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+	info: {
+		title: "Thunderdome RPC";
+		version: "1.0";
+	};
+	schemes: HTTPS;
+	consumes: "application/json";
+	produces: "application/json";
+	security_definitions: {
+		security: {
+			key: "CN-Auth-PubKeyString";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+                name: "CN-Auth-PubKeyString";
+                description: "Hex encoded compressed public key. Example: 020c3a0e7b00e0d8dcccdd931b2d61848392878297ab455272cca9840144681848"
+			}
+        }
+		security: {
+			key: "CN-Auth-Signature";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+                name: "CN-Auth-Signature";
+                description: "Hex encoded signature of signing the `CN-Auth-Timestamp` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1"
+			}
+        }
+		security: {
+			key: "CN-Auth-Timestamp";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+                name: "CN-Auth-Timestamp";
+                description: "Current time in RFC3339. Example: 2006-01-02T15:04:05Z07:00"
+			}
+        }
+    }
+	responses: {
+		key: "401";
+		value: {
+			description: "Returned when the user does not have permission to access the resource.";
+		}
+	}
+	responses: {
+		key: "404";
+		value: {
+			description: "Returned when the resource does not exist.";
+			schema: {
+				json_schema: {
+					type: STRING;
+				}
+			}
+		}
+	}
+};
 
 service ThunderdomeRPC {
 
@@ -66,20 +125,35 @@ service ThunderdomeRPC {
 
 // Account
 message Account {
-    // Account Id
+
     string id = 1;
     // Created at timestamp
-    google.protobuf.Timestamp created_at = 2 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp created_at = 2 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.moretags) = "db:\"created_at\""
+    ];
     // Update at timestamp
-    google.protobuf.Timestamp updated_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp updated_at = 3 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.moretags) = "db:\"updated_at\""
+    ];
     // The BTC address for the account
     string address = 4;
     // The current balance
-    int64 balance = 5  [(gogoproto.jsontag) = "balance"];
+    int64 balance = 5 [
+        (gogoproto.jsontag) = "balance",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The current pending incoming balance
-    int64 pending_in = 6 [(gogoproto.jsontag) = "pending_in",(gogoproto.moretags) = "db:\"pending_in\""];
+    int64 pending_in = 6 [
+        (gogoproto.jsontag) = "pending_in",(gogoproto.moretags) = "db:\"pending_in\"",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The current pending outgoing balance
-    int64 pending_out = 7 [(gogoproto.jsontag) = "pending_out",(gogoproto.moretags) = "db:\"pending_out\""];
+    int64 pending_out = 7 [
+        (gogoproto.jsontag) = "pending_out",(gogoproto.moretags) = "db:\"pending_out\"",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
 }
 
 // Ledger Record
@@ -87,13 +161,24 @@ message LedgerRecord {
     // The ID for the record. Lightning Payment Hash or BTC transaction
     string id = 1;
     // The user account associated with the request
-    string account_id = 2 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"account_id\""];
+    string account_id = 2 [
+        (gogoproto.moretags) = "db:\"account_id\""
+    ];
     // Created at timestamp
-    google.protobuf.Timestamp created_at = 3 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"created_at\""];
+    google.protobuf.Timestamp created_at = 3 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.moretags) = "db:\"created_at\""
+    ];
     // Update at timestamps
-    google.protobuf.Timestamp updated_at = 4 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"updated_at\""];
+    google.protobuf.Timestamp updated_at = 4 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.moretags) = "db:\"updated_at\""
+    ];
     // Expires at timestamp
-    google.protobuf.Timestamp expires_at = 5 [(gogoproto.stdtime) = true,(gogoproto.moretags) = "db:\"expires_at\""];
+    google.protobuf.Timestamp expires_at = 5 [
+        (gogoproto.stdtime) = true,
+        (gogoproto.moretags) = "db:\"expires_at\""
+    ];
     // Ledger Record Status
     enum Status {
         PENDING = 0;
@@ -102,7 +187,9 @@ message LedgerRecord {
         FAILED = 3;
     }
     // The record status
-    Status status = 6 [(gogoproto.jsontag) = "status"];
+    Status status = 6 [
+        (gogoproto.jsontag) = "status"
+    ];
     // Ledger Record Type
     enum Type {
         BTC = 0;
@@ -116,23 +203,51 @@ message LedgerRecord {
         OUT = 1;
     }
     // The direction of the transaction
-    Direction direction = 8 [(gogoproto.jsontag) = "direction"];
+    Direction direction = 8 [
+        (gogoproto.jsontag) = "direction"
+    ];
     // Is this a generated request
-    bool generated = 9 [(gogoproto.jsontag) = "-"];
+    bool generated = 9 [
+        (gogoproto.jsontag) = "-"
+    ];
     // The amount of the transaction
-    int64 value = 10 [(gogoproto.jsontag) = "value"];
+    int64 value = 10 [
+        (gogoproto.jsontag) = "value",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The amount of the transaction
-    int64 network_fee = 11 [(gogoproto.jsontag) = "network_fee",(gogoproto.moretags) = "db:\"network_fee\""];
+    int64 network_fee = 11 [
+        (gogoproto.jsontag) = "network_fee",
+        (gogoproto.moretags) = "db:\"network_fee\"",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The amount of the transaction
-    int64 processing_fee = 12 [(gogoproto.jsontag) = "processing_fee",(gogoproto.moretags) = "db:\"processing_fee\""];
+    int64 processing_fee = 12 [
+        (gogoproto.jsontag) = "processing_fee",
+        (gogoproto.moretags) = "db:\"processing_fee\"",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The address index of the lightning request
-    uint64 add_index = 13 [(gogoproto.jsontag) = "-",(gogoproto.moretags) = "db:\"add_index\""];
+    uint64 add_index = 13 [
+        (gogoproto.jsontag) = "-",
+        (gogoproto.moretags) = "db:\"add_index\""
+    ];
     // An optional request memo
-    string memo = 14 [(gogoproto.jsontag) = "memo"];;
+    string memo = 14 [
+        (gogoproto.jsontag) = "memo"
+    ];
     // The lightning payment request
-    string request = 15 [(gogoproto.jsontag) = "request"];
+    string request = 15 [
+        (gogoproto.jsontag) = "request"
+    ];
     // Any error associated with the request
-    string error = 16 [(gogoproto.jsontag) = "error"];
+    string error = 16 [
+        (gogoproto.jsontag) = "error"
+    ];
+    // Used to hide records that are duplicates
+    bool hidden = 17 [
+        (gogoproto.jsontag) = "-"
+    ];
 }
 
 // Decode Request
@@ -144,24 +259,45 @@ message DecodeRequest {
 // Decode Response
 message DecodeResponse {
     // Desintation Node
-    string destination = 1 [(gogoproto.jsontag) = "destination"];
+    string destination = 1 [
+        (gogoproto.jsontag) = "destination"
+    ];
     // Payment hash for the request
-    string payment_hash = 2 [(gogoproto.jsontag) = "payment_hash"];
+    string payment_hash = 2 [
+        (gogoproto.jsontag) = "payment_hash"
+    ];
     // The number of Satoshis
-    int64 num_satoshis = 3 [(gogoproto.jsontag) = "num_satoshis"];
+    int64 num_satoshis = 3 [
+        (gogoproto.jsontag) = "num_satoshis",
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The timestamp of the request
-    int64 timestamp = 4 [(gogoproto.jsontag) = "timestamp"];
+    int64 timestamp = 4 [
+        (gogoproto.jsontag) = "timestamp"
+    ];
     // The expiration of the request
-    int64 expiry = 5 [(gogoproto.jsontag) = "expiry"];
+    int64 expiry = 5 [
+        (gogoproto.jsontag) = "expiry"
+    ];
     // Optional description/memo of the request
-    string description = 6 [(gogoproto.jsontag) = "description"];
+    string description = 6 [
+        (gogoproto.jsontag) = "description"
+    ];
     // If the description is too long, a shorter hash of the description
-    string description_hash = 7 [(gogoproto.jsontag) = "description_hash"];
+    string description_hash = 7 [
+        (gogoproto.jsontag) = "description_hash"
+    ];
     // Fallback payment address
-    string fallback_addr = 8 [(gogoproto.jsontag) = "fallback_addr"];
-    int64 cltv_expiry = 9 [(gogoproto.jsontag) = "cltv_expiry"];
+    string fallback_addr = 8 [
+        (gogoproto.jsontag) = "fallback_addr"
+    ];
+    int64 cltv_expiry = 9 [
+        (gogoproto.jsontag) = "cltv_expiry"
+    ];
     // Route hints
-    repeated RouteHint route_hints = 10 [(gogoproto.jsontag) = "route_hints,omitempty"];
+    repeated RouteHint route_hints = 10 [
+        (gogoproto.jsontag) = "route_hints,omitempty"
+    ];
 }
 
 // Route Hint
@@ -172,11 +308,21 @@ message RouteHint {
 
 // Hop Hint
 message HopHint {
-    string node_id = 1 [(gogoproto.jsontag) = "node_id"];
-    uint64 chan_id = 2 [(gogoproto.jsontag) = "chan_id"];
-    uint32 fee_base_msat = 3 [(gogoproto.jsontag) = "fee_base_msat"];
-    uint32 fee_proportional_millionths = 4 [(gogoproto.jsontag) = "fee_proportional_millionths"];
-    uint32 cltv_expiry_delta = 5 [(gogoproto.jsontag) = "cltv_expiry_delta"];
+    string node_id = 1 [
+        (gogoproto.jsontag) = "node_id"
+    ];
+    uint64 chan_id = 2 [
+        (gogoproto.jsontag) = "chan_id"
+    ];
+    uint32 fee_base_msat = 3 [
+        (gogoproto.jsontag) = "fee_base_msat"
+    ];
+    uint32 fee_proportional_millionths = 4 [
+        (gogoproto.jsontag) = "fee_proportional_millionths"
+    ];
+    uint32 cltv_expiry_delta = 5 [
+        (gogoproto.jsontag) = "cltv_expiry_delta"
+    ];
 }
 
 // Create Request
@@ -184,9 +330,13 @@ message CreateRequest {
     // An optional memo to include
     string memo = 1;
     // The amount for the payment request. (Zero means no pre-set value)
-    int64 value = 2;
+    int64 value = 2 [
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // How long (in seconds) the payment request should be valid for
-    int64 expires = 3;
+    int64 expires = 3 [
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
 }
 
 // Create Response
@@ -200,7 +350,9 @@ message PayRequest {
     // The payment request string
     string request = 1;
     // The amount you wish to pay the payment request
-    int64 value = 2;
+    int64 value = 2 [
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
 }
 
 // Pay Response
@@ -211,6 +363,15 @@ message PayResponse {
 
 // Ledger Request
 message LedgerRequest {
+    // Filter values (status, type, direction, request, generated, hidden)
+    map<string, string> filter = 1;
+    // After filtering for creattion time
+    google.protobuf.Timestamp after = 2 [
+        (gogoproto.stdtime) = true
+    ];
+    // Offset, Limit for pagination
+    int32 offset = 3;
+    int32 limit = 4;
 }
 
 // Ledger Response
@@ -224,9 +385,17 @@ message WithdrawRequest {
     // The address to send funds to
     string address = 1;
     // The amount to send (in satoshis)
-    int64 value = 2;
+    int64 value = 2[
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
     // The target number of blocks this should be confirmed by
     int32 blocks = 3;
+    // A manual setting of fee per 
+    int64 sat_per_byte = 4 [
+        (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
+    // Estimate the withdraw request that would be created based on fee inputs
+    bool estimate = 5;
 }
 
 // Withdraw Response
