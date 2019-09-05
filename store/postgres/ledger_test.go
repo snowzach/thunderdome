@@ -74,11 +74,11 @@ func (suite *DBTestSuite) TestGetLedger() {
 
 	lr2list := []*tdrpc.LedgerRecord{lr21, lr22}
 
-	l, err := suite.client.GetLedger(suite.ctx, a1.Id, map[string]string{}, time.Time{}, 0, -1)
+	l, err := suite.client.GetLedger(suite.ctx, map[string]string{"account_id": a1.Id}, time.Time{}, 0, -1)
 	suite.Nil(err)
 	suite.ElementsMatch(l, lr1list)
 
-	l, err = suite.client.GetLedger(suite.ctx, a2.Id, map[string]string{}, time.Time{}, 0, -1)
+	l, err = suite.client.GetLedger(suite.ctx, map[string]string{"account_id": a2.Id}, time.Time{}, 0, -1)
 	suite.Nil(err)
 	suite.ElementsMatch(l, lr2list)
 

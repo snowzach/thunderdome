@@ -165,7 +165,7 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 	}
 
 	// Get the updated sender record
-	err = c.db.GetContext(ctx, &sender, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, internalID, tdrpc.OUT)
+	err = tx.GetContext(ctx, &sender, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, internalID, tdrpc.OUT)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("Could not find post sender request")
 	} else if err != nil {

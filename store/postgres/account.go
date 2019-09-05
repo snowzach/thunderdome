@@ -3,13 +3,57 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-// AccountGetByID fetches a account by ID
-func (c *Client) AccountGetByID(ctx context.Context, id string) (*tdrpc.Account, error) {
+// GetAccounts fetches a accounts with filter and pagination
+func (c *Client) GetAccounts(ctx context.Context, filter map[string]string, offset int, limit int) ([]*tdrpc.Account, error) {
+
+	var queryClause string
+	var queryParams = []interface{}{}
+
+	// Validate the filters
+	for filter, value := range filter {
+		switch filter {
+		case "id":
+			if value == "" {
+				return nil, fmt.Errorf("Invalid value for id")
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND id = $%d", len(queryParams))
+		case "address":
+			if value == "" {
+				return nil, fmt.Errorf("Invalid value for address")
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND address = $%d", len(queryParams))
+		default:
+			return nil, fmt.Errorf("Unsupported filter %s", filter)
+
+		}
+	}
+
+	if limit > 0 {
+		queryClause += fmt.Sprintf(" LIMIT %d", limit)
+	}
+	if offset > 0 {
+		queryClause += fmt.Sprintf(" OFFSET %d", offset)
+	}
+
+	var accounts = make([]*tdrpc.Account, 0)
+	err := c.db.SelectContext(ctx, &accounts, `SELECT * FROM account WHERE 1=1`+queryClause, queryParams...)
+	if err != nil {
+		return accounts, err
+	}
+
+	return accounts, nil
+}
+
+// GetAccountByID fetches a account by ID
+func (c *Client) GetAccountByID(ctx context.Context, id string) (*tdrpc.Account, error) {
 
 	account := new(tdrpc.Account)
 	err := c.db.GetContext(ctx, account, `SELECT * FROM account WHERE id = $1`, id)
@@ -22,8 +66,8 @@ func (c *Client) AccountGetByID(ctx context.Context, id string) (*tdrpc.Account,
 	return account, nil
 }
 
-// AccountGetByAddress fetches a account by address
-func (c *Client) AccountGetByAddress(ctx context.Context, address string) (*tdrpc.Account, error) {
+// GetAccountByAddress fetches a account by address
+func (c *Client) GetAccountByAddress(ctx context.Context, address string) (*tdrpc.Account, error) {
 
 	account := new(tdrpc.Account)
 	err := c.db.GetContext(ctx, account, `SELECT * FROM account WHERE address = $1`, address)
@@ -36,8 +80,8 @@ func (c *Client) AccountGetByAddress(ctx context.Context, address string) (*tdrp
 	return account, nil
 }
 
-// AccountSave creates/updates a account
-func (c *Client) AccountSave(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error) {
+// SaveAccount creates/updates a account
+func (c *Client) SaveAccount(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error) {
 
 	err := c.db.GetContext(ctx, account, `
 		INSERT INTO account (id, created_at, updated_at, address, balance, pending_in, pending_out)

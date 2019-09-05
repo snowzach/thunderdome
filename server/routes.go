@@ -1,13 +1,13 @@
 package server
 
 import (
-	"net/http"
 	"context"
+	"net/http"
 
-	"github.com/elazarl/go-bindata-assetfs"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 
-	"git.coinninja.net/backend/thunderdome/server/rpc"
 	"git.coinninja.net/backend/thunderdome/embed"
+	"git.coinninja.net/backend/thunderdome/server/rpc"
 )
 
 // SetupRoutes configures all the routes for this service
@@ -26,6 +26,9 @@ func (s *Server) SetupRoutes() {
 		fs.ServeHTTP(w, r)
 	}))
 	s.router.Get("/swagger-ui/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fs.ServeHTTP(w, r)
+	}))
+	s.router.Get("/test/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fs.ServeHTTP(w, r)
 	}))
 

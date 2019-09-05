@@ -79,7 +79,8 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 	}
 
 	if prevlr != nil {
-		c.logger.Debugw("ProcessLedgerRecord Delta", getLedgerDeltaLog(prevlr, lr)...)
+		// Create a log entry for deltas (if any)
+		c.LedgerDeltaLog(prevlr, lr)
 
 		// The previous transaction exists, validate that nothing of note has changed in the request
 		if prevlr.Type != lr.Type || prevlr.Direction != lr.Direction || prevlr.AccountId != lr.AccountId || prevlr.Request != lr.Request {
@@ -189,7 +190,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 		if prevlr != nil {
 
 			// It was previously pending, pull the reserved funds from pending_in
-			if prevlr.Status == tdrpc.PENDING {
+			if prevlr.Status == tdrpc.PENDING && lr.Type == tdrpc.BTC {
 				_, err = tx.ExecContext(ctx, `UPDATE account SET pending_in = pending_in - $1 WHERE id = $2`, prevlr.ValueTotal(), prevlr.AccountId)
 				if err != nil {
 					return fmt.Errorf("Could not process in new pending balance: %v", err)
@@ -197,8 +198,8 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 			}
 		}
 
-		// Pending incoming transactions
-		if lr.Status == tdrpc.PENDING {
+		// Pending incoming transactions (but only for BTC) add balance to pending
+		if lr.Status == tdrpc.PENDING && lr.Type == tdrpc.BTC {
 			_, err = tx.ExecContext(ctx, `UPDATE account SET pending_in = pending_in + $1 WHERE id = $2`, lr.ValueTotal(), lr.AccountId)
 			if err != nil {
 				return fmt.Errorf("Could not process in new completed balance: %v", err)

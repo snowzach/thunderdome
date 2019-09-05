@@ -8,7 +8,7 @@ import (
 )
 
 func (suite *DBTestSuite) newTestAccount(id string, balance int64) *tdrpc.Account {
-	account, err := suite.client.AccountSave(suite.ctx, &tdrpc.Account{
+	account, err := suite.client.SaveAccount(suite.ctx, &tdrpc.Account{
 		Id:         id,
 		Address:    "address:" + id,
 		Balance:    balance,
@@ -26,7 +26,7 @@ func (suite *DBTestSuite) TestAccount() {
 	a1 := suite.newTestAccount("testuser1", 0)
 
 	// Fetch it from the database and compare
-	a2, err := suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a2, err := suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
 	suite.Equal(a1, a2)
 
@@ -34,25 +34,25 @@ func (suite *DBTestSuite) TestAccount() {
 	a1.Balance = 1000
 	a1.PendingIn = 2000
 	a1.PendingOut = 2000
-	_, err = suite.client.AccountSave(suite.ctx, a1)
+	_, err = suite.client.SaveAccount(suite.ctx, a1)
 	suite.Nil(err)
 
 	// Fetch and compare again
-	a2, err = suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
 	suite.Equal(a1, a2)
 
 	// Find it by address
-	a3, err := suite.client.AccountGetByAddress(suite.ctx, a1.Address)
+	a3, err := suite.client.GetAccountByAddress(suite.ctx, a1.Address)
 	suite.Nil(err)
 	suite.Equal(a1, a3)
 
 	// Check for missing ID
-	_, err = suite.client.AccountGetByID(suite.ctx, "missingid")
+	_, err = suite.client.GetAccountByID(suite.ctx, "missingid")
 	suite.Equal(store.ErrNotFound, err)
 
 	// Check for missing address
-	_, err = suite.client.AccountGetByAddress(suite.ctx, "missingaddress")
+	_, err = suite.client.GetAccountByAddress(suite.ctx, "missingaddress")
 	suite.Equal(store.ErrNotFound, err)
 
 }

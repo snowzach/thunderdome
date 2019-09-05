@@ -34,18 +34,25 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		return nil, status.Errorf(codes.InvalidArgument, "Request is expired")
 	}
 
-	// Check for zero amount
-	if pr.NumSatoshis == 0 && request.Value == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
-	}
-
 	// Check for mangled amount
 	if pr.NumSatoshis < 0 || request.Value < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
 	}
 
-	// If no value specified, pay the amount in the PayReq
-	if request.Value == 0 {
+	// Check for zero amount
+	if pr.NumSatoshis == 0 {
+		if request.Value == 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "Amount must be specified when paying a zero amount invoice")
+		}
+		// request.Value has the value we will pay already
+
+		// The payment request has a value specified
+	} else {
+		// Ensure the user hasn't tried to specify a value, or if they have, it matches what the payment request is
+		if request.Value != 0 && request.Value != pr.NumSatoshis {
+			return nil, status.Errorf(codes.InvalidArgument, "You can only specify a value for a 0 sat invoice or the value must equal the invoice value of %d", pr.NumSatoshis)
+		}
+		// Force the request value to match the payment request
 		request.Value = pr.NumSatoshis
 	}
 

@@ -46,9 +46,9 @@ func TestAuthFuncOverride(t *testing.T) {
 	sigHexString := hex.EncodeToString(sig.Serialize())
 
 	// Not Found - creeate new account and address
-	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
+	mockStore.On("GetAccountByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
 	// Valid information but CreatedGenerated endpoint should return error
-	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+	_, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 		thunderdome.MetadataAuthPubKeyString, pubKey,
 		thunderdome.MetadataAuthSignature, sigHexString,
 		thunderdome.MetadataAuthTimestamp, timeString,
@@ -64,11 +64,11 @@ func TestAuthFuncOverride(t *testing.T) {
 	assert.Nil(t, err)
 	sigHexString = hex.EncodeToString(sig.Serialize())
 	address := "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm"
-	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
+	mockStore.On("GetAccountByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
 	mockLClient.On("NewAddress", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.NewAddressRequest")).Once().Return(&lnrpc.NewAddressResponse{Address: address}, nil)
-	mockStore.On("AccountSave", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.Account")).Once().
+	mockStore.On("SaveAccount", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.Account")).Once().
 		Return(func(ctx context.Context, a *tdrpc.Account) *tdrpc.Account { return a }, nil)
-	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 		thunderdome.MetadataAuthPubKeyString, pubKey,
 		thunderdome.MetadataAuthSignature, sigHexString,
 		thunderdome.MetadataAuthTimestamp, timeString,
@@ -81,7 +81,7 @@ func TestAuthFuncOverride(t *testing.T) {
 	assert.Equal(t, address, account.Address)
 
 	// Make the request
-	mockStore.On("AccountGetByID", mock.AnythingOfType("*context.valueCtx"), account.Id).Once().Return(account, nil)
+	mockStore.On("GetAccountByID", mock.AnythingOfType("*context.valueCtx"), account.Id).Once().Return(account, nil)
 	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 		thunderdome.MetadataAuthPubKeyString, pubKey,
 		thunderdome.MetadataAuthSignature, sigHexString,

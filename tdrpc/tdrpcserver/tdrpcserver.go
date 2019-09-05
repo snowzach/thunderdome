@@ -55,7 +55,7 @@ func newTDRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (*td
 
 	// Return the server
 	s := &tdRPCServer{
-		logger:   zap.S().With("package", "rpcserver"),
+		logger:   zap.S().With("package", "tdrpc"),
 		store:    store,
 		myPubKey: info.IdentityPubkey,
 		lclient:  lclient,

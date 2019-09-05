@@ -8,10 +8,12 @@ package cmd
 import (
 	"context"
 	"crypto/tls"
+	"git.coinninja.net/backend/cnauth"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/tdrpcserver"
+	"git.coinninja.net/backend/thunderdome/tdrpc/adminrpcserver"
+	"git.coinninja.net/backend/thunderdome/tdrpc/tdrpcserver"
 	"git.coinninja.net/backend/thunderdome/thunderdome"
 	"git.coinninja.net/backend/thunderdome/txmonitor"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -52,17 +54,28 @@ func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
 	return thunderdomeRPCServer, nil
 }
 
-func NewTXMonitor() (*txmonitor.TXMonitor, error) {
+func NewAdminRPCServer() (tdrpc.AdminRPCServer, error) {
 	store := NewStore()
-	clientConn := NewLndGrpcClientConn()
-	txMonitor, err := txmonitor.NewTXMonitor(store, clientConn)
+	client, err := NewCNAuthClient()
 	if err != nil {
 		return nil, err
 	}
-	return txMonitor, nil
+	adminRPCServer, err := adminrpcserver.NewAdminRPCServer(store, client)
+	if err != nil {
+		return nil, err
+	}
+	return adminRPCServer, nil
 }
 
 // wire.go:
+
+// NewTXMonitor will create a new BTC and LN transaction monitor
+func NewTXMonitor() (*txmonitor.TXMonitor, error) {
+	store := NewStore()
+	lndConn := NewLndGrpcClientConn()
+	bloccConn := NewBloccClientConn()
+	return txmonitor.NewTXMonitor(store, lndConn, bloccConn)
+}
 
 // NewStore is the store for the application
 func NewStore() thunderdome.Store {
@@ -132,6 +145,56 @@ func NewLndGrpcClientConn() *grpc.ClientConn {
 	conn, err := grpc.Dial(net.JoinHostPort(viper.GetString("lnd.host"), viper.GetString("lnd.port")), dialOptions...)
 	if err != nil {
 		logger.Fatalw("Could not connect to lnd", "error", err, "host:port", net.JoinHostPort(viper.GetString("lnd.host"), viper.GetString("lnd.port")))
+	}
+
+	return conn
+
+}
+
+func NewCNAuthClient() (*cnauth.Client, error) {
+
+	if viper.GetBool("tdome.disable_auth") {
+		return nil, nil
+	}
+
+	client, err := cnauth.New(context.Background(), viper.GetString("tdome.firebase_credentials_file"))
+	if err != nil {
+		logger.Fatalw("Could not create firebase auth client", "error", err, "credentials_file", viper.GetString("tdome.firebase_credentials_file"))
+	}
+
+	return client, nil
+
+}
+
+func NewBloccClientConn() *grpc.ClientConn {
+
+	if !viper.GetBool("tdome.topup_instant") {
+		return nil
+	}
+
+	dialOptions := []grpc.DialOption{grpc.WithTimeout(10 * time.Second), grpc.WithBlock()}
+
+	if viper.GetBool("blocc.tls") {
+		if viper.GetBool("blocc.tls_insecure") {
+			creds := credentials.NewTLS(&tls.Config{
+				InsecureSkipVerify: true,
+			})
+			dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+		} else {
+
+			creds, err := credentials.NewClientTLSFromFile(viper.GetString("blocc.tls_cert"), viper.GetString("blocc.tls_host"))
+			if err != nil {
+				logger.Fatalw("Could not load credentials", "error", err)
+			}
+			dialOptions = append(dialOptions, grpc.WithTransportCredentials(creds))
+		}
+	} else {
+		dialOptions = append(dialOptions, grpc.WithInsecure())
+	}
+
+	conn, err := grpc.Dial(net.JoinHostPort(viper.GetString("blocc.host"), viper.GetString("blocc.port")), dialOptions...)
+	if err != nil {
+		logger.Fatalw("Could not connect to blocc", "error", err, "host:port", net.JoinHostPort(viper.GetString("blocc.host"), viper.GetString("blocc.port")))
 	}
 
 	return conn

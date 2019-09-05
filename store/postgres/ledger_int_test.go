@@ -76,13 +76,13 @@ func (suite *DBTestSuite) TestProcessLedgerRecordInternal() {
 	suite.Nil(err)
 
 	// Check the balance, should show lesser balance
-	a1, err = suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
 	suite.Equal(a1.PendingIn, int64(0))  // Make sure PendingIn = 0
 	suite.Equal(a1.PendingOut, int64(0)) // Make sure PendingOut = 0
 	suite.Equal(a1.Balance, int64(7))    // Make sure Balance = 7
 
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.PendingIn, int64(0))  // Make sure PendingIn = 0
 	suite.Equal(a2.PendingOut, int64(0)) // Make sure PendingOut = 0

@@ -38,7 +38,7 @@ func TestLedger(t *testing.T) {
 		},
 	}
 
-	mockStore.On("GetLedger", mock.AnythingOfType("*context.valueCtx"), account.Id, map[string]string{"hidden": "false"}, mock.AnythingOfType("time.Time"), 0, -1).Once().Return(lrs, nil)
+	mockStore.On("GetLedger", mock.AnythingOfType("*context.valueCtx"), map[string]string{"account_id": account.Id, "hidden": "false"}, mock.AnythingOfType("time.Time"), 0, 0).Once().Return(lrs, nil)
 
 	// Make the request
 	response, err := s.Ledger(ctx, &tdrpc.LedgerRequest{})
