@@ -74,7 +74,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	}
 
 	// See if we have an account already?
-	account, err := s.store.AccountGetByID(ctx, accountID)
+	account, err := s.store.GetAccountByID(ctx, accountID)
 	if err == store.ErrNotFound {
 
 		// If the endpoint is the CreateGeneratedEndpoint we do not want to auto-create an account. Just return a not found error
@@ -96,13 +96,13 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 		// Save the account
 		account.Address = address.Address
-		account, err = s.store.AccountSave(ctx, account)
+		account, err = s.store.SaveAccount(ctx, account)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "AccountSave Error: %v", err)
+			return nil, status.Errorf(codes.Internal, "SaveAccount Error: %v", err)
 		}
 
 	} else if err != nil {
-		return ctx, status.Errorf(codes.Internal, "AccountGetByID Error: %v", err)
+		return ctx, status.Errorf(codes.Internal, "GetAccountByID Error: %v", err)
 	}
 
 	// Include the account in the context

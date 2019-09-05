@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"git.coinninja.net/backend/blocc/blocc"
 
 	"git.coinninja.net/backend/thunderdome/conf"
 	"git.coinninja.net/backend/thunderdome/store"
@@ -44,7 +47,7 @@ func (txm *TXMonitor) MonitorBTC() {
 		txm.logger.Infow("Listening for transactions...", "monitor", "btc")
 
 		// Catch up on existing transactions
-		// TODO: Optimize what transactions we will fetch
+		// TODO: Optimize what transactions we will fetch by setting addr index
 		txsDetails, err := txm.lclient.GetTransactions(ctx, &lnrpc.GetTransactionsRequest{})
 		if err != nil {
 			txm.logger.Fatalw("Could not GetTransactions", "monitor", "btc", "error", err)
@@ -92,7 +95,7 @@ func (txm *TXMonitor) MonitorBTC() {
 	}
 
 	if txclient != nil {
-		txclient.CloseSend()
+		_ = txclient.CloseSend()
 	}
 	conf.Stop.Done()
 }
@@ -112,6 +115,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 	var foundTx bool
 
 	// Check to see if this has an outbound transaction we know about already
+	// These are transactions being send from Thunderdome and will have the txHash as he id
 	lrOut, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
 	if err == nil {
 		if confirmations > 0 && lrOut.Status != tdrpc.COMPLETED {
@@ -125,7 +129,77 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 		foundTx = true
 	}
 
-	// Parse all of the outputs
+	// If there are no confirmations, we can check to see if this transaction is eligible for instant TopUp.
+	// To be eligible all inputs must be:
+	// - Confirmed
+	// - Sequence >= wire.MaxTxInSequenceNum-1
+	// We must also have a blocc client we can ask
+	var validForInstantTopUp bool = false
+topUp: // Use a for so we can break at any time on failure and drop out of the block
+	for confirmations == 0 && txm.bclient != nil {
+
+		// Build a slice and map of previous transaction ids, deduplicate at the same time
+		idsMap := make(map[string]*blocc.Tx)
+		idsSlice := make([]string, 0)
+		for _, vin := range wTx.TxIn {
+
+			hash := vin.PreviousOutPoint.Hash.String()
+
+			// If any the of the inputs have a sequence less than MaxTxInSequenceNum - 1, they could be replaced and are not valid
+			if vin.Sequence < wire.MaxTxInSequenceNum-1 {
+				txm.logger.Infow("Invalid sequence for instant top-up", "hash", txHash, "input_hash", hash, "sequence", vin.Sequence)
+				break topUp
+			}
+
+			// Dedup
+			if _, ok := idsMap[hash]; ok {
+				continue
+			}
+
+			idsSlice = append(idsSlice, hash)
+			idsMap[hash] = nil
+		}
+
+		// Get the transactions
+		txns, err := txm.bclient.FindTransactions(ctx, &blocc.Find{
+			Symbol: blocc.SymbolBTC,
+			Ids:    idsSlice,
+			Count:  int64(len(idsSlice)),
+		})
+		if err != nil {
+			txm.logger.Errorw("Unable to fetch input transactions for instant top-up", "error", err)
+			break
+		}
+
+		// Parse them out into the map for lookup
+		for _, bloccTx := range txns.Transactions {
+			idsMap[bloccTx.TxId] = bloccTx
+		}
+
+		// Check the input transactions
+		for hash, bloccTx := range idsMap {
+
+			// Transaction was missing from blocc
+			if bloccTx == nil {
+				txm.logger.Infow("Missing input for instant top-up", "hash", txHash, "input_hash", hash)
+				break topUp
+			}
+
+			// This transaction is still unconfirmed
+			if bloccTx.BlockHeight == blocc.HeightUnknown {
+				txm.logger.Infow("Unconfirmed input for instant top-up", "hash", txHash, "input_hash", hash)
+				break topUp
+			}
+
+		}
+
+		// Everything succeeded, set to true, break out of for loop
+		validForInstantTopUp = true
+		txm.logger.Infow("Transaction eligible for instant top-up", "hash", txHash)
+		break
+	}
+
+	// Parse all of inbound to thunderdome transactions. These are transaction outputs destined for an address in thunderdome
 	for height, vout := range wTx.TxOut {
 
 		// Attempt to parse simple addresses out of the script
@@ -144,11 +218,11 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 		txm.logger.Debugw("Processing TxOut", "height", height, "addresses", addresses[0].String(), "value", vout.Value)
 
 		// Find the associated account
-		account, err := txm.store.AccountGetByAddress(ctx, addresses[0].String())
+		account, err := txm.store.GetAccountByAddress(ctx, addresses[0].String())
 		if err == store.ErrNotFound {
 			continue
 		} else if err != nil {
-			txm.logger.Fatalw("AccountGetByAddress Error", "monitor", "btc", "error", err)
+			txm.logger.Fatalw("GetAccountByAddress Error", "monitor", "btc", "error", err)
 		}
 
 		// Handle fee free topup
@@ -169,7 +243,10 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 			Direction: tdrpc.IN,
 			Value:     vout.Value,
 		}
-		if confirmations > 0 {
+		// No confirmations, is not replace by fee and instant topup is enabled
+		if confirmations == 0 && validForInstantTopUp {
+			lr.Status = tdrpc.COMPLETED
+		} else if confirmations > 0 {
 			lr.Status = tdrpc.COMPLETED
 		}
 

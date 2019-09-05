@@ -16,14 +16,20 @@ import (
 )
 
 // GetLedger returns the ledger for a user
-func (c *Client) GetLedger(ctx context.Context, accountID string, filters map[string]string, after time.Time, offset int, limit int) ([]*tdrpc.LedgerRecord, error) {
+func (c *Client) GetLedger(ctx context.Context, filter map[string]string, after time.Time, offset int, limit int) ([]*tdrpc.LedgerRecord, error) {
 
 	var queryClause string
-	var queryParams = []interface{}{accountID}
+	var queryParams = []interface{}{}
 
 	// Validate the filters
-	for filter, value := range filters {
+	for filter, value := range filter {
 		switch filter {
+		case "account_id":
+			if value == "" {
+				return nil, fmt.Errorf("Invalid value for account_id")
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND account_id = $%d", len(queryParams))
 		case "status":
 			// Validate
 			if err := new(tdrpc.LedgerRecord_Status).Scan(value); err != nil {
@@ -86,6 +92,9 @@ func (c *Client) GetLedger(ctx context.Context, accountID string, filters map[st
 		queryClause += fmt.Sprintf(" AND created_at >= $%d", len(queryParams))
 	}
 
+	// Order By
+	queryClause += " ORDER BY created_at DESC"
+
 	if limit > 0 {
 		queryClause += fmt.Sprintf(" LIMIT %d", limit)
 	}
@@ -94,7 +103,7 @@ func (c *Client) GetLedger(ctx context.Context, accountID string, filters map[st
 	}
 
 	var lrs = make([]*tdrpc.LedgerRecord, 0)
-	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE account_id = $1`+queryClause, queryParams...)
+	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE 1=1`+queryClause, queryParams...)
 	if err != nil {
 		return lrs, err
 	}
@@ -257,13 +266,13 @@ func (c *Client) ExpireLedgerRequests(ctx context.Context) error {
 
 }
 
-// Returns the difference in two ledger records suitable for logging
-func getLedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) []interface{} {
+// LedgerDeltaLog logs the difference between 2 ledger records
+func (c *Client) LedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) {
 
 	ret := make([]interface{}, 0)
 
 	if lr1 == nil || lr2 == nil {
-		return ret
+		return
 	}
 
 	if lr1.AccountId != lr2.AccountId {
@@ -303,6 +312,8 @@ func getLedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) []interface{} {
 		ret = append(ret, "error", fmt.Sprintf("%v->%v", lr1.Error, lr2.Error))
 	}
 
-	return ret
+	if len(ret) > 0 {
+		c.logger.Debugw("ProcessLedgerRecord Delta", ret...)
+	}
 
 }

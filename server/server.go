@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -26,12 +25,9 @@ import (
 	"github.com/snowzach/certtools/autocert"
 	config "github.com/spf13/viper"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
@@ -47,7 +43,7 @@ type Server struct {
 
 // This is the default authentication function, it's not actually going to get used because we will override it
 func authenticate(ctx context.Context) (context.Context, error) {
-	return nil, status.Errorf(codes.Unauthenticated, "Access denied")
+	return ctx, nil
 }
 
 // When starting to listen, we will reigster gateway functions
@@ -61,48 +57,6 @@ func New() (*Server, error) {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
-
-	// Log Requests
-	if config.GetBool("server.log_requests") {
-		r.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				start := time.Now()
-				var requestID string
-				if reqID := r.Context().Value(middleware.RequestIDKey); reqID != nil {
-					requestID = reqID.(string)
-				}
-				ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
-				next.ServeHTTP(ww, r)
-
-				// Don't log the version endpoint, it's too noisy
-				if r.RequestURI == "/version" {
-					return
-				}
-
-				latency := time.Since(start)
-
-				fields := []zapcore.Field{
-					zap.Int("status", ww.Status()),
-					zap.Duration("took", latency),
-					zap.String("request", r.RequestURI),
-					zap.String("method", r.Method),
-					zap.String("package", "server.request"),
-				}
-				if requestID != "" {
-					fields = append(fields, zap.String("request-id", requestID))
-				}
-				// If we have an x-Forwarded-For header, use that for the remote
-				if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
-					fields = append(fields, zap.String("remote", forwardedFor))
-				} else {
-					fields = append(fields, zap.String("remote", r.RemoteAddr))
-				}
-				zap.L().Info("API Request", fields...)
-			})
-		})
-	}
-
-	// CORS Config
 	r.Use(cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{http.MethodHead, http.MethodOptions, http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch},
@@ -117,6 +71,20 @@ func New() (*Server, error) {
 	}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
 		grpc_auth.UnaryServerInterceptor(authenticate),
+	}
+
+	// Log Requests - Use appropriate format depending on the encoding
+	if config.GetBool("server.log_requests") {
+		switch config.GetString("logger.encoding") {
+		case "stackdriver":
+			unaryInterceptors = append(unaryInterceptors, loggerGRPCUnaryStackdriver())
+			streamInterceptors = append(streamInterceptors, loggerGRPCStreamStackdriver())
+			r.Use(loggerHTTPMiddlewareStackdriver())
+		default:
+			unaryInterceptors = append(unaryInterceptors, loggerGRPCUnaryDefault())
+			streamInterceptors = append(streamInterceptors, loggerGRPCStreamDefault())
+			r.Use(loggerHTTPMiddlewareDefault())
+		}
 	}
 
 	// GRPC Server Options

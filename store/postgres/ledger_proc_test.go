@@ -31,10 +31,10 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 	suite.Equal(lr1, lr2)
 
 	// Check the current balance
-	a1, err = suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
-	suite.Equal(a1.Balance, int64(0))    // No Balance
-	suite.Equal(a1.PendingIn, int64(10)) // Make sure PendingIn = 10
+	suite.Equal(a1.Balance, int64(0))   // No Balance
+	suite.Equal(a1.PendingIn, int64(0)) // Make sure PendingIn = 0 - Not adjusted
 
 	// Complete the inbound transaction
 	lr1.Status = tdrpc.COMPLETED
@@ -42,10 +42,10 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 	suite.Nil(err)
 
 	// Check the current balance -
-	a1, err = suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
 	suite.Equal(a1.Balance, int64(10))  // No Balance
-	suite.Equal(a1.PendingIn, int64(0)) // Make sure PendingIn = 10
+	suite.Equal(a1.PendingIn, int64(0)) // Make sure PendingIn = 0
 
 	// Atempt to set it back to pending should fail
 	lr1.Status = tdrpc.PENDING
@@ -70,10 +70,10 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 	suite.Nil(err)
 
 	// Check the current balance -
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
-	suite.Equal(a2.PendingIn, int64(10)) // Make sure PendingIn = 10
-	suite.Equal(a2.Balance, int64(0))    // Make sure Balance = 0
+	suite.Equal(a2.PendingIn, int64(0)) // Make sure PendingIn = 0 - Not adjusted
+	suite.Equal(a2.Balance, int64(0))   // Make sure Balance = 0
 
 	// Fail the request - this essentially makes it no longer exist
 	lr2.Status = tdrpc.FAILED
@@ -81,7 +81,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 	suite.Nil(err)
 
 	// Check the current balance -
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.Balance, int64(0))   // Make sure Balance = 0
 	suite.Equal(a2.PendingIn, int64(0)) // Make sure PendingIn = 0 // request removed
@@ -92,10 +92,10 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 	suite.Nil(err)
 
 	// Check the balance again, should show pending once more
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
-	suite.Equal(a2.PendingIn, int64(10)) // Make sure PendingIn = 10
-	suite.Equal(a2.Balance, int64(0))    // Make sure Balance = 0
+	suite.Equal(a2.PendingIn, int64(0)) // Make sure PendingIn = 0 - Not adjusted
+	suite.Equal(a2.Balance, int64(0))   // Make sure Balance = 0
 
 	// This time complete the transaction but with a lesser value
 	lr2.Status = tdrpc.COMPLETED
@@ -104,7 +104,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 	suite.Nil(err)
 
 	// Check the balance, should show lesser balance
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.PendingIn, int64(0)) // Make sure PendingIn = 0
 	suite.Equal(a2.Balance, int64(5))   // Make sure Balance = 5
@@ -146,7 +146,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Equal(lr1, lr2)
 
 	// Check the current balance
-	a1, err = suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
 	suite.Equal(a1.Balance, int64(5))    // = 5
 	suite.Equal(a1.PendingOut, int64(5)) // Make sure PendingOut = 5
@@ -157,7 +157,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Nil(err)
 
 	// Check the current balance -
-	a1, err = suite.client.AccountGetByID(suite.ctx, a1.Id)
+	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
 	suite.Equal(a1.Balance, int64(5))   // = 5
 	suite.Equal(a1.PendingIn, int64(0)) // back to 0
@@ -185,7 +185,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Nil(err)
 
 	// Check the current balance -
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.PendingOut, int64(10)) // Make sure PendingOut = 10
 	suite.Equal(a2.Balance, int64(2))     // Make sure Balance = 2
@@ -196,7 +196,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Nil(err)
 
 	// Check the current balance -
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.Balance, int64(12))   // Make sure Balance = 12
 	suite.Equal(a2.PendingOut, int64(0)) // Make sure PendingOut = 0 // request removed
@@ -207,7 +207,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Nil(err)
 
 	// Check the balance again, should show pending once more
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.PendingOut, int64(10)) // Make sure PendingOut = 12
 	suite.Equal(a2.Balance, int64(2))     // Make sure Balance = 2
@@ -219,7 +219,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Nil(err)
 
 	// Check the balance, should show lesser balance
-	a2, err = suite.client.AccountGetByID(suite.ctx, a2.Id)
+	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
 	suite.Equal(a2.PendingOut, int64(0)) // Make sure PendingOut = 0
 	suite.Equal(a2.Balance, int64(7))    // Make sure Balance = 7

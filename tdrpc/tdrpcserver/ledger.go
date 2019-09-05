@@ -25,20 +25,19 @@ func (s *tdRPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) 
 		after = *request.After
 	}
 
-	if request.Count == 0 {
-		request.Count = -1
-	}
-
 	if request.Filter == nil {
 		request.Filter = make(map[string]string)
 	}
+
+	// Always force this users account id
+	request.Filter["account_id"] = account.Id
 
 	// If not specified, don't show hidden entries
 	if _, ok := request.Filter["hidden"]; !ok {
 		request.Filter["hidden"] = "false"
 	}
 
-	lrs, err := s.store.GetLedger(ctx, account.Id, request.Filter, after, int(request.Start), int(request.Count))
+	lrs, err := s.store.GetLedger(ctx, request.Filter, after, int(request.Offset), int(request.Limit))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Error on GetLedger: %v", err)
 	}

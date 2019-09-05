@@ -1,0 +1,43 @@
+syntax="proto3";
+package tdrpc;
+
+import "tdrpc/tdrpc.proto";
+import "google/api/annotations.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+option go_package = "git.coinninja.net/backend/thunderdome/tdrpc";
+
+option (gogoproto.enum_stringer_all) = false;
+
+service AdminRPC {
+
+    // GetUser Accounts
+    rpc Accounts(AdminAccountsRequest) returns (AdminAccountsResponse) {
+        option (google.api.http) = {
+            get: "/admin/accounts"
+        };
+    }
+ 
+    // Decode a payment request
+    rpc Ledger(LedgerRequest) returns (LedgerResponse) {
+        option (google.api.http) = {
+            get: "/admin/ledger"
+        };
+    }
+
+}
+
+// AdminAccountsRequest is used to request one or more accounts
+message AdminAccountsRequest {
+    // Filter values (id, address)
+    map<string, string> filter = 1;
+    // Offset, Limit for pagination
+    int32 offset = 3;
+    int32 limit = 4;
+}
+
+message AdminAccountsResponse {
+    // The list of accounts
+    repeated Account accounts = 1;
+}

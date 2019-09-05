@@ -88,7 +88,7 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, _ *emptypb.Empty) (*t
 		return &tdrpc.CreateResponse{
 			Request: lr.Request,
 		}, nil
-	} else if err != nil && err != store.ErrNotFound {
+	} else if err != store.ErrNotFound {
 		// Some other error
 		return nil, status.Errorf(codes.Internal, "Could not get record: %v", err)
 	}
