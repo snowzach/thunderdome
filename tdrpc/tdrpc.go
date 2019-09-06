@@ -1,8 +1,9 @@
 package tdrpc
 
+// These two endpoints are able to be called on behalf of a user using a privileged key
 const (
-	// This is the path to the CreatedGenerated endpoint
 	CreateGeneratedEndpoint = "/tdrpc.ThunderdomeRPC/CreateGenerated"
+	AccountEndpoint         = "/tdrpc.ThunderdomeRPC/Account"
 )
 
 // ValueTotal will return the total value of the transaction

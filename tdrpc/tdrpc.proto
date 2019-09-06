@@ -116,7 +116,7 @@ service ThunderdomeRPC {
     }
 
     // Create a auto-generated payment request with no value. If one exist already, return that.
-    rpc CreateGenerated(google.protobuf.Empty) returns (CreateResponse) {
+    rpc CreateGenerated(CreateGeneratedRequest) returns (CreateResponse) {
         option (google.api.http) = {
             get: "/create"
         };
@@ -153,6 +153,10 @@ message Account {
     int64 pending_out = 7 [
         (gogoproto.jsontag) = "pending_out",(gogoproto.moretags) = "db:\"pending_out\"",
         (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
+    ];
+    // Is the account locked
+    bool locked = 8 [
+        (gogoproto.jsontag) = "locked"
     ];
 }
 
@@ -402,4 +406,10 @@ message WithdrawRequest {
 message WithdrawResponse {
     // The withdraw request result
     LedgerRecord result = 1;    
+}
+
+// CreateGenerated Request
+message CreateGeneratedRequest {
+    // Allow generated requests when the user account is locked
+    bool allow_locked = 1;
 }

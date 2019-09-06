@@ -19,8 +19,6 @@ import (
 
 const (
 	AccountTypePubKey = "pubkey"
-
-	Meta
 )
 
 var (
@@ -29,6 +27,11 @@ var (
 
 // AuthFuncOverride will handle authentication
 func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+
+	// Returns a 503
+	if config.GetBool("tdome.disabled") {
+		return ctx, status.Errorf(codes.Unavailable, "Service Unavailable")
+	}
 
 	// Get request metadata
 	md, ok := metadata.FromIncomingContext(ctx)
@@ -46,21 +49,28 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
 	sig := mdfirst(md, thunderdome.MetadataAuthSignature)
 
-	// If we're calling the CreateGeneric endpoint and the sig is set to the create_generic_secret we can skip auth
-	// If the secret is not set, the CreateGeneric endpoint cannot be called
-	// This allows trusted sources, like btc-api to generate invoices
-	if fullMethodName != tdrpc.CreateGeneratedEndpoint || sig != config.GetString("tdome.create_generic_secret") || config.GetString("tdome.create_generic_secret") == "" {
-		// If auth is disabled
-		if !config.GetBool("tdome.disable_auth") {
-			if ts == "" || sig == "" {
-				return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
-			}
-			// Verify the signature
-			err := ValidateTimestampSigntature(ts, pubKeyString, sig, time.Now())
-			if err != nil {
-				return ctx, status.Errorf(codes.PermissionDenied, err.Error())
-			}
+	// This handles authentication, there are several cases, break from the for loop when Authenticated
+	for {
+		// Auth is disabled
+		if config.GetBool("tdome.disable_auth") {
+			break // Authenticated
 		}
+
+		// We're requesting tdrpc.CreateGeneratedEndpoint
+		// The signature is supplied and is = tdome.agent_signature"
+		if (fullMethodName == tdrpc.CreateGeneratedEndpoint) && sig != "" && sig == config.GetString("tdome.agent_signature") {
+			// Add the agent flag to the context
+			ctx = context.WithValue(ctx, contextKey(contextKeyAgent), true)
+			break // Authenticated
+		}
+
+		// Otherwise require a valid signature
+		err := ValidateTimestampSigntature(ts, pubKeyString, sig, time.Now())
+		if err != nil {
+			return ctx, status.Errorf(codes.PermissionDenied, err.Error())
+		}
+
+		break // Authenticated
 	}
 
 	// The accountID will account for different methods of logging in, right now we support public key
@@ -77,7 +87,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	account, err := s.store.GetAccountByID(ctx, accountID)
 	if err == store.ErrNotFound {
 
-		// If the endpoint is the CreateGeneratedEndpoint we do not want to auto-create an account. Just return a not found error
+		// We will never auto-create an account for the CreateGeneratedEndpoint
 		if fullMethodName == tdrpc.CreateGeneratedEndpoint {
 			return ctx, status.Errorf(codes.NotFound, "account does not exist")
 		}
@@ -85,6 +95,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		// Create a new account
 		account = new(tdrpc.Account)
 		account.Id = accountID
+		account.Locked = config.GetBool("tdome.lock_new_accounts")
 
 		// Fetch an unused address from the lightning node
 		address, err := s.lclient.NewAddress(ctx, &lnrpc.NewAddressRequest{

@@ -37,6 +37,9 @@ func init() {
 	config.SetDefault("server.certfile", "server.crt")
 	config.SetDefault("server.keyfile", "server.key")
 	config.SetDefault("server.log_requests", true)
+	config.SetDefault("server.log_disabled_http", []string{"/version"})
+	config.SetDefault("server.log_disabled_grpc", []string{"/versionrpc.VersionRPC/Version"})
+	config.SetDefault("server.log_disabled_grpc_stream", []string{})
 	config.SetDefault("server.profiler_enabled", false)
 	config.SetDefault("server.profiler_path", "/debug")
 
@@ -69,9 +72,11 @@ func init() {
 	config.SetDefault("blocc.tls_cert", "tls.cert")
 	config.SetDefault("blocc.tls_host", "blocc")
 
+	config.SetDefault("tdome.disabled", false)
 	config.SetDefault("tdome.min_withdraw", 40000)
 	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
 	config.SetDefault("tdome.disable_auth", false)
+	config.SetDefault("tdome.lock_new_accounts", false)
 	config.SetDefault("tdome.firebase_credentials_file", "")
 	config.SetDefault("tdome.processing_fee_rate", 0.0)
 	config.SetDefault("tdome.withdraw_fee_rate", 1.0)
@@ -80,7 +85,7 @@ func init() {
 	config.SetDefault("tdome.topup_fee_free", false)
 	config.SetDefault("tdome.topup_fee_free_limit", 40000)
 	config.SetDefault("tdome.default_request_expires", 86400)
-	config.SetDefault("tdome.create_generic_secret", "") // If left blank, it cannot be used
-	config.SetDefault("tdome.create_generic_expiration", 172800)
+	config.SetDefault("tdome.agent_signature", "") // If left blank, it cannot be used
+	config.SetDefault("tdome.create_generated_expires", 2592000)
 
 }
