@@ -20,23 +20,20 @@
         "operationId": "GetAccount",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcAccount"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
@@ -51,26 +48,33 @@
         "operationId": "CreateGenerated",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcCreateResponse"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
+        "parameters": [
+          {
+            "name": "allow_locked",
+            "description": "Allow generated requests when the user account is locked.",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
         "tags": [
           "ThunderdomeRPC"
         ]
@@ -80,23 +84,20 @@
         "operationId": "Create",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcCreateResponse"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
@@ -121,23 +122,20 @@
         "operationId": "Decode",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcDecodeResponse"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
@@ -162,23 +160,20 @@
         "operationId": "Ledger",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcLedgerResponse"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
@@ -201,7 +196,6 @@
           },
           {
             "name": "limit",
-            "description": "TEST.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -219,23 +213,20 @@
         "operationId": "Pay",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcPayResponse"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
@@ -260,23 +251,20 @@
         "operationId": "Withdraw",
         "responses": {
           "200": {
-            "description": "",
+            "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/tdrpcWithdrawResponse"
             }
           },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {
-              "title": "TEST"
-            }
+            "schema": {}
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
               "type": "string",
-              "format": "string",
-              "title": "TEST"
+              "format": "string"
             }
           }
         },
@@ -321,8 +309,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "TEST"
+          "type": "string"
         },
         "created_at": {
           "type": "string",
@@ -352,6 +339,11 @@
           "type": "integer",
           "format": "int64",
           "title": "The current pending outgoing balance"
+        },
+        "locked": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Is the account locked"
         }
       },
       "title": "Account"
@@ -436,8 +428,7 @@
         },
         "cltv_expiry": {
           "type": "string",
-          "format": "int64",
-          "title": "TEST"
+          "format": "int64"
         },
         "route_hints": {
           "type": "array",
@@ -453,28 +444,23 @@
       "type": "object",
       "properties": {
         "node_id": {
-          "type": "string",
-          "title": "TEST"
+          "type": "string"
         },
         "chan_id": {
           "type": "string",
-          "format": "uint64",
-          "title": "TEST"
+          "format": "uint64"
         },
         "fee_base_msat": {
           "type": "integer",
-          "format": "int64",
-          "title": "TEST"
+          "format": "int64"
         },
         "fee_proportional_millionths": {
           "type": "integer",
-          "format": "int64",
-          "title": "TEST"
+          "format": "int64"
         },
         "cltv_expiry_delta": {
           "type": "integer",
-          "format": "int64",
-          "title": "TEST"
+          "format": "int64"
         }
       },
       "title": "Hop Hint"

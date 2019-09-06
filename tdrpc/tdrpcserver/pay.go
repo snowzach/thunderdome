@@ -22,6 +22,10 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		return nil, status.Errorf(codes.Internal, "Missing Account")
 	}
 
+	if account.Locked {
+		return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
+	}
+
 	// Decode the Request
 	pr, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: request.Request})
 	if err != nil {

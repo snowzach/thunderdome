@@ -104,8 +104,6 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 	// Since this is an internal payment, we will need to create a new IN record in case someone pays the payment request anyhow
 	// This will also prevent double payment of the request internally
 	receiver.Id = internalID
-	origReceiverValue := receiver.Value
-	receiver.Value = 0 // This avoids screwing up the pending_in balance
 	err = c.processLedgerRecord(ctx, tx, &receiver)
 	if err != nil {
 		return nil, err
@@ -134,8 +132,8 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 		return nil, fmt.Errorf("Could not process sender pending_out: %v", err)
 	}
 
-	// Update the receiver balance
-	_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1, pending_in = pending_in - $2 WHERE id = $3`, sender.ValueTotal(), origReceiverValue, receiver.AccountId)
+	// Update the receiver balance, unlock the account if it is
+	_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1, locked = false WHERE id = $2`, sender.ValueTotal(), receiver.AccountId)
 	if err != nil {
 		return nil, fmt.Errorf("Could not process receiver balance: %v", err)
 	}

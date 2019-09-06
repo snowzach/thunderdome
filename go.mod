@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.45.0 // indirect
-	git.coinninja.net/backend/blocc v1.1.7
+	git.coinninja.net/backend/blocc v1.1.8
 	git.coinninja.net/backend/cnauth v0.1.1
 	git.schwanenlied.me/yawning/bsaes.git v0.0.0-20190320102049-26d1add596b6 // indirect
 	github.com/Microsoft/go-winio v0.4.14 // indirect
@@ -82,6 +82,7 @@ require (
 	github.com/rs/xid v1.2.1
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/snowzach/certtools v1.0.2
+	github.com/snowzach/gogrpcapi v0.0.0-20190906192732-41c23335a0d0
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
@@ -99,9 +100,8 @@ require (
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39 // indirect
 	golang.org/x/mobile v0.0.0-20190830201351-c6da95954960 // indirect
 	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
-	golang.org/x/sys v0.0.0-20190904154756-749cb33beabd // indirect
 	golang.org/x/tools v0.0.0-20190903163617-be0da057c5e3 // indirect
-	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+	google.golang.org/genproto v0.0.0-20190905072037-92dd089d5514
 	google.golang.org/grpc v1.23.0
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/macaroon-bakery.v2 v2.1.0 // indirect

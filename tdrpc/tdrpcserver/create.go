@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"time"
 
-	emptypb "github.com/golang/protobuf/ptypes/empty"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
@@ -22,6 +21,10 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 	account := getAccount(ctx)
 	if account == nil {
 		return nil, status.Errorf(codes.Internal, "Missing Account")
+	}
+
+	if account.Locked {
+		return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
 	}
 
 	if request.Value < 0 {
@@ -73,12 +76,24 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 }
 
 // CreateGenerated makes a payment request with no value. If one exists already, it will be returned.
-func (s *tdRPCServer) CreateGenerated(ctx context.Context, _ *emptypb.Empty) (*tdrpc.CreateResponse, error) {
+func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.CreateGeneratedRequest) (*tdrpc.CreateResponse, error) {
 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
 		return nil, status.Errorf(codes.Internal, "Missing Account")
+	}
+
+	// If it's locked
+	if account.Locked {
+		// If we're not the agent, access denied
+		if !isAgent(ctx) {
+			return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
+		}
+		// If we don't specifically allow locked accounts, return not found
+		if !request.AllowLocked {
+			return nil, status.Errorf(codes.NotFound, "account does not exist")
+		}
 	}
 
 	// See if we already have an existing invoice
@@ -93,7 +108,7 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, _ *emptypb.Empty) (*t
 		return nil, status.Errorf(codes.Internal, "Could not get record: %v", err)
 	}
 
-	expirationSeconds := config.GetInt64("tdome.create_generic_expiration")
+	expirationSeconds := config.GetInt64("tdome.create_generated_expires")
 	expiresAt := time.Now().UTC().Add(time.Duration(expirationSeconds) * time.Second)
 	memo := "Generated request"
 

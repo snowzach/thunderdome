@@ -25,6 +25,10 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 		return nil, status.Errorf(codes.Internal, "Missing Account")
 	}
 
+	if account.Locked {
+		return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
+	}
+
 	// What we charge to withdraw (percentage)
 	withdrawFeeRate := config.GetFloat64("tdome.withdraw_fee_rate") / 100.0
 
@@ -35,8 +39,8 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 		// Estimate the base value based on an estimated fee of 2000 sats and the withdraw fee rate
 		// We need this to determine the SatPerByte below
 		request.Value = int64(float64(account.Balance-2000) / (1.0 + withdrawFeeRate))
-	
-	// Check for mangled amount
+
+		// Check for mangled amount
 	} else if request.Value < config.GetInt64("tdome.min_withdraw") {
 		return nil, status.Errorf(codes.InvalidArgument, "Withdraw value must be at least %d satoshis", config.GetInt64("tdome.min_withdraw"))
 	}
@@ -52,9 +56,9 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 			}
 			// We're going to use an estimator of 6 blocks to determine the transaction size
 			// We can then use our fee rate to determine how much to charge the user
-			request.Blocks = 6 
+			request.Blocks = 6
 		}
-	// Blocks != 0, if SatPerByte also != 0, error
+		// Blocks != 0, if SatPerByte also != 0, error
 	} else if request.SatPerByte != 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "You must specify blocks or sat_per_byte but not both")
 	} else if request.Blocks < 0 || request.Blocks > 144 {
@@ -86,8 +90,8 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 
 	// If this is an account sweep, we now know the exact networkFee at this point, update all the values to ensure the account is empty
 	if accountSweep {
-		processingFee = int64(float64(account.Balance-networkFee) * withdrawFeeRate)		
-		request.Value = account.Balance-networkFee-processingFee
+		processingFee = int64(float64(account.Balance-networkFee) * withdrawFeeRate)
+		request.Value = account.Balance - networkFee - processingFee
 	}
 
 	// Generate a random hex string to use as a temporary identifier to reserve funds

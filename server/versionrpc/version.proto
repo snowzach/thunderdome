@@ -1,14 +1,13 @@
 syntax="proto3";
-package server;
+package versionrpc;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-option go_package = "git.coinninja.net/backend/thunderdome/server/rpc";
+option go_package = "git.coinninja.net/backend/thunderdome/server/versionrpc";
 
 service VersionRPC {
 
-    // Get the version
     rpc Version(google.protobuf.Empty) returns (VersionResponse) {
         option (google.api.http) = {
             get: "/version"
@@ -17,8 +16,6 @@ service VersionRPC {
 
 }
 
-// Version Response
 message VersionResponse {
-    // The version
     string version = 1;
 }
