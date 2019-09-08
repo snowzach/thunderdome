@@ -84,17 +84,18 @@ func (c *Client) GetAccountByAddress(ctx context.Context, address string) (*tdrp
 func (c *Client) SaveAccount(ctx context.Context, account *tdrpc.Account) (*tdrpc.Account, error) {
 
 	err := c.db.GetContext(ctx, account, `
-		INSERT INTO account (id, created_at, updated_at, address, balance, pending_in, pending_out)
-		VALUES($1, NOW(), NOW(), $2, $3, $4, $5)
+		INSERT INTO account (id, created_at, updated_at, address, balance, pending_in, pending_out, locked)
+		VALUES($1, NOW(), NOW(), $2, $3, $4, $5, $6)
 		ON CONFLICT (id) DO UPDATE
 		SET
 		updated_at = NOW(),
 		address = $2,
 		balance = $3,
 		pending_in = $4,
-		pending_out = $5
+		pending_out = $5,
+		locked = $6
 		RETURNING *
-	`, account.Id, account.Address, account.Balance, account.PendingIn, account.PendingOut)
+	`, account.Id, account.Address, account.Balance, account.PendingIn, account.PendingOut, account.Locked)
 	if err != nil {
 		return account, err
 	}

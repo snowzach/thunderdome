@@ -3,8 +3,8 @@ module git.coinninja.net/backend/thunderdome
 go 1.12
 
 require (
-	cloud.google.com/go v0.45.0 // indirect
-	git.coinninja.net/backend/blocc v1.1.7
+	cloud.google.com/go v0.45.1 // indirect
+	git.coinninja.net/backend/blocc v1.1.8
 	git.coinninja.net/backend/cnauth v0.1.1
 	git.schwanenlied.me/yawning/bsaes.git v0.0.0-20190320102049-26d1add596b6 // indirect
 	github.com/Microsoft/go-winio v0.4.14 // indirect
@@ -18,7 +18,7 @@ require (
 	github.com/blendle/zapdriver v1.1.6
 	github.com/btcsuite/btcd v0.0.0-20190824003749-130ea5bddde3
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/btcsuite/btcwallet v0.0.0-20190814023431-505acf51507f // indirect
+	github.com/btcsuite/btcwallet v0.0.0-20190906013808-ae43a2a200e9 // indirect
 	github.com/containerd/containerd v1.2.8 // indirect
 	github.com/coreos/etcd v3.3.15+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -62,7 +62,6 @@ require (
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/kshvakov/clickhouse v1.3.11 // indirect
 	github.com/lib/pq v1.2.0
-	github.com/lightninglabs/neutrino v0.0.0-20190830072513-0887a5813eb1 // indirect
 	github.com/lightningnetwork/lightning-onion v0.0.0-20190808221659-0c0c9dbf17ea // indirect
 	github.com/lightningnetwork/lnd v0.7.1-beta.0.20190807225126-ea77ff91c221
 	github.com/ltcsuite/ltcutil v0.0.0-20190507133322-23cdfa9fcc3d // indirect
@@ -95,13 +94,15 @@ require (
 	gitlab.com/NebulousLabs/go-upnp v0.0.0-20181011194642-3a71999ed0d3 // indirect
 	go.opencensus.io v0.22.1 // indirect
 	go.uber.org/zap v1.10.0
+	golang.org/x/crypto v0.0.0-20190907121410-71b5226ff739 // indirect
 	golang.org/x/exp v0.0.0-20190829153037-c13cbed26979 // indirect
 	golang.org/x/image v0.0.0-20190902063713-cb417be4ba39 // indirect
 	golang.org/x/mobile v0.0.0-20190830201351-c6da95954960 // indirect
 	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
-	golang.org/x/sys v0.0.0-20190904154756-749cb33beabd // indirect
+	golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03 // indirect
 	golang.org/x/tools v0.0.0-20190903163617-be0da057c5e3 // indirect
-	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+	google.golang.org/api v0.10.0 // indirect
+	google.golang.org/genproto v0.0.0-20190905072037-92dd089d5514
 	google.golang.org/grpc v1.23.0
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/macaroon-bakery.v2 v2.1.0 // indirect

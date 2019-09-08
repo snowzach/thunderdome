@@ -1,4 +1,4 @@
-package server
+package versionrpcserver
 
 import (
 	"context"
@@ -11,11 +11,8 @@ import (
 
 func TestVersionGet(t *testing.T) {
 
-	// Mock Store and server
-	s, err := New()
-	assert.Nil(t, err)
-
-	response, err := s.Version(context.Background(), nil)
+	var vs versionRPCServer
+	response, err := vs.Version(context.Background(), nil)
 	assert.Nil(t, err)
 	assert.Equal(t, conf.GitVersion, response.Version)
 

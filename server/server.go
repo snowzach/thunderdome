@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
 	"git.coinninja.net/backend/thunderdome/thunderdome"
@@ -77,13 +78,13 @@ func New() (*Server, error) {
 	if config.GetBool("server.log_requests") {
 		switch config.GetString("logger.encoding") {
 		case "stackdriver":
-			unaryInterceptors = append(unaryInterceptors, loggerGRPCUnaryStackdriver())
-			streamInterceptors = append(streamInterceptors, loggerGRPCStreamStackdriver())
-			r.Use(loggerHTTPMiddlewareStackdriver())
+			unaryInterceptors = append(unaryInterceptors, loggerGRPCUnaryStackdriver(config.GetBool("server.log_requests_body"), config.GetStringSlice("server.log_disabled_grpc")))
+			streamInterceptors = append(streamInterceptors, loggerGRPCStreamStackdriver(config.GetStringSlice("server.log_disabled_grpc_stream")))
+			r.Use(loggerHTTPMiddlewareStackdriver(config.GetBool("server.log_requests_body"), config.GetStringSlice("server.log_disabled_http")))
 		default:
-			unaryInterceptors = append(unaryInterceptors, loggerGRPCUnaryDefault())
-			streamInterceptors = append(streamInterceptors, loggerGRPCStreamDefault())
-			r.Use(loggerHTTPMiddlewareDefault())
+			unaryInterceptors = append(unaryInterceptors, loggerGRPCUnaryDefault(config.GetBool("server.log_requests_body"), config.GetStringSlice("server.log_disabled_grpc")))
+			streamInterceptors = append(streamInterceptors, loggerGRPCStreamDefault(config.GetStringSlice("server.log_disabled_grpc_stream")))
+			r.Use(loggerHTTPMiddlewareDefault(config.GetBool("server.log_requests_body"), config.GetStringSlice("server.log_disabled_http")))
 		}
 	}
 
@@ -180,6 +181,9 @@ func (s *Server) ListenAndServe() error {
 
 	// Setup the GRPC gateway
 	grpcGatewayMux := gwruntime.NewServeMux(
+		gwruntime.WithMetadata(func(ctx context.Context, r *http.Request) metadata.MD {
+			return metadata.New(map[string]string{grpcGatewayIdentifier: grpcGatewayIdentifier})
+		}),
 		gwruntime.WithMarshalerOption(gwruntime.MIMEWildcard, &JSONMarshaler{}),
 		gwruntime.WithIncomingHeaderMatcher(func(header string) (string, bool) {
 			// Pass our headers

@@ -1,0 +1,2 @@
+ALTER TABLE account
+    ADD COLUMN locked BOOLEAN NOT NULL DEFAULT false;

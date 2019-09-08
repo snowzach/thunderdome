@@ -19,6 +19,11 @@ var (
 
 // ParsePubKeyHexString parses a hex encoded string to a public key struct
 func ParsePubKeyHexString(str string) (*btcec.PublicKey, error) {
+
+	if str == "" {
+		return nil, ErrInvalidPubKey
+	}
+
 	pubKeyBytes, err := hex.DecodeString(str)
 	if err != nil {
 		return nil, err
@@ -29,6 +34,11 @@ func ParsePubKeyHexString(str string) (*btcec.PublicKey, error) {
 
 // ParseSignatureHexString parses a hex encoded string to a signature struct
 func ParseSignatureHexString(str string) (*btcec.Signature, error) {
+
+	if str == "" {
+		return nil, ErrInvalidSig
+	}
+
 	sig, err := hex.DecodeString(str)
 	if err != nil {
 		return nil, err
@@ -71,6 +81,10 @@ func ValidateSigntature(payload string, pubKeyHexString string, sigHexString str
 
 // ValidateTimestampSigntature will validate a timestamp string ensuring proper time window
 func ValidateTimestampSigntature(timeString string, pubKeyHexString string, sigHexString string, referenceTime time.Time) error {
+
+	if timeString == "" {
+		return ErrInvalidTimestamp
+	}
 
 	t, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {

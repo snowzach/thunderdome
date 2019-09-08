@@ -23,6 +23,7 @@ type contextKey string
 
 const (
 	contextKeyAccount = "account"
+	contextKeyAgent   = "agent"
 )
 
 // addAccount will include the authenticated account to the RPC context
@@ -37,6 +38,15 @@ func getAccount(ctx context.Context) *tdrpc.Account {
 		return account
 	}
 	return nil
+}
+
+// Returns if it's being called on behalf of the agent
+func isAgent(ctx context.Context) bool {
+	agent, ok := ctx.Value(contextKey(contextKeyAgent)).(bool)
+	if ok {
+		return agent
+	}
+	return false
 }
 
 // NewTDRPCServer creates the server
