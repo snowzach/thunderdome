@@ -11,11 +11,11 @@ import (
 func init() {
 	rootCmd.AddCommand(apiCmd)
 
-	apiCmd.PersistentFlags().BoolVarP(&apiCmdTxMonitor, "txmonitor", "t", false, "Start the TXMonitr also")
+	apiCmd.PersistentFlags().BoolVarP(&apiCmdMonitor, "monitor", "m", false, "Start the Monitr also")
 }
 
 var (
-	apiCmdTxMonitor bool
+	apiCmdMonitor bool
 
 	apiCmd = &cli.Command{
 		Use:   "api",
@@ -60,8 +60,8 @@ var (
 				)
 			}
 
-			if apiCmdTxMonitor {
-				startTxMonitor()
+			if apiCmdMonitor {
+				startMonitor()
 			}
 
 			<-conf.Stop.Chan() // Wait until StopChan

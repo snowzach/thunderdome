@@ -135,45 +135,161 @@ func (m *AdminAccountsResponse) GetAccounts() []*Account {
 	return nil
 }
 
+// Used to get an account
+type AdminGetAccountRequest struct {
+	// The id of the account
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The address of the account
+	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+}
+
+func (m *AdminGetAccountRequest) Reset()      { *m = AdminGetAccountRequest{} }
+func (*AdminGetAccountRequest) ProtoMessage() {}
+func (*AdminGetAccountRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f27b1318c7cd0a2, []int{2}
+}
+func (m *AdminGetAccountRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AdminGetAccountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AdminGetAccountRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AdminGetAccountRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AdminGetAccountRequest.Merge(m, src)
+}
+func (m *AdminGetAccountRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AdminGetAccountRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AdminGetAccountRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AdminGetAccountRequest proto.InternalMessageInfo
+
+func (m *AdminGetAccountRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *AdminGetAccountRequest) GetAddress() string {
+	if m != nil {
+		return m.Address
+	}
+	return ""
+}
+
+type AdminUpdateAccountRequest struct {
+	// The id of the account
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The locked status of the account
+	Locked bool `protobuf:"varint,2,opt,name=locked,proto3" json:"locked,omitempty"`
+}
+
+func (m *AdminUpdateAccountRequest) Reset()      { *m = AdminUpdateAccountRequest{} }
+func (*AdminUpdateAccountRequest) ProtoMessage() {}
+func (*AdminUpdateAccountRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5f27b1318c7cd0a2, []int{3}
+}
+func (m *AdminUpdateAccountRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AdminUpdateAccountRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AdminUpdateAccountRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalTo(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AdminUpdateAccountRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AdminUpdateAccountRequest.Merge(m, src)
+}
+func (m *AdminUpdateAccountRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *AdminUpdateAccountRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_AdminUpdateAccountRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AdminUpdateAccountRequest proto.InternalMessageInfo
+
+func (m *AdminUpdateAccountRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *AdminUpdateAccountRequest) GetLocked() bool {
+	if m != nil {
+		return m.Locked
+	}
+	return false
+}
+
 func init() {
 	proto.RegisterType((*AdminAccountsRequest)(nil), "tdrpc.AdminAccountsRequest")
 	proto.RegisterMapType((map[string]string)(nil), "tdrpc.AdminAccountsRequest.FilterEntry")
 	proto.RegisterType((*AdminAccountsResponse)(nil), "tdrpc.AdminAccountsResponse")
+	proto.RegisterType((*AdminGetAccountRequest)(nil), "tdrpc.AdminGetAccountRequest")
+	proto.RegisterType((*AdminUpdateAccountRequest)(nil), "tdrpc.AdminUpdateAccountRequest")
 }
 
 func init() { proto.RegisterFile("tdrpc/adminrpc.proto", fileDescriptor_5f27b1318c7cd0a2) }
 
 var fileDescriptor_5f27b1318c7cd0a2 = []byte{
-	// 457 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0x31, 0x8f, 0xd3, 0x30,
-	0x14, 0xc7, 0xe3, 0x96, 0x56, 0xc5, 0x27, 0x38, 0xce, 0x6a, 0x21, 0x2a, 0x27, 0xab, 0xea, 0x42,
-	0x05, 0x34, 0x96, 0x8e, 0x05, 0x58, 0xd0, 0x71, 0x82, 0xe9, 0x06, 0x94, 0x91, 0x01, 0xc9, 0x4d,
-	0x5e, 0x7d, 0xe6, 0x52, 0x3b, 0x24, 0x0e, 0xe8, 0x36, 0xc4, 0x27, 0x40, 0xe2, 0x4b, 0xf0, 0x11,
-	0x18, 0x19, 0x19, 0x2b, 0xb1, 0xdc, 0x48, 0x53, 0x06, 0xc6, 0xfb, 0x08, 0xa8, 0xb6, 0x83, 0xd0,
-	0x51, 0xb1, 0x24, 0xfe, 0xff, 0xff, 0xcf, 0x3f, 0xbf, 0x27, 0x3d, 0xdc, 0x37, 0x69, 0x91, 0x27,
-	0x8c, 0xa7, 0x0b, 0xa9, 0x8a, 0x3c, 0x89, 0xf2, 0x42, 0x1b, 0x4d, 0x3a, 0xd6, 0x1d, 0xee, 0xb9,
-	0xd0, 0x7e, 0x5d, 0x32, 0xdc, 0x17, 0x5a, 0x8b, 0x0c, 0x18, 0xcf, 0x25, 0xe3, 0x4a, 0x69, 0xc3,
-	0x8d, 0xd4, 0xaa, 0xf4, 0xe9, 0x54, 0x48, 0x73, 0x52, 0xcd, 0xa2, 0x44, 0x2f, 0x98, 0xd0, 0x42,
-	0x33, 0x6b, 0xcf, 0xaa, 0xb9, 0x55, 0x56, 0xd8, 0x93, 0x2f, 0xbf, 0x6f, 0x7f, 0xc9, 0x54, 0x80,
-	0x9a, 0x96, 0xef, 0xb8, 0x10, 0x50, 0x30, 0x9d, 0x5b, 0xe0, 0xbf, 0xf0, 0xf1, 0x57, 0x84, 0xfb,
-	0x87, 0x9b, 0x3e, 0x0f, 0x93, 0x44, 0x57, 0xca, 0x94, 0x31, 0xbc, 0xa9, 0xa0, 0x34, 0xe4, 0x09,
-	0xee, 0xce, 0x65, 0x66, 0xa0, 0x08, 0xd1, 0xa8, 0x3d, 0xd9, 0x39, 0xb8, 0x13, 0xb9, 0x8e, 0xb7,
-	0x15, 0x47, 0xcf, 0x6d, 0xe5, 0x33, 0x65, 0x8a, 0xb3, 0xd8, 0x5f, 0x23, 0x37, 0x71, 0x57, 0xcf,
-	0xe7, 0x25, 0x98, 0xb0, 0x3d, 0x42, 0x93, 0x4e, 0xec, 0x15, 0xe9, 0xe3, 0x4e, 0x26, 0x17, 0xd2,
-	0x84, 0x57, 0xac, 0xed, 0xc4, 0xf0, 0x11, 0xde, 0xf9, 0x0b, 0x42, 0x6e, 0xe0, 0xf6, 0x29, 0x9c,
-	0x85, 0x68, 0x84, 0x26, 0x57, 0xe3, 0xcd, 0x71, 0x73, 0xed, 0x2d, 0xcf, 0x2a, 0x08, 0x5b, 0xd6,
-	0x73, 0xe2, 0x71, 0xeb, 0x21, 0x1a, 0x1f, 0xe1, 0xc1, 0xa5, 0xa6, 0xca, 0x5c, 0xab, 0x12, 0xc8,
-	0x5d, 0xdc, 0xe3, 0xde, 0xf3, 0x43, 0x5c, 0x6f, 0x86, 0x70, 0x76, 0xfc, 0x27, 0x3f, 0xf8, 0x82,
-	0x70, 0xcf, 0x52, 0xe2, 0x17, 0x47, 0xe4, 0x15, 0xee, 0x35, 0x30, 0x72, 0xfb, 0x3f, 0x73, 0x0f,
-	0xf7, 0xb7, 0x87, 0xee, 0xfd, 0xf1, 0xad, 0x0f, 0xdf, 0x7f, 0x7e, 0x6a, 0xed, 0x91, 0x5d, 0xb7,
-	0x09, 0xac, 0x79, 0x8c, 0x1c, 0xe3, 0xee, 0x31, 0xa4, 0x02, 0x0a, 0xd2, 0xf7, 0x00, 0x27, 0x1b,
-	0xec, 0xe0, 0x92, 0xeb, 0x79, 0x03, 0xcb, 0xdb, 0x25, 0xd7, 0x3c, 0x2f, 0xb3, 0xf1, 0x53, 0xbe,
-	0x5c, 0xd1, 0xe0, 0x7c, 0x45, 0x83, 0x8b, 0x15, 0x45, 0xef, 0x6b, 0x8a, 0x3e, 0xd7, 0x14, 0x7d,
-	0xab, 0x29, 0x5a, 0xd6, 0x14, 0xfd, 0xa8, 0x29, 0xfa, 0x55, 0xd3, 0xe0, 0xa2, 0xa6, 0xc1, 0xc7,
-	0x35, 0x0d, 0x96, 0x6b, 0x1a, 0x9c, 0xaf, 0x69, 0xf0, 0xf2, 0x9e, 0x90, 0x26, 0x4a, 0xb4, 0x54,
-	0x4a, 0xaa, 0xd7, 0x3c, 0x52, 0x60, 0xd8, 0x8c, 0x27, 0xa7, 0xa0, 0x52, 0x66, 0x4e, 0x2a, 0x95,
-	0x42, 0x91, 0xea, 0x05, 0xb8, 0x35, 0x9d, 0x75, 0xed, 0xb2, 0x3c, 0xf8, 0x1d, 0x00, 0x00, 0xff,
-	0xff, 0x32, 0xdc, 0xb5, 0x27, 0xd9, 0x02, 0x00, 0x00,
+	// 572 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x93, 0x41, 0x6f, 0xd3, 0x3e,
+	0x18, 0xc6, 0xe3, 0xec, 0xbf, 0xfe, 0x87, 0xc7, 0x36, 0x66, 0x75, 0x25, 0x2b, 0xc3, 0x54, 0xb9,
+	0x30, 0x0d, 0x96, 0x48, 0xe3, 0x02, 0xbb, 0xa0, 0x6d, 0x02, 0x2e, 0x3d, 0xa0, 0x48, 0x1c, 0xe0,
+	0xe6, 0xc4, 0x6e, 0x66, 0x9a, 0xda, 0x21, 0x71, 0x40, 0x13, 0x42, 0x42, 0x7c, 0x02, 0x24, 0xbe,
+	0x04, 0x1f, 0x83, 0x23, 0xc7, 0x4a, 0x5c, 0x76, 0xa4, 0x29, 0x07, 0x8e, 0xbb, 0x73, 0x41, 0x75,
+	0x1c, 0x28, 0x6d, 0x05, 0x97, 0xd6, 0xcf, 0xfb, 0xd8, 0x3f, 0xbf, 0xef, 0xd3, 0x1a, 0x36, 0x15,
+	0xcd, 0xd2, 0xc8, 0x27, 0x74, 0xc0, 0x45, 0x96, 0x46, 0x5e, 0x9a, 0x49, 0x25, 0xd1, 0xb2, 0xae,
+	0xb6, 0x37, 0x2b, 0x53, 0x7f, 0x56, 0x4e, 0x7b, 0x27, 0x96, 0x32, 0x4e, 0x98, 0x4f, 0x52, 0xee,
+	0x13, 0x21, 0xa4, 0x22, 0x8a, 0x4b, 0x91, 0x1b, 0x77, 0x3f, 0xe6, 0xea, 0xb4, 0x08, 0xbd, 0x48,
+	0x0e, 0xfc, 0x58, 0xc6, 0xd2, 0xd7, 0xe5, 0xb0, 0xe8, 0x69, 0xa5, 0x85, 0x5e, 0x99, 0xed, 0xb7,
+	0xf5, 0x57, 0xb4, 0x1f, 0x33, 0xb1, 0x9f, 0xbf, 0x22, 0x71, 0xcc, 0x32, 0x5f, 0xa6, 0x1a, 0x38,
+	0x0f, 0x77, 0x3f, 0x01, 0xd8, 0x3c, 0x9a, 0xf4, 0x79, 0x14, 0x45, 0xb2, 0x10, 0x2a, 0x0f, 0xd8,
+	0x8b, 0x82, 0xe5, 0x0a, 0xdd, 0x87, 0x8d, 0x1e, 0x4f, 0x14, 0xcb, 0x1c, 0xd0, 0x59, 0xda, 0x5d,
+	0x3d, 0xb8, 0xe9, 0x55, 0x1d, 0x2f, 0xda, 0xec, 0x3d, 0xd4, 0x3b, 0x1f, 0x08, 0x95, 0x9d, 0x05,
+	0xe6, 0x18, 0x6a, 0xc1, 0x86, 0xec, 0xf5, 0x72, 0xa6, 0x9c, 0xa5, 0x0e, 0xd8, 0x5d, 0x0e, 0x8c,
+	0x42, 0x4d, 0xb8, 0x9c, 0xf0, 0x01, 0x57, 0xce, 0x7f, 0xba, 0x5c, 0x89, 0xf6, 0x3d, 0xb8, 0x3a,
+	0x05, 0x41, 0x57, 0xe0, 0x52, 0x9f, 0x9d, 0x39, 0xa0, 0x03, 0x76, 0x2f, 0x05, 0x93, 0xe5, 0xe4,
+	0xd8, 0x4b, 0x92, 0x14, 0xcc, 0xb1, 0x75, 0xad, 0x12, 0x87, 0xf6, 0x5d, 0xe0, 0x9e, 0xc0, 0xad,
+	0x99, 0xa6, 0xf2, 0x54, 0x8a, 0x9c, 0xa1, 0x3d, 0xb8, 0x42, 0x4c, 0xcd, 0x0c, 0xb1, 0x5e, 0x0f,
+	0x51, 0x95, 0x83, 0x5f, 0xbe, 0x7b, 0x0c, 0x5b, 0x1a, 0xf2, 0x88, 0xa9, 0xda, 0x34, 0x41, 0xac,
+	0x43, 0x9b, 0x53, 0xd3, 0x89, 0xcd, 0x29, 0x72, 0xe0, 0xff, 0x84, 0xd2, 0x8c, 0xe5, 0xb9, 0x69,
+	0xa5, 0x96, 0xee, 0x09, 0xdc, 0xd6, 0x8c, 0x27, 0x29, 0x25, 0x8a, 0xfd, 0x03, 0xd3, 0x82, 0x8d,
+	0x44, 0x46, 0x7d, 0x46, 0x35, 0x65, 0x25, 0x30, 0xea, 0xe0, 0x87, 0x0d, 0x57, 0x34, 0x25, 0x78,
+	0x7c, 0x82, 0x42, 0x78, 0xb9, 0xcb, 0xf3, 0xba, 0xa3, 0x1c, 0x5d, 0xfb, 0xcb, 0x8f, 0xd0, 0xde,
+	0x59, 0x6c, 0x56, 0x61, 0xb8, 0x57, 0xdf, 0x7d, 0xf9, 0xf6, 0xc1, 0xde, 0x44, 0x1b, 0xd5, 0xdf,
+	0xd2, 0xaf, 0x27, 0x47, 0x4f, 0x21, 0xfc, 0x3d, 0x34, 0xba, 0x3e, 0x0d, 0x99, 0x0b, 0xa3, 0x3d,
+	0x13, 0xa0, 0xbb, 0xa3, 0xa9, 0x2d, 0xd4, 0x9c, 0xa1, 0xfa, 0xaf, 0x39, 0x7d, 0x83, 0x42, 0xb8,
+	0xf6, 0x47, 0x16, 0xa8, 0x33, 0x4d, 0x5f, 0x14, 0xd3, 0xdc, 0x05, 0x37, 0xf4, 0x05, 0xdb, 0x07,
+	0x0b, 0x2f, 0x38, 0x04, 0x7b, 0xa8, 0x0b, 0x1b, 0x5d, 0x46, 0x63, 0x96, 0xa1, 0xa6, 0x39, 0x5a,
+	0xc9, 0x1a, 0xb8, 0x35, 0x53, 0x35, 0x71, 0x6c, 0x69, 0xee, 0x06, 0x5a, 0x33, 0xdc, 0x44, 0xdb,
+	0xc7, 0x64, 0x38, 0xc2, 0xd6, 0xf9, 0x08, 0x5b, 0x17, 0x23, 0x0c, 0xde, 0x96, 0x18, 0x7c, 0x2c,
+	0x31, 0xf8, 0x5c, 0x62, 0x30, 0x2c, 0x31, 0xf8, 0x5a, 0x62, 0xf0, 0xbd, 0xc4, 0xd6, 0x45, 0x89,
+	0xad, 0xf7, 0x63, 0x6c, 0x0d, 0xc7, 0xd8, 0x3a, 0x1f, 0x63, 0xeb, 0xd9, 0xad, 0x98, 0x2b, 0x2f,
+	0x92, 0x5c, 0x08, 0x2e, 0x9e, 0x13, 0x4f, 0x30, 0xe5, 0x87, 0x24, 0xea, 0x33, 0x41, 0x7d, 0x75,
+	0x5a, 0x08, 0xca, 0x32, 0x2a, 0x07, 0xac, 0x7a, 0xf2, 0x61, 0x43, 0x3f, 0xbc, 0x3b, 0x3f, 0x03,
+	0x00, 0x00, 0xff, 0xff, 0x77, 0xb9, 0x33, 0x70, 0x25, 0x04, 0x00, 0x00,
 }
 
 func (this *AdminAccountsRequest) Equal(that interface{}) bool {
@@ -240,6 +356,60 @@ func (this *AdminAccountsResponse) Equal(that interface{}) bool {
 	}
 	return true
 }
+func (this *AdminGetAccountRequest) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*AdminGetAccountRequest)
+	if !ok {
+		that2, ok := that.(AdminGetAccountRequest)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Id != that1.Id {
+		return false
+	}
+	if this.Address != that1.Address {
+		return false
+	}
+	return true
+}
+func (this *AdminUpdateAccountRequest) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*AdminUpdateAccountRequest)
+	if !ok {
+		that2, ok := that.(AdminUpdateAccountRequest)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Id != that1.Id {
+		return false
+	}
+	if this.Locked != that1.Locked {
+		return false
+	}
+	return true
+}
 func (this *AdminAccountsRequest) GoString() string {
 	if this == nil {
 		return "nil"
@@ -276,6 +446,28 @@ func (this *AdminAccountsResponse) GoString() string {
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
+func (this *AdminGetAccountRequest) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&tdrpc.AdminGetAccountRequest{")
+	s = append(s, "Id: "+fmt.Sprintf("%#v", this.Id)+",\n")
+	s = append(s, "Address: "+fmt.Sprintf("%#v", this.Address)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *AdminUpdateAccountRequest) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&tdrpc.AdminUpdateAccountRequest{")
+	s = append(s, "Id: "+fmt.Sprintf("%#v", this.Id)+",\n")
+	s = append(s, "Locked: "+fmt.Sprintf("%#v", this.Locked)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
 func valueToGoStringAdminrpc(v interface{}, typ string) string {
 	rv := reflect.ValueOf(v)
 	if rv.IsNil() {
@@ -297,8 +489,12 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AdminRPCClient interface {
-	// GetUser Accounts
-	Accounts(ctx context.Context, in *AdminAccountsRequest, opts ...grpc.CallOption) (*AdminAccountsResponse, error)
+	// List Accounts
+	ListAccounts(ctx context.Context, in *AdminAccountsRequest, opts ...grpc.CallOption) (*AdminAccountsResponse, error)
+	// Get Account
+	GetAccount(ctx context.Context, in *AdminGetAccountRequest, opts ...grpc.CallOption) (*Account, error)
+	// Update Account
+	UpdateAccount(ctx context.Context, in *AdminUpdateAccountRequest, opts ...grpc.CallOption) (*Account, error)
 	// Decode a payment request
 	Ledger(ctx context.Context, in *LedgerRequest, opts ...grpc.CallOption) (*LedgerResponse, error)
 }
@@ -311,9 +507,27 @@ func NewAdminRPCClient(cc *grpc.ClientConn) AdminRPCClient {
 	return &adminRPCClient{cc}
 }
 
-func (c *adminRPCClient) Accounts(ctx context.Context, in *AdminAccountsRequest, opts ...grpc.CallOption) (*AdminAccountsResponse, error) {
+func (c *adminRPCClient) ListAccounts(ctx context.Context, in *AdminAccountsRequest, opts ...grpc.CallOption) (*AdminAccountsResponse, error) {
 	out := new(AdminAccountsResponse)
-	err := c.cc.Invoke(ctx, "/tdrpc.AdminRPC/Accounts", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/tdrpc.AdminRPC/ListAccounts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminRPCClient) GetAccount(ctx context.Context, in *AdminGetAccountRequest, opts ...grpc.CallOption) (*Account, error) {
+	out := new(Account)
+	err := c.cc.Invoke(ctx, "/tdrpc.AdminRPC/GetAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminRPCClient) UpdateAccount(ctx context.Context, in *AdminUpdateAccountRequest, opts ...grpc.CallOption) (*Account, error) {
+	out := new(Account)
+	err := c.cc.Invoke(ctx, "/tdrpc.AdminRPC/UpdateAccount", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -331,8 +545,12 @@ func (c *adminRPCClient) Ledger(ctx context.Context, in *LedgerRequest, opts ...
 
 // AdminRPCServer is the server API for AdminRPC service.
 type AdminRPCServer interface {
-	// GetUser Accounts
-	Accounts(context.Context, *AdminAccountsRequest) (*AdminAccountsResponse, error)
+	// List Accounts
+	ListAccounts(context.Context, *AdminAccountsRequest) (*AdminAccountsResponse, error)
+	// Get Account
+	GetAccount(context.Context, *AdminGetAccountRequest) (*Account, error)
+	// Update Account
+	UpdateAccount(context.Context, *AdminUpdateAccountRequest) (*Account, error)
 	// Decode a payment request
 	Ledger(context.Context, *LedgerRequest) (*LedgerResponse, error)
 }
@@ -341,20 +559,56 @@ func RegisterAdminRPCServer(s *grpc.Server, srv AdminRPCServer) {
 	s.RegisterService(&_AdminRPC_serviceDesc, srv)
 }
 
-func _AdminRPC_Accounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdminRPC_ListAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdminAccountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminRPCServer).Accounts(ctx, in)
+		return srv.(AdminRPCServer).ListAccounts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tdrpc.AdminRPC/Accounts",
+		FullMethod: "/tdrpc.AdminRPC/ListAccounts",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminRPCServer).Accounts(ctx, req.(*AdminAccountsRequest))
+		return srv.(AdminRPCServer).ListAccounts(ctx, req.(*AdminAccountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminRPC_GetAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminGetAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminRPCServer).GetAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tdrpc.AdminRPC/GetAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminRPCServer).GetAccount(ctx, req.(*AdminGetAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminRPC_UpdateAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdminUpdateAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminRPCServer).UpdateAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tdrpc.AdminRPC/UpdateAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminRPCServer).UpdateAccount(ctx, req.(*AdminUpdateAccountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -382,8 +636,16 @@ var _AdminRPC_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AdminRPCServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Accounts",
-			Handler:    _AdminRPC_Accounts_Handler,
+			MethodName: "ListAccounts",
+			Handler:    _AdminRPC_ListAccounts_Handler,
+		},
+		{
+			MethodName: "GetAccount",
+			Handler:    _AdminRPC_GetAccount_Handler,
+		},
+		{
+			MethodName: "UpdateAccount",
+			Handler:    _AdminRPC_UpdateAccount_Handler,
 		},
 		{
 			MethodName: "Ledger",
@@ -469,6 +731,70 @@ func (m *AdminAccountsResponse) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
+func (m *AdminGetAccountRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AdminGetAccountRequest) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Id) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintAdminrpc(dAtA, i, uint64(len(m.Id)))
+		i += copy(dAtA[i:], m.Id)
+	}
+	if len(m.Address) > 0 {
+		dAtA[i] = 0x12
+		i++
+		i = encodeVarintAdminrpc(dAtA, i, uint64(len(m.Address)))
+		i += copy(dAtA[i:], m.Address)
+	}
+	return i, nil
+}
+
+func (m *AdminUpdateAccountRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AdminUpdateAccountRequest) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Id) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintAdminrpc(dAtA, i, uint64(len(m.Id)))
+		i += copy(dAtA[i:], m.Id)
+	}
+	if m.Locked {
+		dAtA[i] = 0x10
+		i++
+		if m.Locked {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i++
+	}
+	return i, nil
+}
+
 func encodeVarintAdminrpc(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
@@ -516,6 +842,39 @@ func (m *AdminAccountsResponse) Size() (n int) {
 	return n
 }
 
+func (m *AdminGetAccountRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovAdminrpc(uint64(l))
+	}
+	l = len(m.Address)
+	if l > 0 {
+		n += 1 + l + sovAdminrpc(uint64(l))
+	}
+	return n
+}
+
+func (m *AdminUpdateAccountRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovAdminrpc(uint64(l))
+	}
+	if m.Locked {
+		n += 2
+	}
+	return n
+}
+
 func sovAdminrpc(x uint64) (n int) {
 	for {
 		n++
@@ -557,6 +916,28 @@ func (this *AdminAccountsResponse) String() string {
 	}
 	s := strings.Join([]string{`&AdminAccountsResponse{`,
 		`Accounts:` + strings.Replace(fmt.Sprintf("%v", this.Accounts), "Account", "Account", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *AdminGetAccountRequest) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&AdminGetAccountRequest{`,
+		`Id:` + fmt.Sprintf("%v", this.Id) + `,`,
+		`Address:` + fmt.Sprintf("%v", this.Address) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *AdminUpdateAccountRequest) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&AdminUpdateAccountRequest{`,
+		`Id:` + fmt.Sprintf("%v", this.Id) + `,`,
+		`Locked:` + fmt.Sprintf("%v", this.Locked) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -850,6 +1231,228 @@ func (m *AdminAccountsResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAdminrpc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AdminGetAccountRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAdminrpc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AdminGetAccountRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AdminGetAccountRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdminrpc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdminrpc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Address = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAdminrpc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AdminUpdateAccountRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAdminrpc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AdminUpdateAccountRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AdminUpdateAccountRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdminrpc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAdminrpc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Locked", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdminrpc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Locked = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipAdminrpc(dAtA[iNdEx:])

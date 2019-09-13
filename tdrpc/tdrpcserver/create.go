@@ -29,6 +29,8 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 
 	if request.Value < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid Value")
+	} else if request.Value > config.GetInt64("tdome.value_limit") {
+		return nil, status.Errorf(codes.InvalidArgument, "Max invoice value is %d", config.GetInt64("tdome.value_limit"))
 	}
 
 	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 7776000) {
@@ -110,11 +112,9 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.Create
 
 	expirationSeconds := config.GetInt64("tdome.create_generated_expires")
 	expiresAt := time.Now().UTC().Add(time.Duration(expirationSeconds) * time.Second)
-	memo := "Generated request"
 
 	// Create the invoice
 	invoice, err := s.lclient.AddInvoice(ctx, &lnrpc.Invoice{
-		Memo:   memo,
 		Value:  0,
 		Expiry: expirationSeconds,
 	})
@@ -133,7 +133,6 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.Create
 		Direction: tdrpc.IN,
 		Value:     0,
 		AddIndex:  invoice.AddIndex,
-		Memo:      memo,
 		Request:   invoice.PaymentRequest,
 	})
 	if err != nil {

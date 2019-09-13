@@ -72,7 +72,7 @@ cmd/wire_gen.go: cmd/wire.go
 
 .PHONY: mocks
 mocks: tools
-	mockery -dir ./thunderdome -name Store
+	mockery -dir ./tdrpc -name Store
 	mockery -dir $(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd/lnrpc) -name LightningClient
 
 .PHONY: ${EXECUTABLE}

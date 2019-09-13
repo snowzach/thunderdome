@@ -12,7 +12,6 @@ import (
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // GetLedger returns the ledger for a user
@@ -140,7 +139,7 @@ func (c *Client) GetActiveGeneratedLightningLedgerRequest(ctx context.Context, a
 		direction = $4 AND
 		generated = true AND
 		expires_at > NOW() + INTERVAL '1 HOUR' AND
-		NOT EXISTS (SELECT 1 FROM ledger AS li WHERE li.id = CONCAT(ledger.id, '`+thunderdome.InternalIdSuffix+`'))
+		NOT EXISTS (SELECT 1 FROM ledger AS li WHERE li.id = CONCAT(ledger.id, '`+tdrpc.InternalIdSuffix+`'))
 		ORDER BY expires_at DESC
 		LIMIT 1
 	`, accountID, tdrpc.PENDING, tdrpc.LIGHTNING, tdrpc.IN)

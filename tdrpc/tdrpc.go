@@ -4,6 +4,7 @@ package tdrpc
 const (
 	CreateGeneratedEndpoint = "/tdrpc.ThunderdomeRPC/CreateGenerated"
 	AccountEndpoint         = "/tdrpc.ThunderdomeRPC/Account"
+	DecodeEndpoint          = "/tdrpc.ThunderdomeRPC/Decode"
 )
 
 // ValueTotal will return the total value of the transaction

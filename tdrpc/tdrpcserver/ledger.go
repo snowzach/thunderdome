@@ -42,6 +42,11 @@ func (s *tdRPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) 
 		return nil, status.Errorf(codes.Internal, "Error on GetLedger: %v", err)
 	}
 
+	if lrs == nil {
+		lrs = []*tdrpc.LedgerRecord{}
+
+	}
+
 	return &tdrpc.LedgerResponse{
 		Ledger: lrs,
 	}, nil
