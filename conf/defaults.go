@@ -29,6 +29,13 @@ func init() {
 	config.SetDefault("profiler.host", "")
 	config.SetDefault("profiler.port", "6060")
 
+	// Datadog DogStatsD Configuration
+	config.SetDefault("dogstatsd.enabled", false)
+	config.SetDefault("dogstatsd.host", "dogstatsd")
+	config.SetDefault("dogstatsd.port", 8125)
+	config.SetDefault("dogstatsd.namespace", "thunderdome.")
+	config.SetDefault("dogstatsd.tags", []string{})
+
 	// Server Configuration
 	config.SetDefault("server.host", "")
 	config.SetDefault("server.port", "8900")
@@ -79,6 +86,7 @@ func init() {
 	config.SetDefault("tdome.disable_auth", false)
 	config.SetDefault("tdome.lock_new_accounts", false)
 	config.SetDefault("tdome.firebase_credentials_file", "")
+	config.SetDefault("tdome.value_limit", 500000)
 	config.SetDefault("tdome.processing_fee_rate", 0.0)
 	config.SetDefault("tdome.withdraw_fee_rate", 1.0)
 	config.SetDefault("tdome.network_fee_limit", 40000)

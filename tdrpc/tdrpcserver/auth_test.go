@@ -15,7 +15,6 @@ import (
 	"git.coinninja.net/backend/thunderdome/mocks"
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 func TestAuthFuncOverride(t *testing.T) {
@@ -30,9 +29,9 @@ func TestAuthFuncOverride(t *testing.T) {
 
 	// Bad Value
 	_, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		thunderdome.MetadataAuthPubKeyString, "SOME BAD PUBKEY",
-		thunderdome.MetadataAuthSignature, "Bad Signature",
-		thunderdome.MetadataAuthTimestamp, time.Now().Format(time.RFC3339),
+		tdrpc.MetadataAuthPubKeyString, "SOME BAD PUBKEY",
+		tdrpc.MetadataAuthSignature, "Bad Signature",
+		tdrpc.MetadataAuthTimestamp, time.Now().Format(time.RFC3339),
 	)), "test")
 	assert.NotNil(t, err)
 
@@ -49,9 +48,9 @@ func TestAuthFuncOverride(t *testing.T) {
 	mockStore.On("GetAccountByID", mock.AnythingOfType("*context.valueCtx"), AccountTypePubKey+":"+pubKey).Once().Return(nil, store.ErrNotFound)
 	// Valid information but CreatedGenerated endpoint should return error
 	_, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		thunderdome.MetadataAuthPubKeyString, pubKey,
-		thunderdome.MetadataAuthSignature, sigHexString,
-		thunderdome.MetadataAuthTimestamp, timeString,
+		tdrpc.MetadataAuthPubKeyString, pubKey,
+		tdrpc.MetadataAuthSignature, sigHexString,
+		tdrpc.MetadataAuthTimestamp, timeString,
 	)), tdrpc.CreateGeneratedEndpoint)
 	assert.NotNil(t, err)
 
@@ -69,9 +68,9 @@ func TestAuthFuncOverride(t *testing.T) {
 	mockStore.On("SaveAccount", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.Account")).Once().
 		Return(func(ctx context.Context, a *tdrpc.Account) *tdrpc.Account { return a }, nil)
 	ctx, err := s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		thunderdome.MetadataAuthPubKeyString, pubKey,
-		thunderdome.MetadataAuthSignature, sigHexString,
-		thunderdome.MetadataAuthTimestamp, timeString,
+		tdrpc.MetadataAuthPubKeyString, pubKey,
+		tdrpc.MetadataAuthSignature, sigHexString,
+		tdrpc.MetadataAuthTimestamp, timeString,
 	)), "test")
 	assert.Nil(t, err)
 
@@ -83,9 +82,9 @@ func TestAuthFuncOverride(t *testing.T) {
 	// Make the request
 	mockStore.On("GetAccountByID", mock.AnythingOfType("*context.valueCtx"), account.Id).Once().Return(account, nil)
 	ctx, err = s.AuthFuncOverride(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		thunderdome.MetadataAuthPubKeyString, pubKey,
-		thunderdome.MetadataAuthSignature, sigHexString,
-		thunderdome.MetadataAuthTimestamp, timeString,
+		tdrpc.MetadataAuthPubKeyString, pubKey,
+		tdrpc.MetadataAuthSignature, sigHexString,
+		tdrpc.MetadataAuthTimestamp, timeString,
 	)), "test")
 	assert.Nil(t, err)
 	account = getAccount(ctx)

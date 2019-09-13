@@ -9,12 +9,11 @@ import (
 	"go.uber.org/zap"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 type tdRPCServer struct {
 	logger   *zap.SugaredLogger
-	store    thunderdome.Store
+	store    tdrpc.Store
 	myPubKey string
 	lclient  lnrpc.LightningClient
 }
@@ -50,13 +49,13 @@ func isAgent(ctx context.Context) bool {
 }
 
 // NewTDRPCServer creates the server
-func NewTDRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (tdrpc.ThunderdomeRPCServer, error) {
+func NewTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient) (tdrpc.ThunderdomeRPCServer, error) {
 
 	return newTDRPCServer(store, lclient)
 
 }
 
-func newTDRPCServer(store thunderdome.Store, lclient lnrpc.LightningClient) (*tdRPCServer, error) {
+func newTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient) (*tdRPCServer, error) {
 
 	info, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
 	if err != nil {

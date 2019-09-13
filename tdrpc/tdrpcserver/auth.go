@@ -14,7 +14,6 @@ import (
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 const (
@@ -33,6 +32,11 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		return ctx, status.Errorf(codes.Unavailable, "Service Unavailable")
 	}
 
+	// No auth required for DecodeEndpoint
+	if fullMethodName == tdrpc.DecodeEndpoint {
+		return ctx, nil
+	}
+
 	// Get request metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -40,14 +44,14 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	}
 
 	// Get the user pubKeyString
-	pubKeyString := mdfirst(md, thunderdome.MetadataAuthPubKeyString)
+	pubKeyString := mdfirst(md, tdrpc.MetadataAuthPubKeyString)
 	if pubKeyString == "" {
 		return ctx, status.Errorf(codes.PermissionDenied, "Invalid Login")
 	}
 
 	// Get the timestamp and signature
-	ts := mdfirst(md, thunderdome.MetadataAuthTimestamp)
-	sig := mdfirst(md, thunderdome.MetadataAuthSignature)
+	ts := mdfirst(md, tdrpc.MetadataAuthTimestamp)
+	sig := mdfirst(md, tdrpc.MetadataAuthSignature)
 
 	// This handles authentication, there are several cases, break from the for loop when Authenticated
 	for {

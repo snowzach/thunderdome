@@ -1,4 +1,4 @@
-package txmonitor
+package monitor
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 )
 
 // MonitorBTC will spin up, search for existing transactions, and listen for incoming transactions
-func (txm *TXMonitor) MonitorBTC() {
+func (m *Monitor) MonitorBTC() {
 
 	// Handle shutting down
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,51 +40,51 @@ func (txm *TXMonitor) MonitorBTC() {
 	for !conf.Stop.Bool() {
 
 		// Connect to the transaction stream, subscribe to transactions
-		txclient, err = txm.lclient.SubscribeTransactions(ctx, &lnrpc.GetTransactionsRequest{})
+		txclient, err = m.lclient.SubscribeTransactions(ctx, &lnrpc.GetTransactionsRequest{})
 		if err != nil {
-			txm.logger.Fatalw("Could not SubscribeTransactions", "error", err)
+			m.logger.Fatalw("Could not SubscribeTransactions", "error", err)
 		}
-		txm.logger.Infow("Listening for transactions...", "monitor", "btc")
+		m.logger.Infow("Listening for transactions...", "monitor", "btc")
 
 		// Catch up on existing transactions
 		// TODO: Optimize what transactions we will fetch by setting addr index
-		txsDetails, err := txm.lclient.GetTransactions(ctx, &lnrpc.GetTransactionsRequest{})
+		txsDetails, err := m.lclient.GetTransactions(ctx, &lnrpc.GetTransactionsRequest{})
 		if err != nil {
-			txm.logger.Fatalw("Could not GetTransactions", "monitor", "btc", "error", err)
+			m.logger.Fatalw("Could not GetTransactions", "monitor", "btc", "error", err)
 		}
 
 		for _, tx := range txsDetails.Transactions {
-			txm.logger.Infow("Processing existing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
+			m.logger.Infow("Processing existing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
 			rawTx, err := hex.DecodeString(tx.RawTxHex)
 			if err != nil {
-				txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
+				m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
+			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
 		}
 
 		// Main loop
 		for {
 			tx, err := txclient.Recv()
 			if err == io.EOF {
-				txm.logger.Errorw("TXM Closed Connection", "monitor", "btc")
+				m.logger.Errorw("TXM Closed Connection", "monitor", "btc")
 				break
 			} else if status.Code(err) == codes.Canceled {
-				txm.logger.Info("TXM Shutting Down")
+				m.logger.Info("TXM Shutting Down")
 				break
 			} else if err != nil {
-				txm.logger.Errorw("TXM Error", "monitor", "btc", "error", err)
+				m.logger.Errorw("TXM Error", "monitor", "btc", "error", err)
 				break
 			}
 
 			// Don't process a transaction until it has at least 1 confirmation
-			txm.logger.Infow("Processing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
+			m.logger.Infow("Processing transaction", "monitor", "btc", "hash", tx.TxHash, "confirmations", tx.NumConfirmations)
 			rawTx, err := hex.DecodeString(tx.RawTxHex)
 			if err != nil {
-				txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
+				m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			txm.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
+			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
 		}
 
 		// We were disconnected, reconnect and try again
@@ -101,12 +101,12 @@ func (txm *TXMonitor) MonitorBTC() {
 }
 
 // This will parse the transaction and add it to the ledger
-func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, txFee int64) {
+func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, txFee int64) {
 
 	// Decode the transaction
 	tx, err := btcutil.NewTxFromBytes(rawTx)
 	if err != nil {
-		txm.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash")
+		m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash")
 		return
 	}
 	txHash := tx.Hash().String() // Get txHash
@@ -116,13 +116,13 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 
 	// Check to see if this has an outbound transaction we know about already
 	// These are transactions being send from Thunderdome and will have the txHash as he id
-	lrOut, err := txm.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
+	lrOut, err := m.store.GetLedgerRecord(ctx, txHash, tdrpc.OUT)
 	if err == nil {
 		if confirmations > 0 && lrOut.Status != tdrpc.COMPLETED {
 			lrOut.Status = tdrpc.COMPLETED
-			err = txm.store.ProcessLedgerRecord(ctx, lrOut)
+			err = m.store.ProcessLedgerRecord(ctx, lrOut)
 			if err != nil {
-				txm.logger.Fatalw("ProcessLedgerRecord Out Error", "monitor", "btc", "error", err)
+				m.logger.Fatalw("ProcessLedgerRecord Out Error", "monitor", "btc", "error", err)
 			}
 		}
 		// On the insane chance we somehow paid another address in this wallet, let it continue to process
@@ -136,7 +136,7 @@ func (txm *TXMonitor) parseBTCTranaction(ctx context.Context, rawTx []byte, conf
 	// We must also have a blocc client we can ask
 	var validForInstantTopUp bool = false
 topUp: // Use a for so we can break at any time on failure and drop out of the block
-	for confirmations == 0 && txm.bclient != nil {
+	for confirmations == 0 && m.bclient != nil {
 
 		// Build a slice and map of previous transaction ids, deduplicate at the same time
 		idsMap := make(map[string]*blocc.Tx)
@@ -147,7 +147,7 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 
 			// If any the of the inputs have a sequence less than MaxTxInSequenceNum - 1, they could be replaced and are not valid
 			if vin.Sequence < wire.MaxTxInSequenceNum-1 {
-				txm.logger.Infow("Invalid sequence for instant top-up", "hash", txHash, "input_hash", hash, "sequence", vin.Sequence)
+				m.logger.Infow("Invalid sequence for instant top-up", "hash", txHash, "input_hash", hash, "sequence", vin.Sequence)
 				break topUp
 			}
 
@@ -161,13 +161,13 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 		}
 
 		// Get the transactions
-		txns, err := txm.bclient.FindTransactions(ctx, &blocc.Find{
+		txns, err := m.bclient.FindTransactions(ctx, &blocc.Find{
 			Symbol: blocc.SymbolBTC,
 			Ids:    idsSlice,
 			Count:  int64(len(idsSlice)),
 		})
 		if err != nil {
-			txm.logger.Errorw("Unable to fetch input transactions for instant top-up", "error", err)
+			m.logger.Errorw("Unable to fetch input transactions for instant top-up", "error", err)
 			break
 		}
 
@@ -181,13 +181,13 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 
 			// Transaction was missing from blocc
 			if bloccTx == nil {
-				txm.logger.Infow("Missing input for instant top-up", "hash", txHash, "input_hash", hash)
+				m.logger.Infow("Missing input for instant top-up", "hash", txHash, "input_hash", hash)
 				break topUp
 			}
 
 			// This transaction is still unconfirmed
 			if bloccTx.BlockHeight == blocc.HeightUnknown {
-				txm.logger.Infow("Unconfirmed input for instant top-up", "hash", txHash, "input_hash", hash)
+				m.logger.Infow("Unconfirmed input for instant top-up", "hash", txHash, "input_hash", hash)
 				break topUp
 			}
 
@@ -195,7 +195,7 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 
 		// Everything succeeded, set to true, break out of for loop
 		validForInstantTopUp = true
-		txm.logger.Infow("Transaction eligible for instant top-up", "hash", txHash)
+		m.logger.Infow("Transaction eligible for instant top-up", "hash", txHash)
 		break
 	}
 
@@ -203,26 +203,26 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 	for height, vout := range wTx.TxOut {
 
 		// Attempt to parse simple addresses out of the script
-		_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, txm.chain)
+		_, addresses, _, err := txscript.ExtractPkScriptAddrs(vout.PkScript, m.chain)
 		if err != nil { // Could not decode, it's not one of ours
-			txm.logger.Errorw("Could not decode ouput script", "monitor", "btc", "hash", txHash, "height", height)
+			m.logger.Errorw("Could not decode ouput script", "monitor", "btc", "hash", txHash, "height", height)
 			continue
 		} else if vout.Value == 0 {
 			// No value, just skip it
 			continue
 		} else if len(addresses) != 1 {
-			txm.logger.Warnw("Could not determine output addresses. Skipping.", "monitor", "btc", "hash", txHash, "height", height, "addresses", len(addresses))
+			m.logger.Warnw("Could not determine output addresses. Skipping.", "monitor", "btc", "hash", txHash, "height", height, "addresses", len(addresses))
 			continue
 		}
 
-		txm.logger.Debugw("Processing TxOut", "height", height, "addresses", addresses[0].String(), "value", vout.Value)
+		m.logger.Debugw("Processing TxOut", "height", height, "addresses", addresses[0].String(), "value", vout.Value)
 
 		// Find the associated account
-		account, err := txm.store.GetAccountByAddress(ctx, addresses[0].String())
+		account, err := m.store.GetAccountByAddress(ctx, addresses[0].String())
 		if err == store.ErrNotFound {
 			continue
 		} else if err != nil {
-			txm.logger.Fatalw("GetAccountByAddress Error", "monitor", "btc", "error", err)
+			m.logger.Fatalw("GetAccountByAddress Error", "monitor", "btc", "error", err)
 		}
 
 		// Handle fee free topup
@@ -250,9 +250,9 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 			lr.Status = tdrpc.COMPLETED
 		}
 
-		err = txm.store.ProcessLedgerRecord(ctx, lr)
+		err = m.store.ProcessLedgerRecord(ctx, lr)
 		if err != nil {
-			txm.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
+			m.logger.Errorw("ProcessLedgerRecord Error", "monitor", "btc", "error", err)
 		}
 
 		foundTx = true
@@ -260,7 +260,7 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 
 	// We had this transaction but could not relate it to an account
 	if !foundTx {
-		txm.logger.Warnw("No account found for transaction", "monitor", "btc", "hash", txHash)
+		m.logger.Warnw("No account found for transaction", "monitor", "btc", "hash", txHash)
 	}
 
 }

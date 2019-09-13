@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // Pay will pay a payment request
@@ -34,7 +33,7 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 
 	// Are we sweeping the account
 	var accountSweep = false
-	if request.Value == thunderdome.ValueSweep {
+	if request.Value == tdrpc.ValueSweep {
 		accountSweep = true
 		// Estimate the base value based on an estimated fee of 2000 sats and the withdraw fee rate
 		// We need this to determine the SatPerByte below
@@ -99,7 +98,7 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 	if _, err := rand.Read(randomID); err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not generate random id")
 	}
-	tempLedgerRecordID := thunderdome.TempLedgerRecordIdPrefix + hex.EncodeToString(randomID)
+	tempLedgerRecordID := tdrpc.TempLedgerRecordIdPrefix + hex.EncodeToString(randomID)
 
 	// Build the temporary ledger record
 	lr := &tdrpc.LedgerRecord{

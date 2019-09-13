@@ -1,4 +1,4 @@
-package txmonitor
+package monitor
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-func (txm *TXMonitor) MonitorLN() {
+func (m *Monitor) MonitorLN() {
 
 	// Handle shutting down
 	ctx, cancel := context.WithCancel(context.Background())
@@ -25,16 +25,16 @@ func (txm *TXMonitor) MonitorLN() {
 
 	// Connect to the transaction stream
 	conf.Stop.Add(1)
-	invclient, err := txm.lclient.SubscribeInvoices(ctx, &lnrpc.InvoiceSubscription{
+	invclient, err := m.lclient.SubscribeInvoices(ctx, &lnrpc.InvoiceSubscription{
 		// TODO: We could start with the highest completed, not expired index
 		AddIndex:    1,
 		SettleIndex: 1,
 	})
 	if err != nil {
-		txm.logger.Fatalw("Could not SubscribeInvoices", "monitor", "ln", "error", err)
+		m.logger.Fatalw("Could not SubscribeInvoices", "monitor", "ln", "error", err)
 	}
 
-	txm.logger.Info("Listening for lightning transactions...", "monitor", "ln")
+	m.logger.Info("Listening for lightning transactions...", "monitor", "ln")
 
 	for !conf.Stop.Bool() {
 
@@ -43,13 +43,13 @@ func (txm *TXMonitor) MonitorLN() {
 		// Get the next message
 		invoice, err := invclient.Recv()
 		if err == io.EOF {
-			txm.logger.Fatalw("LightningMonitor EOF", "monitor", "ln")
+			m.logger.Fatalw("LightningMonitor EOF", "monitor", "ln")
 			continue
 		} else if status.Code(err) == codes.Canceled {
-			txm.logger.Info("LightningMonitor Shutting Down")
+			m.logger.Info("LightningMonitor Shutting Down")
 			break
 		} else if err != nil {
-			txm.logger.Fatalw("LightningMonitor Failure", "monitor", "ln", "error", err)
+			m.logger.Fatalw("LightningMonitor Failure", "monitor", "ln", "error", err)
 		}
 
 		// We only need to process settled transactions
@@ -61,7 +61,7 @@ func (txm *TXMonitor) MonitorLN() {
 		paymentHash := hex.EncodeToString(invoice.RHash)
 
 		// Find the existing ledger record outbound
-		lr, err := txm.store.GetLedgerRecord(ctx, paymentHash, tdrpc.OUT)
+		lr, err := m.store.GetLedgerRecord(ctx, paymentHash, tdrpc.OUT)
 		if err == nil {
 			// Update it with the value and status
 			lr.Status = tdrpc.COMPLETED
@@ -69,20 +69,20 @@ func (txm *TXMonitor) MonitorLN() {
 			handledTx = true
 
 			// Process the payment
-			err = txm.store.ProcessLedgerRecord(ctx, lr)
+			err = m.store.ProcessLedgerRecord(ctx, lr)
 			if err != nil {
-				txm.logger.Errorw("ProcessLedgerRecord Out Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
+				m.logger.Errorw("ProcessLedgerRecord Out Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
 				continue
 			}
 
-			txm.logger.Infow("Processed Out Invoice", "monitor", "ln", "payment_hash", paymentHash, "value", invoice.AmtPaidSat)
+			m.logger.Infow("Processed Out Invoice", "monitor", "ln", "payment_hash", paymentHash, "value", invoice.AmtPaidSat)
 
 		} else if err != store.ErrNotFound {
-			txm.logger.Fatalw("GetLedgerRecord Error", "monitor", "ln", "error", err)
+			m.logger.Fatalw("GetLedgerRecord Error", "monitor", "ln", "error", err)
 		}
 
 		// Find the existing ledger record inbound
-		lr, err = txm.store.GetLedgerRecord(ctx, paymentHash, tdrpc.IN)
+		lr, err = m.store.GetLedgerRecord(ctx, paymentHash, tdrpc.IN)
 		if err == nil {
 			// Update it with the value and status
 			lr.Status = tdrpc.COMPLETED
@@ -90,20 +90,20 @@ func (txm *TXMonitor) MonitorLN() {
 			handledTx = true
 
 			// Process the payment
-			err = txm.store.ProcessLedgerRecord(ctx, lr)
+			err = m.store.ProcessLedgerRecord(ctx, lr)
 			if err != nil {
-				txm.logger.Errorw("ProcessLedgerRecord In Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
+				m.logger.Errorw("ProcessLedgerRecord In Error", "monitor", "ln", "error", err, "payment_hash", paymentHash)
 				continue
 			}
 
-			txm.logger.Infow("Processed In Invoice", "monitor", "ln", "payment_hash", paymentHash, "value", invoice.AmtPaidSat)
+			m.logger.Infow("Processed In Invoice", "monitor", "ln", "payment_hash", paymentHash, "value", invoice.AmtPaidSat)
 
 		} else if err != store.ErrNotFound {
-			txm.logger.Fatalw("GetLedgerRecord Error", "monitor", "ln", "error", err)
+			m.logger.Fatalw("GetLedgerRecord Error", "monitor", "ln", "error", err)
 		}
 
 		if !handledTx {
-			txm.logger.Infow("Did not find LedgerRecord for Invoice", "monitor", "ln", "payment_hash", paymentHash, "value", invoice.AmtPaidSat)
+			m.logger.Infow("Did not find LedgerRecord for Invoice", "monitor", "ln", "payment_hash", paymentHash, "value", invoice.AmtPaidSat)
 		}
 
 	}

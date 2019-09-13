@@ -8,17 +8,17 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(txMonitorCmd)
+	rootCmd.AddCommand(monitorCmd)
 }
 
 var (
-	txMonitorCmd = &cli.Command{
-		Use:   "txmonitor",
-		Short: "TX Monitor",
-		Long:  `TX Monitor`,
+	monitorCmd = &cli.Command{
+		Use:   "monitor",
+		Short: "Monitor",
+		Long:  `Monitor`,
 		Run: func(cmd *cli.Command, args []string) { // Initialize the databse
 
-			startTxMonitor()
+			startMonitor()
 
 			<-conf.Stop.Chan() // Wait until StopChan
 			conf.Stop.Wait()   // Wait until everyone cleans up
@@ -28,13 +28,9 @@ var (
 	}
 )
 
-func startTxMonitor() {
-	txm, err := NewTXMonitor()
+func startMonitor() {
+	_, err := NewMonitor()
 	if err != nil {
-		logger.Fatalw("Could not create TXMonitor", "error", err)
+		logger.Fatalw("Could not create Monitor", "error", err)
 	}
-
-	go txm.MonitorBTC()
-	go txm.MonitorLN()
-	go txm.MonitorExpired()
 }

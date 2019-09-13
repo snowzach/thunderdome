@@ -15,6 +15,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 
 // MarshalJSON for Account
 func (a *Account) MarshalJSON() ([]byte, error) {
+
 	type Alias Account
 	return json.Marshal(&struct {
 		CreatedAt *Time `json:"created_at"`
@@ -54,4 +55,21 @@ func (dr *DecodeResponse) MarshalJSON() ([]byte, error) {
 		Timestamp: (*Time)(&ts),
 		Alias:     (*Alias)(dr),
 	})
+}
+
+// MarshalJSON for LedgerResponse
+func (lr *LedgerResponse) MarshalJSON() ([]byte, error) {
+
+	// Ensure the ledger is an empty list instead of nil
+	if lr.Ledger == nil {
+		lr.Ledger = []*LedgerRecord{}
+	}
+
+	type Alias LedgerResponse
+	return json.Marshal(&struct {
+		*Alias
+	}{
+		Alias: (*Alias)(lr),
+	})
+
 }

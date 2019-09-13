@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // Pay will pay a payment request
@@ -60,6 +59,12 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		request.Value = pr.NumSatoshis
 	}
 
+	if request.Value < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid request value")
+	} else if request.Value > config.GetInt64("tdome.value_limit") {
+		return nil, status.Errorf(codes.InvalidArgument, "Max request value is %d", config.GetInt64("tdome.value_limit"))
+	}
+
 	// Build the ledger record
 	lr := &tdrpc.LedgerRecord{
 		Id:            pr.PaymentHash,
@@ -95,7 +100,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// If this is a payment to someone else using this service, mark the outbound records as interal
 	if pr.Destination == s.myPubKey {
-		lr.Id += thunderdome.InternalIdSuffix
+		lr.Id += tdrpc.InternalIdSuffix
 	}
 
 	// Save the initial state - will do some sanity checking as well

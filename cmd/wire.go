@@ -11,7 +11,9 @@ import (
 	"net"
 	"time"
 
+	"git.coinninja.net/backend/blocc/blocc"
 	"git.coinninja.net/backend/cnauth"
+	"github.com/DataDog/datadog-go/statsd"
 	"github.com/google/wire"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/lightningnetwork/lnd/macaroons"
@@ -22,13 +24,12 @@ import (
 	"google.golang.org/grpc/status"
 	macaroon "gopkg.in/macaroon.v2"
 
+	"git.coinninja.net/backend/thunderdome/monitor"
 	"git.coinninja.net/backend/thunderdome/server"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 	"git.coinninja.net/backend/thunderdome/tdrpc/adminrpcserver"
 	"git.coinninja.net/backend/thunderdome/tdrpc/tdrpcserver"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
-	"git.coinninja.net/backend/thunderdome/txmonitor"
 )
 
 // NewServer will create a new webserver
@@ -39,7 +40,7 @@ func NewServer() (*server.Server, error) {
 
 // NewTDRPCServer will create a new grpc/rest server on the webserver
 func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
-	wire.Build(tdrpcserver.NewTDRPCServer, NewStore, NewLndGrpcClientConn, NewLightningClient)
+	wire.Build(tdrpcserver.NewTDRPCServer, NewStore, NewLightningClient)
 	return nil, nil
 }
 
@@ -50,16 +51,14 @@ func NewAdminRPCServer() (tdrpc.AdminRPCServer, error) {
 }
 
 // NewTXMonitor will create a new BTC and LN transaction monitor
-func NewTXMonitor() (*txmonitor.TXMonitor, error) {
-	store := NewStore()
-	lndConn := NewLndGrpcClientConn()
-	bloccConn := NewBloccClientConn()
-	return txmonitor.NewTXMonitor(store, lndConn, bloccConn)
+func NewMonitor() (*monitor.Monitor, error) {
+	wire.Build(monitor.NewMonitor, NewStore, NewLightningClient, NewBloccClient, NewDogStatsDClient)
+	return nil, nil
 }
 
 // NewStore is the store for the application
-func NewStore() thunderdome.Store {
-	var store thunderdome.Store
+func NewStore() tdrpc.Store {
+	var store tdrpc.Store
 	var err error
 	switch config.GetString("storage.type") {
 	case "postgres":
@@ -71,7 +70,9 @@ func NewStore() thunderdome.Store {
 	return store
 }
 
-func NewLightningClient(conn *grpc.ClientConn) lnrpc.LightningClient {
+func NewLightningClient() lnrpc.LightningClient {
+
+	conn := NewLndGrpcClientConn()
 
 	_, err := lnrpc.NewWalletUnlockerClient(conn).UnlockWallet(context.Background(), &lnrpc.UnlockWalletRequest{
 		WalletPassword: []byte(config.GetString("lnd.unlock_password")),
@@ -152,7 +153,7 @@ func NewCNAuthClient() (*cnauth.Client, error) {
 
 }
 
-func NewBloccClientConn() *grpc.ClientConn {
+func NewBloccClient() blocc.BloccRPCClient {
 
 	// We only need the blocc client when topup_instant is enabled so we can verify input transactions are confirmed
 	if !config.GetBool("tdome.topup_instant") {
@@ -189,6 +190,30 @@ func NewBloccClientConn() *grpc.ClientConn {
 		logger.Fatalw("Could not connect to blocc", "error", err, "host:port", net.JoinHostPort(config.GetString("blocc.host"), config.GetString("blocc.port")))
 	}
 
-	return conn
+	return blocc.NewBloccRPCClient(conn)
 
+}
+
+// NewDogStatsDClient creates a new statsd client
+func NewDogStatsDClient() *statsd.Client {
+
+	if !config.GetBool("dogstatsd.enabled") {
+		return nil
+	}
+
+	client, err := statsd.New(net.JoinHostPort(config.GetString("dogstatsd.host"), config.GetString("dogstatsd.port")))
+	if err != nil {
+		logger.Fatalw("Could not connect to datadog", "error", err, "host:port", net.JoinHostPort(config.GetString("dogstatsd.host"), config.GetString("dogstatsd.port")))
+	}
+
+	client.Namespace = config.GetString("dogstatsd.namespace")
+	client.Tags = append(client.Tags, config.GetStringSlice("dogstatsd.tags")...)
+
+	err = client.Event(&statsd.Event{
+		Title:     "Thunderdome Starting",
+		Text:      "Thunderdome Starting",
+		AlertType: statsd.Info,
+	})
+
+	return client
 }

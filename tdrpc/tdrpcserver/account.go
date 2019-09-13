@@ -21,6 +21,11 @@ func (s *tdRPCServer) GetAccount(ctx context.Context, _ *emptypb.Empty) (*tdrpc.
 		return nil, status.Errorf(codes.Internal, "Missing Account")
 	}
 
+	// If the account is locked, don't reveal the address
+	if account.Locked {
+		account.Address = ""
+	}
+
 	return account, nil
 
 }
