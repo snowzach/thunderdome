@@ -1,44 +1,43 @@
-package txmonitor
+package monitor
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/DataDog/datadog-go/statsd"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 
 	"git.coinninja.net/backend/blocc/blocc"
 
-	"git.coinninja.net/backend/thunderdome/thunderdome"
+	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-type TXMonitor struct {
+type Monitor struct {
 	logger *zap.SugaredLogger
-	store  thunderdome.Store
+	store  tdrpc.Store
 
 	lclient lnrpc.LightningClient
 	bclient blocc.BloccRPCClient
 
+	ddclient *statsd.Client
+
 	chain *chaincfg.Params
 }
 
-func NewTXMonitor(store thunderdome.Store, lndConn *grpc.ClientConn, bloccConn *grpc.ClientConn) (*TXMonitor, error) {
+func NewMonitor(store tdrpc.Store, lclient lnrpc.LightningClient, bclient blocc.BloccRPCClient, ddclient *statsd.Client) (*Monitor, error) {
 
 	logger := zap.S().With("package", "txmonitor")
 
 	// Fetch the node info to make sure we know our own identity for self-payments
-	lclient := lnrpc.NewLightningClient(lndConn)
 	info, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
 	if err != nil {
 		return nil, err
 	}
 
 	// Fetch a simple request from blocc to make sure it's functioning
-	var bclient blocc.BloccRPCClient
-	if bloccConn != nil {
-		bclient = blocc.NewBloccRPCClient(bloccConn)
+	if bclient != nil {
 		_, err = bclient.GetBlock(context.Background(), &blocc.Get{Id: blocc.BlockIdTip})
 		if err != nil {
 			return nil, err
@@ -76,17 +75,26 @@ func NewTXMonitor(store thunderdome.Store, lndConn *grpc.ClientConn, bloccConn *
 		return nil, fmt.Errorf("Could not find chain %s", lndChain.Network)
 	}
 
-	logger.Infof("TXMonitor auto-configured for chain %s", lndChain.Network)
+	logger.Infof("Monitor auto-configured for chain %s", lndChain.Network)
 
 	// Return the server
-	return &TXMonitor{
+	m := &Monitor{
 		logger: logger,
 		store:  store,
 
 		lclient: lclient,
 		bclient: bclient,
 
+		ddclient: ddclient,
+
 		chain: chain,
-	}, nil
+	}
+
+	go m.MonitorBTC()
+	go m.MonitorLN()
+	go m.MonitorExpired()
+	go m.MonitorLND()
+
+	return m, nil
 
 }

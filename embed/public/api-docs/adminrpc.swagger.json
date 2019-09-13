@@ -17,8 +17,8 @@
   "paths": {
     "/admin/accounts": {
       "get": {
-        "summary": "GetUser Accounts",
-        "operationId": "Accounts",
+        "summary": "List Accounts",
+        "operationId": "ListAccounts",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -42,6 +42,71 @@
             "required": false,
             "type": "integer",
             "format": "int32"
+          }
+        ],
+        "tags": [
+          "AdminRPC"
+        ]
+      }
+    },
+    "/admin/accounts/{id}": {
+      "get": {
+        "summary": "Get Account",
+        "operationId": "GetAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcAccount"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The id of the account",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "address",
+            "description": "The address of the account.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AdminRPC"
+        ]
+      },
+      "patch": {
+        "summary": "Update Account",
+        "operationId": "UpdateAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcAccount"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The id of the account",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tdrpcAdminUpdateAccountRequest"
+            }
           }
         ],
         "tags": [
@@ -147,6 +212,11 @@
           "type": "integer",
           "format": "int64",
           "title": "The current pending outgoing balance"
+        },
+        "locked": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Is the account locked"
         }
       },
       "title": "Account"
@@ -160,6 +230,20 @@
             "$ref": "#/definitions/tdrpcAccount"
           },
           "title": "The list of accounts"
+        }
+      }
+    },
+    "tdrpcAdminUpdateAccountRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The id of the account"
+        },
+        "locked": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "The locked status of the account"
         }
       }
     },

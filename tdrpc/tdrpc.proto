@@ -381,7 +381,9 @@ message LedgerRequest {
 // Ledger Response
 message LedgerResponse {
     // The ledger records
-    repeated LedgerRecord ledger = 1;
+    repeated LedgerRecord ledger = 1 [
+        (gogoproto.jsontag) = "ledger"
+    ];
 }
 
 // Withdraw Request

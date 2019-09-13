@@ -1,4 +1,4 @@
-package txmonitor
+package monitor
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 
 // MonitorExpired will mark records as expired once every 2 minutes
 // This will restore handle balance processing as well
-func (txm *TXMonitor) MonitorExpired() {
+func (m *Monitor) MonitorExpired() {
 
 	for !conf.Stop.Bool() {
 
-		err := txm.store.ExpireLedgerRequests(context.Background())
+		err := m.store.ExpireLedgerRequests(context.Background())
 		if err != nil {
-			txm.logger.Fatalw("Could not ExpireLedgerRequests", "error", err)
+			m.logger.Fatalw("Could not ExpireLedgerRequests", "error", err)
 		}
 
 		select {

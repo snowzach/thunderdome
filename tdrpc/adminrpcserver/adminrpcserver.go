@@ -5,23 +5,22 @@ import (
 	"go.uber.org/zap"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 type adminRPCServer struct {
 	logger       *zap.SugaredLogger
-	store        thunderdome.Store
+	store        tdrpc.Store
 	cnAuthClient *cnauth.Client
 }
 
 // NewAdminRPCServer creates the server
-func NewAdminRPCServer(store thunderdome.Store, cnAuthClient *cnauth.Client) (tdrpc.AdminRPCServer, error) {
+func NewAdminRPCServer(store tdrpc.Store, cnAuthClient *cnauth.Client) (tdrpc.AdminRPCServer, error) {
 
 	return newAdminRPCServer(store, cnAuthClient)
 
 }
 
-func newAdminRPCServer(store thunderdome.Store, cnAuthClient *cnauth.Client) (*adminRPCServer, error) {
+func newAdminRPCServer(store tdrpc.Store, cnAuthClient *cnauth.Client) (*adminRPCServer, error) {
 
 	// Return the server
 	s := &adminRPCServer{

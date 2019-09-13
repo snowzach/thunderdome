@@ -12,13 +12,28 @@ option (gogoproto.enum_stringer_all) = false;
 
 service AdminRPC {
 
-    // GetUser Accounts
-    rpc Accounts(AdminAccountsRequest) returns (AdminAccountsResponse) {
+    // List Accounts
+    rpc ListAccounts(AdminAccountsRequest) returns (AdminAccountsResponse) {
         option (google.api.http) = {
             get: "/admin/accounts"
         };
     }
- 
+
+    // Get Account
+    rpc GetAccount(AdminGetAccountRequest) returns (Account) {
+        option (google.api.http) = {
+            get: "/admin/accounts/{id}"
+        };
+    }
+
+    // Update Account
+    rpc UpdateAccount(AdminUpdateAccountRequest) returns (Account) {
+        option (google.api.http) = {
+            patch: "/admin/accounts/{id}"
+            body: "*"
+        };
+    }
+
     // Decode a payment request
     rpc Ledger(LedgerRequest) returns (LedgerResponse) {
         option (google.api.http) = {
@@ -40,4 +55,19 @@ message AdminAccountsRequest {
 message AdminAccountsResponse {
     // The list of accounts
     repeated Account accounts = 1;
+}
+
+// Used to get an account
+message AdminGetAccountRequest {
+    // The id of the account
+    string id = 1;
+    // The address of the account
+    string address = 2;
+}
+
+message AdminUpdateAccountRequest {
+    // The id of the account
+    string id = 1;
+    // The locked status of the account
+    bool locked = 2;
 }

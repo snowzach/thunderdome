@@ -11,7 +11,6 @@ import (
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 // ProcessInternal will process an payment between two accounts on this system
@@ -69,7 +68,7 @@ func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerR
 func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*tdrpc.LedgerRecord, error) {
 
 	var sender, receiver tdrpc.LedgerRecord
-	internalID := id + thunderdome.InternalIdSuffix
+	internalID := id + tdrpc.InternalIdSuffix
 
 	// Get the receiver record
 	err := tx.GetContext(ctx, &receiver, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.IN)

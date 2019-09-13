@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
-	"git.coinninja.net/backend/thunderdome/thunderdome"
 )
 
 func (suite *DBTestSuite) TestProcessLedgerRecordInternal() {
@@ -37,7 +36,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordInternal() {
 
 	// Create the pending record with wrong state
 	lr2 := &tdrpc.LedgerRecord{
-		Id:        "tr1" + thunderdome.InternalIdSuffix, // MUST INCLUDE INTERNAL SUFFIX FOR OUTBOUND
+		Id:        "tr1" + tdrpc.InternalIdSuffix, // MUST INCLUDE INTERNAL SUFFIX FOR OUTBOUND
 		AccountId: a2.Id,
 		ExpiresAt: &expiresAt,
 		Status:    tdrpc.FAILED,
