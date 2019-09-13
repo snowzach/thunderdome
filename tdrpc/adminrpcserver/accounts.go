@@ -2,6 +2,7 @@ package adminrpcserver
 
 import (
 	"context"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,6 +34,8 @@ func (s *adminRPCServer) ListAccounts(ctx context.Context, request *tdrpc.AdminA
 
 func (s *adminRPCServer) GetAccount(ctx context.Context, request *tdrpc.AdminGetAccountRequest) (*tdrpc.Account, error) {
 
+	request.Id = strings.Replace(request.Id, "-", ":", -1)
+
 	var account *tdrpc.Account
 	var err error
 
@@ -55,6 +58,8 @@ func (s *adminRPCServer) GetAccount(ctx context.Context, request *tdrpc.AdminGet
 }
 
 func (s *adminRPCServer) UpdateAccount(ctx context.Context, request *tdrpc.AdminUpdateAccountRequest) (*tdrpc.Account, error) {
+
+	request.Id = strings.Replace(request.Id, "-", ":", -1)
 
 	if request.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid id")
