@@ -94,7 +94,7 @@ func init() {
 	config.SetDefault("tdome.topup_fee_free", false)
 	config.SetDefault("tdome.topup_fee_free_limit", 40000)
 	config.SetDefault("tdome.default_request_expires", 86400)
-	config.SetDefault("tdome.agent_signature", "") // If left blank, it cannot be used
+	config.SetDefault("tdome.agent_secret", "") // If left blank, it cannot be used
 	config.SetDefault("tdome.create_generated_expires", 2592000)
 
 }
