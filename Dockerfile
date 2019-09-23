@@ -4,7 +4,7 @@ RUN apk add --no-cache make git protobuf protobuf-dev curl && \
     rm -rf /var/cache/apk/*
 ENV CGO_ENABLED 0
 ENV GOOS linux
-ENV GOPRIVATE=git.coinninja.net
+ENV GOPRIVATE git.coinninja.net
 
 # Workaround for private dependencies
 ARG CI_JOB_TOKEN
