@@ -61,8 +61,8 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		}
 
 		// We're requesting tdrpc.CreateGeneratedEndpoint
-		// The signature is supplied and is = tdome.agent_signature"
-		if (fullMethodName == tdrpc.CreateGeneratedEndpoint) && sig != "" && sig == config.GetString("tdome.agent_signature") {
+		// The signature is supplied and is = tdome.agent_secret"
+		if (fullMethodName == tdrpc.CreateGeneratedEndpoint) && sig != "" && sig == config.GetString("tdome.agent_secret") {
 			// Add the agent flag to the context
 			ctx = context.WithValue(ctx, contextKey(contextKeyAgent), true)
 			break // Authenticated

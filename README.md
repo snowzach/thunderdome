@@ -94,7 +94,7 @@ LOGGER_LEVEL=debug
 | tdome.topup_fee_free                   | Credit the transaction fee to the users account on topup            | false              |
 | tdome.topup_fee_free_limit             | The max amount a user can be credited for fee free topup (in sat)   | 40000              |
 | tdome.default_request_expires          | How long a payment request is good for (seconds)                    | 86400              |
-| tdome.agent_signature                  | A secret that can be used to create account and payment requests    | "" = disabled      |
+| tdome.agent_secret                     | A secret that can be used to create account and payment requests    | "" = disabled      |
 | tdome.create_generated_expires         | How long a generic invoice expiration will be in seconds            | 2592000            |
 |                                        |                                                                     |                    |
 

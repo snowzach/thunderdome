@@ -443,13 +443,13 @@ func RegisterAdminRPCHandlerClient(ctx context.Context, mux *runtime.ServeMux, c
 }
 
 var (
-	pattern_AdminRPC_ListAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "accounts"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AdminRPC_ListAccounts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "accounts"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_AdminRPC_GetAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "accounts", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AdminRPC_GetAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "accounts", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_AdminRPC_UpdateAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "accounts", "id"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AdminRPC_UpdateAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"admin", "accounts", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_AdminRPC_Ledger_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "ledger"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AdminRPC_Ledger_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"admin", "ledger"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

@@ -50,7 +50,7 @@ ${GOPATH}/bin/wire:
 
 # Handle all grpc endpoint protobufs
 %.pb.gw.go: %.proto
-	protoc ${PROTOBUF_INCLUDES} --gogoslick_out=paths=source_relative,plugins=grpc,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:. --grpc-gateway_out=paths=source_relative,logtostderr=true:. --swagger_out=logtostderr=true:. $*.proto
+	protoc ${PROTOBUF_INCLUDES} --gogoslick_out=paths=source_relative,plugins=grpc,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types:. --grpc-gateway_out=paths=source_relative,allow_colon_final_segments=true,logtostderr=true:. --swagger_out=logtostderr=true:. $*.proto
 
 # Handle any non-specific protobufs
 %.pb.go: %.proto
