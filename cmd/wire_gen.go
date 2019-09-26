@@ -222,11 +222,5 @@ func NewDogStatsDClient() *statsd.Client {
 	client.Namespace = viper.GetString("dogstatsd.namespace")
 	client.Tags = append(client.Tags, viper.GetStringSlice("dogstatsd.tags")...)
 
-	err = client.Event(&statsd.Event{
-		Title:     "Thunderdome Starting",
-		Text:      "Thunderdome Starting",
-		AlertType: statsd.Info,
-	})
-
 	return client
 }

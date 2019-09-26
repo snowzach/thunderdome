@@ -100,7 +100,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 		// If the status hasn't changed
 		if prevlr.Status == lr.Status {
 
-			// Update only the fields we are allowed to update
+			// Update only the fields we are allowed to update, and only set updated_at if something changed
 			_, err = tx.ExecContext(ctx, `
 				UPDATE ledger SET
 				updated_at = NOW(),
@@ -108,7 +108,12 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 				memo = $2,
 				request = $3,
 				error = $4
-				WHERE id = $5 AND direction = $6
+				WHERE id = $5 AND direction = $6 AND (
+					expires_at <> $1 OR
+					memo <> $2 OR
+					request <> $3 OR
+					error <> $4
+				)
 			`, lr.ExpiresAt, lr.Memo, lr.Request, lr.Error, lr.Id, lr.Direction)
 			if err != nil {
 				return err
