@@ -6,6 +6,7 @@ import (
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -78,6 +79,8 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		Memo:          pr.Description,
 		Request:       request.Request,
 	}
+
+	s.logger.Debugw("request.pay", "account_id", account.Id, zap.Any("request", lr))
 
 	// If it's not another user using this service, calcuate the network fee
 	if pr.Destination != s.myPubKey {

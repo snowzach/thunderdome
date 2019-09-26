@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/DataDog/datadog-go/statsd"
 	"github.com/btcsuite/btcd/txscript"
 	"github.com/btcsuite/btcd/wire"
 	"github.com/btcsuite/btcutil"
@@ -60,7 +61,7 @@ func (m *Monitor) MonitorBTC() {
 				m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
+			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees, false)
 		}
 
 		// Main loop
@@ -84,7 +85,7 @@ func (m *Monitor) MonitorBTC() {
 				m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees)
+			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees, true)
 		}
 
 		// We were disconnected, reconnect and try again
@@ -101,7 +102,7 @@ func (m *Monitor) MonitorBTC() {
 }
 
 // This will parse the transaction and add it to the ledger
-func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, txFee int64) {
+func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, txFee int64, alert bool) {
 
 	// Decode the transaction
 	tx, err := btcutil.NewTxFromBytes(rawTx)
@@ -248,6 +249,16 @@ topUp: // Use a for so we can break at any time on failure and drop out of the b
 			lr.Status = tdrpc.COMPLETED
 		} else if confirmations > 0 {
 			lr.Status = tdrpc.COMPLETED
+		}
+
+		// If it's a large transaction, send an alert
+		if m.ddclient != nil && alert && lr.Status == tdrpc.COMPLETED && lr.Value > config.GetInt64("tdome.topup_alert_large") {
+			m.ddclient.Event(&statsd.Event{
+				Title:     "Large TopUp Received",
+				Text:      fmt.Sprintf(`Large TopUp TX:%s Value:%d Address:%s`, txHash, lr.Value, addresses[0].String()),
+				Priority:  statsd.Normal,
+				AlertType: statsd.Warning,
+			})
 		}
 
 		err = m.store.ProcessLedgerRecord(ctx, lr)
