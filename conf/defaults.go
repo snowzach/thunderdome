@@ -72,6 +72,7 @@ func init() {
 	config.SetDefault("lnd.tls_host", "")
 	config.SetDefault("lnd.macaroon", "admin.macaroon")
 	config.SetDefault("lnd.unlock_password", "testtest")
+	config.SetDefault("lnd.health_check_interval", "30s")
 
 	config.SetDefault("blocc.host", "blocc")
 	config.SetDefault("blocc.port", 8080)
