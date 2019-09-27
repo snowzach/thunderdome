@@ -88,7 +88,21 @@ func NewLightningClient() lnrpc.LightningClient {
 		logger.Fatalf("Could not UnlockWallet: %v", err)
 	}
 
-	return lnrpc.NewLightningClient(conn)
+	lclient := lnrpc.NewLightningClient(conn)
+
+	// Continuously monitor the connection to LND, exit if it goes bad
+	go func() {
+		for {
+			_, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
+			if err != nil {
+				logger.Fatalw("LND Connection Invalid.", "error", err)
+			}
+			logger.Debug("LND Healthcheck OK")
+			time.Sleep(config.GetDuration("lnd.health_check_interval"))
+		}
+	}()
+
+	return lclient
 }
 
 // NewLndGrpcClientConn creates a new GRPC connection to LND
