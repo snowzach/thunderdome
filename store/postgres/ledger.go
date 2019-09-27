@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
@@ -268,51 +269,51 @@ func (c *Client) ExpireLedgerRequests(ctx context.Context) error {
 // LedgerDeltaLog logs the difference between 2 ledger records
 func (c *Client) LedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) {
 
-	ret := make([]interface{}, 0)
+	ret := make(map[string]string)
 
 	if lr1 == nil || lr2 == nil {
 		return
 	}
 
 	if lr1.AccountId != lr2.AccountId {
-		ret = append(ret, "account_id", fmt.Sprintf("%v->%v", lr1.AccountId, lr2.AccountId))
+		ret["account_id"] = fmt.Sprintf("%v->%v", lr1.AccountId, lr2.AccountId)
 	}
 	if lr1.Status != lr2.Status {
-		ret = append(ret, "status", fmt.Sprintf("%v->%v", lr1.Status, lr2.Status))
+		ret["status"] = fmt.Sprintf("%v->%v", lr1.Status, lr2.Status)
 	}
 	if lr1.Type != lr2.Type {
-		ret = append(ret, "type", fmt.Sprintf("%v->%v", lr1.Type, lr2.Type))
+		ret["type"] = fmt.Sprintf("%v->%v", lr1.Type, lr2.Type)
 	}
 	if lr1.Generated != lr2.Generated {
-		ret = append(ret, "generated", fmt.Sprintf("%v->%v", lr1.Generated, lr2.Generated))
+		ret["generated"] = fmt.Sprintf("%v->%v", lr1.Generated, lr2.Generated)
 	}
 	if lr1.Direction != lr2.Direction {
-		ret = append(ret, "direction", fmt.Sprintf("%v->%v", lr1.Direction, lr2.Direction))
+		ret["direction"] = fmt.Sprintf("%v->%v", lr1.Direction, lr2.Direction)
 	}
 	if lr1.ValueTotal() != lr2.ValueTotal() {
-		ret = append(ret, "value", fmt.Sprintf("%v->%v", lr1.Value, lr2.Value))
+		ret["value"] = fmt.Sprintf("%v->%v", lr1.Value, lr2.Value)
 	}
 	if lr1.NetworkFee != lr2.NetworkFee {
-		ret = append(ret, "value", fmt.Sprintf("%v->%v", lr1.NetworkFee, lr2.NetworkFee))
+		ret["value"] = fmt.Sprintf("%v->%v", lr1.NetworkFee, lr2.NetworkFee)
 	}
 	if lr1.ProcessingFee != lr2.ProcessingFee {
-		ret = append(ret, "value", fmt.Sprintf("%v->%v", lr1.ProcessingFee, lr2.ProcessingFee))
+		ret["value"] = fmt.Sprintf("%v->%v", lr1.ProcessingFee, lr2.ProcessingFee)
 	}
 	if lr1.AddIndex != lr2.AddIndex {
-		ret = append(ret, "add_index", fmt.Sprintf("%v->%v", lr1.AddIndex, lr2.AddIndex))
+		ret["add_index"] = fmt.Sprintf("%v->%v", lr1.AddIndex, lr2.AddIndex)
 	}
 	if lr1.Memo != lr2.Memo {
-		ret = append(ret, "memo", fmt.Sprintf("%v->%v", lr1.Memo, lr2.Memo))
+		ret["memo"] = fmt.Sprintf("%v->%v", lr1.Memo, lr2.Memo)
 	}
 	if lr1.Request != lr2.Request {
-		ret = append(ret, "request", fmt.Sprintf("%v->%v", lr1.Request, lr2.Request))
+		ret["request"] = fmt.Sprintf("%v->%v", lr1.Request, lr2.Request)
 	}
 	if lr1.Error != lr2.Error {
-		ret = append(ret, "error", fmt.Sprintf("%v->%v", lr1.Error, lr2.Error))
+		ret["error"] = fmt.Sprintf("%v->%v", lr1.Error, lr2.Error)
 	}
 
 	if len(ret) > 0 {
-		c.logger.Debugw("ProcessLedgerRecord Delta", ret...)
+		c.logger.Debugw("LedgerRecord Delta", zap.Any("delta", ret))
 	}
 
 }

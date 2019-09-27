@@ -7,6 +7,7 @@ import (
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -54,7 +55,7 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 	expiresAt := time.Now().UTC().Add(time.Duration(request.Expires) * time.Second)
 
 	// Put it in the ledger
-	err = s.store.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
+	lr := &tdrpc.LedgerRecord{
 		Id:        hex.EncodeToString(invoice.RHash),
 		AccountId: account.Id,
 		ExpiresAt: &expiresAt,
@@ -65,7 +66,11 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 		AddIndex:  invoice.AddIndex,
 		Memo:      request.Memo,
 		Request:   invoice.PaymentRequest,
-	})
+	}
+
+	s.logger.Debugw("request.create", "account_id", account.Id, zap.Any("request", lr))
+
+	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
 	}

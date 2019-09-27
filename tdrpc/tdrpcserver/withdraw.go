@@ -9,6 +9,7 @@ import (
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -112,6 +113,8 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 		ProcessingFee: processingFee,
 		Memo:          fmt.Sprintf("Withdraw %d sats with %d sat netowrk fee and %d sat processing fee", request.Value, feeResponse.FeeSat, processingFee),
 	}
+
+	s.logger.Debugw("request.withdraw", "account_id", account.Id, zap.Any("request", lr))
 
 	// If we are just estimating, return the result without processing
 	if request.Estimate {

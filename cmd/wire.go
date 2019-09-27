@@ -209,11 +209,5 @@ func NewDogStatsDClient() *statsd.Client {
 	client.Namespace = config.GetString("dogstatsd.namespace")
 	client.Tags = append(client.Tags, config.GetStringSlice("dogstatsd.tags")...)
 
-	err = client.Event(&statsd.Event{
-		Title:     "Thunderdome Starting",
-		Text:      "Thunderdome Starting",
-		AlertType: statsd.Info,
-	})
-
 	return client
 }

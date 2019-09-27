@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 
 	"git.coinninja.net/backend/thunderdome/conf"
+	"git.coinninja.net/backend/thunderdome/server"
 )
 
 func init() {
@@ -19,6 +20,8 @@ var (
 		Run: func(cmd *cli.Command, args []string) { // Initialize the databse
 
 			startMonitor()
+
+			go server.VersionHTTPServer()
 
 			<-conf.Stop.Chan() // Wait until StopChan
 			conf.Stop.Wait()   // Wait until everyone cleans up
