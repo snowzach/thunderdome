@@ -3,7 +3,6 @@ variables:
   GKE_INSTANCE: coinninja01
   GKE_ZONE: us-central1-c
   GKE_APP_TYPE: deployment
-  GKE_APP_NAME: thunderdome
   DOCKER_TLS_CERTDIR: ""
 
 # Login for git
@@ -104,8 +103,8 @@ build:tagged:
       kubectl --namespace=${CI_ENVIRONMENT_SLUG} patch ${GKE_APP_TYPE} ${GKE_APP_NAME} -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}}}}}" --record
     fi
     kubectl -n ${CI_ENVIRONMENT_SLUG} rollout status ${GKE_APP_TYPE} ${GKE_APP_NAME} -w
-    
-testing:branch:
+
+testing:branch-server:
   <<: *k8s
   stage: testing
   environment:
@@ -113,13 +112,29 @@ testing:branch:
     url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    GKE_APP_NAME: thunderdome
   only:
     - branches@backend/thunderdome
   except:
     - master
     - develop
 
-testing:latest:
+testing:branch-monitor:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: test
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    GKE_APP_NAME: thunderdome-monitor
+  only:
+    - branches@backend/thunderdome
+  except:
+    - master
+    - develop
+
+testing:latest-server:
   <<: *k8s
   stage: testing
   environment:
@@ -127,10 +142,23 @@ testing:latest:
     url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:latest
+    GKE_APP_NAME: thunderdome
   only:
     - develop@backend/thunderdome
 
-testing:tag:
+testing:latest-monitor:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: test
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:latest
+    GKE_APP_NAME: thunderdome-monitor
+  only:
+    - develop@backend/thunderdome
+
+testing:tag-server:
   <<: *k8s
   stage: testing
   environment:
@@ -138,12 +166,27 @@ testing:tag:
     url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    GKE_APP_NAME: thunderdome
   only:
     - tags@backend/thunderdome
   except:
     - branches
 
-production:tag:
+testing:tag-monitor:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: test
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    GKE_APP_NAME: thunderdome-monitor
+  only:
+    - tags@backend/thunderdome
+  except:
+    - branches
+
+production:tag-server:
   <<: *k8s
   stage: production
   environment:
@@ -151,6 +194,22 @@ production:tag:
     url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    GKE_APP_NAME: thunderdome
+  when: manual
+  only:
+    - tags@backend/thunderdome
+  except:
+    - branches
+
+production:tag-monitor:
+  <<: *k8s
+  stage: production
+  environment:
+    name: prod
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    GKE_APP_NAME: thunderdome-monitor
   when: manual
   only:
     - tags@backend/thunderdome
