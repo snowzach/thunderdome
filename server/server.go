@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
+	"git.coinninja.net/backend/thunderdome/conf"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
@@ -256,4 +257,36 @@ func RenderOrErrInternal(w http.ResponseWriter, r *http.Request, d render.Render
 		_ = render.Render(w, r, ErrInternal(err))
 		return
 	}
+}
+
+// VersionHttpServer listens on http for the /version endpoint only
+func VersionHTTPServer() {
+
+	r := chi.NewRouter()
+	r.Use(render.SetContentType(render.ContentTypeJSON))
+
+	// GetVersion returns version
+	getVersion := func() http.HandlerFunc {
+
+		// Simple version struct
+		type version struct {
+			Version string `json:"version"`
+		}
+		var v = &version{Version: conf.GitVersion}
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			render.JSON(w, r, v)
+		}
+	}
+
+	r.Get("/version", getVersion())
+
+	address := net.JoinHostPort(config.GetString("server.host"), config.GetString("server.port"))
+	zap.S().Infow("Version HTTP Server Listening", "address", address)
+
+	err := http.ListenAndServe(address, r)
+	if err != nil {
+		zap.S().Fatalw("Could not start Version HTTP Server", "error", err)
+	}
+
 }
