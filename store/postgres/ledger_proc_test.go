@@ -12,14 +12,16 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 
 	// Check basic storage of the record
 	lr1 := &tdrpc.LedgerRecord{
-		Id:        "tr1",
-		AccountId: a1.Id,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.LIGHTNING,
-		Direction: tdrpc.IN,
-		Value:     10,
-		Memo:      "memo-tr1",
-		Request:   "request-tr1",
+		Id:            "tr1",
+		AccountId:     a1.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.IN,
+		Value:         10,
+		NetworkFee:    2,
+		ProcessingFee: 3,
+		Memo:          "memo-tr1",
+		Request:       "request-tr1",
 	}
 
 	err := suite.client.ProcessLedgerRecord(suite.ctx, lr1)
@@ -56,14 +58,16 @@ func (suite *DBTestSuite) TestProcessLedgerRecordIn() {
 
 	// Check basic storage of the record
 	lr2 = &tdrpc.LedgerRecord{
-		Id:        "tr2",
-		AccountId: a2.Id,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.LIGHTNING,
-		Direction: tdrpc.IN,
-		Value:     10,
-		Memo:      "memo-tr2",
-		Request:   "request-tr2",
+		Id:            "tr2",
+		AccountId:     a2.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.IN,
+		Value:         10,
+		NetworkFee:    2,
+		ProcessingFee: 3,
+		Memo:          "memo-tr2",
+		Request:       "request-tr2",
 	}
 
 	err = suite.client.ProcessLedgerRecord(suite.ctx, lr2)
@@ -118,14 +122,16 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 
 	// Check basic storage of the record
 	lr1 := &tdrpc.LedgerRecord{
-		Id:        "tr1",
-		AccountId: a1.Id,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.LIGHTNING,
-		Direction: tdrpc.OUT,
-		Value:     20,
-		Memo:      "memo-tr1",
-		Request:   "request-tr1",
+		Id:            "tr1",
+		AccountId:     a1.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.OUT,
+		Value:         20,
+		NetworkFee:    1,
+		ProcessingFee: 2,
+		Memo:          "memo-tr1",
+		Request:       "request-tr1",
 	}
 
 	// Should be not enough funds
@@ -148,8 +154,8 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	// Check the current balance
 	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
-	suite.Equal(a1.Balance, int64(5))    // = 5
-	suite.Equal(a1.PendingOut, int64(5)) // Make sure PendingOut = 5
+	suite.Equal(a1.Balance, int64(2))    // = 5 - 1 - 2
+	suite.Equal(a1.PendingOut, int64(8)) // Make sure PendingOut = 5 + 1 + 2
 
 	// Complete the outbound transaction
 	lr1.Status = tdrpc.COMPLETED
@@ -159,7 +165,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	// Check the current balance -
 	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
 	suite.Nil(err)
-	suite.Equal(a1.Balance, int64(5))   // = 5
+	suite.Equal(a1.Balance, int64(2))   // = 5 - 1 - 2
 	suite.Equal(a1.PendingIn, int64(0)) // back to 0
 
 	// Atempt to set it back to pending should fail
@@ -167,18 +173,20 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	err = suite.client.ProcessLedgerRecord(suite.ctx, lr1)
 	suite.NotNil(err)
 
-	a2 := suite.newTestAccount("testuser2", 12)
+	a2 := suite.newTestAccount("testuser2", 15)
 
 	// Check basic storage of the record
 	lr2 = &tdrpc.LedgerRecord{
-		Id:        "tr2",
-		AccountId: a2.Id,
-		Status:    tdrpc.PENDING,
-		Type:      tdrpc.LIGHTNING,
-		Direction: tdrpc.OUT,
-		Value:     10,
-		Memo:      "memo-tr2",
-		Request:   "request-tr2",
+		Id:            "tr2",
+		AccountId:     a2.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.OUT,
+		Value:         10,
+		NetworkFee:    1,
+		ProcessingFee: 2,
+		Memo:          "memo-tr2",
+		Request:       "request-tr2",
 	}
 
 	err = suite.client.ProcessLedgerRecord(suite.ctx, lr2)
@@ -187,7 +195,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	// Check the current balance -
 	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
-	suite.Equal(a2.PendingOut, int64(10)) // Make sure PendingOut = 10
+	suite.Equal(a2.PendingOut, int64(13)) // Make sure PendingOut = 10 - 1 - 2
 	suite.Equal(a2.Balance, int64(2))     // Make sure Balance = 2
 
 	// Fail the request - this essentially makes it no longer exist
@@ -198,7 +206,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	// Check the current balance -
 	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
-	suite.Equal(a2.Balance, int64(12))   // Make sure Balance = 12
+	suite.Equal(a2.Balance, int64(15))   // Make sure Balance = 12
 	suite.Equal(a2.PendingOut, int64(0)) // Make sure PendingOut = 0 // request removed
 
 	// Set it back to pending
@@ -209,7 +217,7 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	// Check the balance again, should show pending once more
 	a2, err = suite.client.GetAccountByID(suite.ctx, a2.Id)
 	suite.Nil(err)
-	suite.Equal(a2.PendingOut, int64(10)) // Make sure PendingOut = 12
+	suite.Equal(a2.PendingOut, int64(13)) // Make sure PendingOut = 12
 	suite.Equal(a2.Balance, int64(2))     // Make sure Balance = 2
 
 	// This time complete the transaction but with a lesser value

@@ -3,15 +3,16 @@ module git.coinninja.net/backend/thunderdome
 go 1.12
 
 require (
-	cloud.google.com/go v0.45.1 // indirect
-	git.coinninja.net/backend/blocc v1.1.8
+	cloud.google.com/go/firestore v1.0.0 // indirect
+	cloud.google.com/go/storage v1.1.0 // indirect
+	git.coinninja.net/backend/blocc v1.1.12
 	git.coinninja.net/backend/cnauth v0.1.1
 	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/blendle/zapdriver v1.1.6
-	github.com/btcsuite/btcd v0.0.0-20190824003749-130ea5bddde3
+	github.com/btcsuite/btcd v0.0.0-20190926002857-ba530c4abb35
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/btcsuite/btcwallet v0.0.0-20190906013808-ae43a2a200e9 // indirect
+	github.com/btcsuite/btcwallet v0.0.0-20190925005052-95d7aa0b4953 // indirect
 	github.com/containerd/containerd v1.2.8 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhui/dktest v0.3.1 // indirect
@@ -23,12 +24,12 @@ require (
 	github.com/go-chi/cors v1.0.0
 	github.com/go-chi/render v1.0.1
 	github.com/gogo/protobuf v1.3.0
-	github.com/golang-migrate/migrate/v4 v4.6.1
+	github.com/golang-migrate/migrate/v4 v4.6.2
 	github.com/golang/protobuf v1.3.2
 	github.com/google/wire v0.3.0
 	github.com/gorilla/mux v1.7.3 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
-	github.com/grpc-ecosystem/grpc-gateway v1.11.1
+	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
+	github.com/grpc-ecosystem/grpc-gateway v1.11.3
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/juju/clock v0.0.0-20190205081909-9c5c9712527c // indirect
 	github.com/juju/errors v0.0.0-20190806202954-0232dcc7464d // indirect
@@ -41,20 +42,28 @@ require (
 	github.com/rs/xid v1.2.1
 	github.com/snowzach/certtools v1.0.2
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
 	go.opencensus.io v0.22.1
+	go.uber.org/multierr v1.2.0 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190907121410-71b5226ff739 // indirect
-	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297
-	golang.org/x/sys v0.0.0-20190907184412-d223b2b6db03 // indirect
+	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
+	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3 // indirect
+	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
+	golang.org/x/net v0.0.0-20191002035440-2ec189313ef0
+	golang.org/x/sys v0.0.0-20191002091554-b397fe3ad8ed // indirect
+	golang.org/x/text v0.3.2
+	golang.org/x/tools v0.0.0-20191002183253-8a18b87bf663 // indirect
 	google.golang.org/api v0.10.0 // indirect
-	google.golang.org/genproto v0.0.0-20190905072037-92dd089d5514
-	google.golang.org/grpc v1.23.0
+	google.golang.org/appengine v1.6.4 // indirect
+	google.golang.org/genproto v0.0.0-20191002192902-579ee97b777a
+	google.golang.org/grpc v1.24.0
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/macaroon-bakery.v2 v2.1.0 // indirect
 	gopkg.in/macaroon.v2 v2.1.0
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
+	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
 
 replace github.com/btcsuite/btcwallet v0.0.0-20180904010540-284e2e0e696e33d5be388f7f3d9a26db703e0c06 => github.com/btcsuite/btcwallet v0.0.0-20181130030754-284e2e0e696e

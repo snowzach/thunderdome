@@ -8,6 +8,7 @@ package cmd
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"git.coinninja.net/backend/blocc/blocc"
 	"git.coinninja.net/backend/cnauth"
 	"git.coinninja.net/backend/thunderdome/monitor"
@@ -187,7 +188,7 @@ func NewCNAuthClient() (*cnauth.Client, error) {
 
 func NewBloccClient() blocc.BloccRPCClient {
 
-	if !viper.GetBool("tdome.topup_instant") {
+	if !viper.GetBool("tdome.topup_instant_enabled") {
 		return nil
 	}
 
@@ -234,6 +235,13 @@ func NewDogStatsDClient() *statsd.Client {
 
 	client.Namespace = viper.GetString("dogstatsd.namespace")
 	client.Tags = append(client.Tags, viper.GetStringSlice("dogstatsd.tags")...)
+
+	client.Event(&statsd.Event{
+		Title:     "Thunderdome Started",
+		Text:      fmt.Sprintf(`Thunderdome Started`),
+		Priority:  statsd.Normal,
+		AlertType: statsd.Info,
+	})
 
 	return client
 }

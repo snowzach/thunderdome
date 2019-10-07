@@ -81,16 +81,20 @@ LOGGER_LEVEL=debug
 | lnd.unlock_password                    | The password to unlock the lnd wallet                               | "testtest"         |
 | ---                                    | ---                                                                 | ---                |
 | tdome.disabled                         | Shuts down the entire system and returns 503                        | false              |
-| tdome.min_withdraw                     | Minimum amount of satoshis for a withdraw                           | 40000              |
 | tdome.default_withdraw_target_blocks   | The default number of target blocks for confirmation on withdraw    | 6                  |
 | tdome.disable_auth                     | Should authentication be disabled                                   | false              |
 | tdome.lock_new_accounts                | Should a new account be locked when created                         | true               |
 | tdome.firebase_credentials_file        | Path to the firebase credentials.json file for admin auth           | ""                 |
 | tdome.value_limit                      | The max amount you can send or request                              | 500000             |
 | tdome.processing_fee_rate              | The percentage fee charged for paying and invoice 0.1 = 0.1%        | 0.0                |
+| tdome.withdraw_fee_estimate            | The fee used for estimating withdraw transactions                   | 2000               |
 | tdome.withdraw_fee_rate                | The percentage fee charged for a withdraw 0.1 = 0.1%                | 0.1                |
+| tdome.tdome.withdraw_min               | Minimum amount of satoshis for a withdraw                           | 40000              |
 | tdome.network_fee_limit                | The limit we will accept for a withdraw fee                         | 40000              |
-| tdome.topup_instant                    | Allow crediting a user account with no confirmations                | false              |
+| tdome.topup_instant_enabled            | Allow crediting a user account with no confirmations                | false              |
+| tdome.topup_instant_user_count_limit   | The number of pending topup requests to allow another instant one   | 2                  |
+| tdome.topup_instant_user_value_limit   | The maximum pending instant topup request amounts                   | 100000             |
+| tdome.topup_instant_system_value_limit | The system wide max instant pending topups                          | 1000000            |
 | tdome.topup_fee_free                   | Credit the transaction fee to the users account on topup            | false              |
 | tdome.topup_fee_free_limit             | The max amount a user can be credited for fee free topup (in sat)   | 40000              |
 | tdome.default_request_expires          | How long a payment request is good for (seconds)                    | 86400              |

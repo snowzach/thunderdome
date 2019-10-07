@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -16,7 +17,7 @@ func (s *tdRPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, status.Errorf(codes.Internal, "Missing Account")
+		return nil, ErrNotFound
 	}
 
 	// Ensure after has a value
@@ -39,7 +40,8 @@ func (s *tdRPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) 
 
 	lrs, err := s.store.GetLedger(ctx, request.Filter, after, int(request.Offset), int(request.Limit))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Error on GetLedger: %v", err)
+		s.logger.Errorw("GetLedger Error", zap.Any("filter", request.Filter), "error", err)
+		return nil, status.Errorf(codes.Internal, "GetLedger internal error")
 	}
 
 	if lrs == nil {
