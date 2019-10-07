@@ -21,34 +21,36 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, status.Errorf(codes.Internal, "Missing Account")
+		return nil, ErrNotFound
 	}
 
 	if account.Locked {
-		return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
+		return nil, ErrAccountLocked
 	}
 
 	if request.Value < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid Value")
 	} else if request.Value > config.GetInt64("tdome.value_limit") {
-		return nil, status.Errorf(codes.InvalidArgument, "Max invoice value is %d", config.GetInt64("tdome.value_limit"))
+		return nil, status.Errorf(codes.InvalidArgument, "Max invoice value is %s", tdrpc.FormatInt(ctx, config.GetInt64("tdome.value_limit")))
 	}
 
 	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 7776000) {
-		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than 300 or greater than 7776000")
+		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than %s or greater than %s", tdrpc.FormatInt(ctx, 300), tdrpc.FormatInt(ctx, 7776000))
 	}
 	if request.Expires == 0 {
 		request.Expires = config.GetInt64("tdome.default_request_expires")
 	}
 
 	// Create the invoice
-	invoice, err := s.lclient.AddInvoice(ctx, &lnrpc.Invoice{
+	addInvoiceRequest := &lnrpc.Invoice{
 		Memo:   request.Memo,
 		Value:  request.Value,
 		Expiry: request.Expires,
-	})
+	}
+	invoice, err := s.lclient.AddInvoice(ctx, addInvoiceRequest)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
+		s.logger.Errorw("LND AddInvoice Error", zap.Any("request", addInvoiceRequest), "error", err)
+		return nil, status.Errorf(codes.Internal, "Could not AddInvoice: %s", status.Convert(err).Message())
 	}
 
 	// Get the expires time
@@ -72,7 +74,8 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
+		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
+		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
 
 	// Return the payment request
@@ -88,18 +91,18 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.Create
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, status.Errorf(codes.Internal, "Missing Account")
+		return nil, ErrNotFound
 	}
 
 	// If it's locked
 	if account.Locked {
 		// If we're not the agent, access denied
 		if !isAgent(ctx) {
-			return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
+			return nil, ErrAccountLocked
 		}
 		// If we don't specifically allow locked accounts, return not found
 		if !request.AllowLocked {
-			return nil, status.Errorf(codes.NotFound, "account does not exist")
+			return nil, ErrNotFound
 		}
 	}
 
@@ -112,36 +115,42 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.Create
 		}, nil
 	} else if err != store.ErrNotFound {
 		// Some other error
-		return nil, status.Errorf(codes.Internal, "Could not get record: %v", err)
+		s.logger.Errorw("GetActiveGeneratedLightningLedgerRequest Error", "account_id", account.Id, "error", err)
+		return nil, status.Errorf(codes.Internal, "GetActiveGeneratedLightningLedgerRequest internal error")
 	}
 
 	expirationSeconds := config.GetInt64("tdome.create_generated_expires")
 	expiresAt := time.Now().UTC().Add(time.Duration(expirationSeconds) * time.Second)
 
 	// Create the invoice
-	invoice, err := s.lclient.AddInvoice(ctx, &lnrpc.Invoice{
+	addInvoiceRequest := &lnrpc.Invoice{
 		Value:  0,
 		Expiry: expirationSeconds,
-	})
+	}
+	invoice, err := s.lclient.AddInvoice(ctx, addInvoiceRequest)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not AddInvoice: %v", err)
+		s.logger.Errorw("LND AddInvoice Error", zap.Any("request", addInvoiceRequest), "error", err)
+		return nil, status.Errorf(codes.Internal, "Could not AddInvoice: %v", status.Convert(err).Message())
 	}
 
-	// Put it in the ledger
-	err = s.store.ProcessLedgerRecord(ctx, &tdrpc.LedgerRecord{
+	// Create a new one and put it in the ledger
+	lr = &tdrpc.LedgerRecord{
 		Id:        hex.EncodeToString(invoice.RHash),
 		AccountId: account.Id,
 		ExpiresAt: &expiresAt,
 		Status:    tdrpc.PENDING,
 		Generated: true,
+		Hidden:    true, // Initially mark as hidden
 		Type:      tdrpc.LIGHTNING,
 		Direction: tdrpc.IN,
 		Value:     0,
 		AddIndex:  invoice.AddIndex,
 		Request:   invoice.PaymentRequest,
-	})
+	}
+	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not UpsertLedgerRecord: %v", err)
+		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
+		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
 
 	// Return the payment request

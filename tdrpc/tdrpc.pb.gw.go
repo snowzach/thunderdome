@@ -81,6 +81,39 @@ func local_request_ThunderdomeRPC_Decode_0(ctx context.Context, marshaler runtim
 
 }
 
+var (
+	filter_ThunderdomeRPC_Decode_1 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_ThunderdomeRPC_Decode_1(ctx context.Context, marshaler runtime.Marshaler, client ThunderdomeRPCClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DecodeRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ThunderdomeRPC_Decode_1); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.Decode(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_ThunderdomeRPC_Decode_1(ctx context.Context, marshaler runtime.Marshaler, server ThunderdomeRPCServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DecodeRequest
+	var metadata runtime.ServerMetadata
+
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_ThunderdomeRPC_Decode_1); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.Decode(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_ThunderdomeRPC_Create_0(ctx context.Context, marshaler runtime.Marshaler, client ThunderdomeRPCClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq CreateRequest
 	var metadata runtime.ServerMetadata
@@ -294,6 +327,26 @@ func RegisterThunderdomeRPCHandlerServer(ctx context.Context, mux *runtime.Serve
 
 	})
 
+	mux.Handle("GET", pattern_ThunderdomeRPC_Decode_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ThunderdomeRPC_Decode_1(rctx, inboundMarshaler, server, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ThunderdomeRPC_Decode_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_ThunderdomeRPC_Create_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -475,6 +528,26 @@ func RegisterThunderdomeRPCHandlerClient(ctx context.Context, mux *runtime.Serve
 
 	})
 
+	mux.Handle("GET", pattern_ThunderdomeRPC_Decode_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ThunderdomeRPC_Decode_1(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ThunderdomeRPC_Decode_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_ThunderdomeRPC_Create_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -579,25 +652,29 @@ func RegisterThunderdomeRPCHandlerClient(ctx context.Context, mux *runtime.Serve
 }
 
 var (
-	pattern_ThunderdomeRPC_GetAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"account"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_GetAccount_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"account"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ThunderdomeRPC_Decode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"decode"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_Decode_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"decode"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ThunderdomeRPC_Create_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"create"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_Decode_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"decode"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ThunderdomeRPC_Pay_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"pay"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_Create_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"create"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ThunderdomeRPC_Ledger_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ledger"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_Pay_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"pay"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ThunderdomeRPC_Withdraw_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"withdraw"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_Ledger_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"ledger"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ThunderdomeRPC_CreateGenerated_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"create"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_ThunderdomeRPC_Withdraw_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"withdraw"}, "", runtime.AssumeColonVerbOpt(false)))
+
+	pattern_ThunderdomeRPC_CreateGenerated_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0}, []string{"create"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
 	forward_ThunderdomeRPC_GetAccount_0 = runtime.ForwardResponseMessage
 
 	forward_ThunderdomeRPC_Decode_0 = runtime.ForwardResponseMessage
+
+	forward_ThunderdomeRPC_Decode_1 = runtime.ForwardResponseMessage
 
 	forward_ThunderdomeRPC_Create_0 = runtime.ForwardResponseMessage
 

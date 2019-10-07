@@ -79,7 +79,7 @@ monLoop:
 			stats.LocalBalance += c.LocalBalance
 			stats.RemoteBalance += c.RemoteBalance
 		}
-		m.logger.Infow("Stats", zap.Any("lnd_stats", stats))
+		m.logger.Infow("LND Stats", zap.Any("lnd_stats", stats))
 
 		if m.ddclient != nil {
 			m.ddclient.Gauge("lnd.confirmed_balance", float64(stats.ConfirmedBalance), []string{}, 1)

@@ -22,7 +22,7 @@ func (s *adminRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName st
 		return ctx, status.Errorf(codes.PermissionDenied, "missing auth method")
 	}
 
-	_, err = s.cnAuthClient.VerifyRole(ctx, jwt, cnauth.ClaimRolePrefix, cnauth.RoleAdmin)
+	_, err = s.cnAuthClient.VerifyRole(ctx, jwt, cnauth.ClaimRolePrefix, cnauth.RoleWrite)
 	if err != nil {
 		return ctx, status.Errorf(codes.PermissionDenied, "access denied: %v", err)
 	}
