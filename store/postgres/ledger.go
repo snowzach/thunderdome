@@ -266,6 +266,96 @@ func (c *Client) ExpireLedgerRequests(ctx context.Context) error {
 
 }
 
+// GetLedgerRecordStats fetches statistics for all users or a single user for ongoing transactions
+func (c *Client) GetLedgerRecordStats(ctx context.Context, filter map[string]string, after time.Time) (*tdrpc.LedgerRecordStats, error) {
+
+	var queryClause string
+	var queryParams = []interface{}{}
+
+	// Validate the filters
+	for filter, value := range filter {
+		switch filter {
+		case "account_id":
+			if value == "" {
+				return nil, fmt.Errorf("Invalid value for account_id")
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND account_id = $%d", len(queryParams))
+		case "status":
+			// Validate
+			if err := new(tdrpc.LedgerRecord_Status).Scan(value); err != nil {
+				return nil, err
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND status = $%d", len(queryParams))
+		case "type":
+			// Validate
+			if err := new(tdrpc.LedgerRecord_Type).Scan(value); err != nil {
+				return nil, err
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND type = $%d", len(queryParams))
+		case "direction":
+			// Validate
+			if err := new(tdrpc.LedgerRecord_Direction).Scan(value); err != nil {
+				return nil, err
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND direction = $%d", len(queryParams))
+		case "generated":
+			value = strings.ToLower(value)
+			if value == "true" {
+				queryParams = append(queryParams, true)
+			} else if value == "false" {
+				queryParams = append(queryParams, false)
+			} else {
+				return nil, fmt.Errorf("Invalid value for generated")
+			}
+			queryClause += fmt.Sprintf(" AND generated = $%d", len(queryParams))
+		case "request":
+			if value == "" {
+				return nil, fmt.Errorf("Invalid value for request")
+			}
+			queryParams = append(queryParams, value)
+			queryClause += fmt.Sprintf(" AND request = $%d", len(queryParams))
+		case "hidden":
+			value = strings.ToLower(value)
+			if value == "true" {
+				queryParams = append(queryParams, true)
+			} else if value == "false" {
+				queryParams = append(queryParams, false)
+			} else if value == "*" {
+				// Don't filter at all
+				break
+			} else {
+				return nil, fmt.Errorf("Invalid value for hidden")
+			}
+			queryClause += fmt.Sprintf(" AND hidden = $%d", len(queryParams))
+		default:
+			return nil, fmt.Errorf("Unsupported filter %s", filter)
+
+		}
+	}
+
+	// Handle the after field
+	if !after.IsZero() {
+		queryParams = append(queryParams, after)
+		queryClause += fmt.Sprintf(" AND created_at >= $%d", len(queryParams))
+	}
+
+	var stats = new(tdrpc.LedgerRecordStats)
+	err := c.db.GetContext(ctx, stats, `
+		SELECT
+		COUNT(id) as count,
+		COALESCE(SUM(value),0) as value
+		FROM ledger WHERE 1=1`+queryClause, queryParams...)
+	if err != nil {
+		return stats, err
+	}
+
+	return stats, nil
+}
+
 // LedgerDeltaLog logs the difference between 2 ledger records
 func (c *Client) LedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) {
 

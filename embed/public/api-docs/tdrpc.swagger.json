@@ -25,15 +25,52 @@
               "$ref": "#/definitions/tdrpcAccount"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
@@ -53,22 +90,59 @@
               "$ref": "#/definitions/tdrpcCreateResponse"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
         "parameters": [
           {
             "name": "allow_locked",
-            "description": "Allow generated requests when the user account is locked.",
+            "description": "Allow generated requests when the user account is locked. Requires Agent Authorization.",
             "in": "query",
             "required": false,
             "type": "boolean",
@@ -89,15 +163,52 @@
               "$ref": "#/definitions/tdrpcCreateResponse"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
@@ -117,6 +228,78 @@
       }
     },
     "/decode": {
+      "get": {
+        "summary": "Decode a payment request",
+        "operationId": "Decode2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcDecodeResponse"
+            }
+          },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
+          "401": {
+            "description": "Returned when the user does not have permission to access the resource.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "request",
+            "description": "The payment request to be decoded.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      },
       "post": {
         "summary": "Decode a payment request",
         "operationId": "Decode",
@@ -127,15 +310,52 @@
               "$ref": "#/definitions/tdrpcDecodeResponse"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
@@ -165,15 +385,52 @@
               "$ref": "#/definitions/tdrpcLedgerResponse"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
@@ -218,15 +475,52 @@
               "$ref": "#/definitions/tdrpcPayResponse"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
@@ -256,15 +550,52 @@
               "$ref": "#/definitions/tdrpcWithdrawResponse"
             }
           },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
           "401": {
             "description": "Returned when the user does not have permission to access the resource.",
-            "schema": {}
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
           },
           "404": {
             "description": "Returned when the resource does not exist.",
             "schema": {
-              "type": "string",
-              "format": "string"
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
             }
           }
         },
@@ -307,6 +638,16 @@
     },
     "tdrpcAccount": {
       "type": "object",
+      "example": {
+        "id": "pubkey:abcabc123123",
+        "created_at": "2019-10-01T18:33:17.606Z",
+        "updated_at": "2019-10-01T18:33:17.606Z",
+        "address": "2MymaDj8Jfv5tXv6bhjVVpisHvsbsXmhFbE",
+        "balance": 100000,
+        "pending_in": 5000,
+        "pending_out": 6000,
+        "locked": true
+      },
       "properties": {
         "id": {
           "type": "string"
@@ -350,6 +691,11 @@
     },
     "tdrpcCreateRequest": {
       "type": "object",
+      "example": {
+        "memo": "Sample Memo",
+        "value": 10000,
+        "expires": 86400
+      },
       "properties": {
         "memo": {
           "type": "string",
@@ -370,6 +716,9 @@
     },
     "tdrpcCreateResponse": {
       "type": "object",
+      "example": {
+        "request": "lnrabcabc123..."
+      },
       "properties": {
         "request": {
           "type": "string",
@@ -380,6 +729,9 @@
     },
     "tdrpcDecodeRequest": {
       "type": "object",
+      "example": {
+        "request": "lnrabcabc123..."
+      },
       "properties": {
         "request": {
           "type": "string",
@@ -467,6 +819,20 @@
     },
     "tdrpcLedgerRecord": {
       "type": "object",
+      "example": {
+        "id": "c31b53fd5e93b90250aa2e2839744dfb7d9f7f768ae395a65531e1a033dcc311",
+        "account_id": "pubkey:abcabc123123",
+        "created_at": "2019-10-01T18:33:17.606Z",
+        "updated_at": "2019-10-01T18:33:17.606Z",
+        "expires_at": "2019-10-01T18:33:17.606Z",
+        "status": "pending",
+        "type": "lightning",
+        "direction": "in",
+        "value": 100000,
+        "network_fee": 7000,
+        "processing_fee": 700,
+        "memo": "Example ledger record"
+      },
       "properties": {
         "id": {
           "type": "string",
@@ -572,6 +938,10 @@
     },
     "tdrpcPayRequest": {
       "type": "object",
+      "example": {
+        "request": "lnrabcabc123...",
+        "value": 10000
+      },
       "properties": {
         "request": {
           "type": "string",
@@ -581,6 +951,11 @@
           "type": "integer",
           "format": "int64",
           "title": "The amount you wish to pay the payment request"
+        },
+        "estimate": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Estimate the pay request that would be created based on the route"
         }
       },
       "title": "Pay Request"
@@ -610,6 +985,11 @@
     },
     "tdrpcWithdrawRequest": {
       "type": "object",
+      "example": {
+        "address": "2MymaDj8Jfv5tXv6bhjVVpisHvsbsXmhFbE",
+        "value": 100000,
+        "sat_per_byte": 40
+      },
       "properties": {
         "address": {
           "type": "string",

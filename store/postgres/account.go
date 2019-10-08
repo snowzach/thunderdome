@@ -102,3 +102,21 @@ func (c *Client) SaveAccount(ctx context.Context, account *tdrpc.Account) (*tdrp
 	return account, nil
 
 }
+
+// GetAccountStats returns the statistics for the system
+func (c *Client) GetAccountStats(ctx context.Context) (*tdrpc.AccountStats, error) {
+
+	var stats = new(tdrpc.AccountStats)
+	err := c.db.GetContext(ctx, stats, `
+	SELECT
+	COUNT(id) filter (WHERE locked = false) as count,
+	COUNT(id) filter (WHERE locked = true) as locked_count,
+	COALESCE(SUM(balance),0) as balance,
+	COALESCE(SUM(pending_in),0) as pending_in,
+	COALESCE(SUM(pending_out),0) as pending_out
+	FROM
+	account
+	`)
+	return stats, err
+
+}

@@ -83,7 +83,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 		c.LedgerDeltaLog(prevlr, lr)
 
 		// The previous transaction exists, validate that nothing of note has changed in the request
-		if prevlr.Type != lr.Type || prevlr.Direction != lr.Direction || prevlr.AccountId != lr.AccountId || prevlr.Request != lr.Request {
+		if prevlr.Type != lr.Type || prevlr.Direction != lr.Direction || prevlr.AccountId != lr.AccountId {
 			return fmt.Errorf("Existing Ledger Entry Mismatch %v:%v", prevlr, lr)
 		}
 
@@ -191,6 +191,8 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 
 	} else if lr.Direction == tdrpc.IN {
 
+		// When inbound, only the values are taken into account. Network Fee and Processing Fee are ignored
+
 		// There is a previous LedgerRecord
 		if prevlr != nil {
 
@@ -233,20 +235,22 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 	// Upsert the data, capture the result
 	var ret tdrpc.LedgerRecord
 	err = tx.GetContext(ctx, &ret, `
-		INSERT INTO ledger (id, account_id, created_at, updated_at, expires_at, status, type, direction, generated, value, add_index, memo, request, error)
-		VALUES($1, $2, NOW(), NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO ledger (id, account_id, created_at, updated_at, expires_at, status, type, direction, generated, value, network_fee, processing_fee, add_index, memo, request, error)
+		VALUES($1, $2, NOW(), NOW(), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		ON CONFLICT (id, direction) DO UPDATE
 		SET
 		updated_at = NOW(),
 		expires_at = $3,
 		status = $4,
 		value = $8,
-		memo = $10,
-		request = $11,
-		error = $12
+		network_fee = $9,
+		processing_fee = $10,
+		memo = $12,
+		request = $13,
+		error = $14
 		`+extraUpdateClause+`
 		RETURNING *
-	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.Generated, lr.ValueTotal(), lr.AddIndex, lr.Memo, lr.Request, lr.Error)
+	`, lr.Id, lr.AccountId, lr.ExpiresAt, lr.Status, lr.Type, lr.Direction, lr.Generated, lr.Value, lr.NetworkFee, lr.ProcessingFee, lr.AddIndex, lr.Memo, lr.Request, lr.Error)
 	if err != nil {
 		return fmt.Errorf("Could not process ledger: %v", err)
 	}

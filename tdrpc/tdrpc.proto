@@ -48,10 +48,28 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 			}
         }
     }
-	responses: {
+    responses: {
+        key: "400";
+        value: {
+            description: "There was an error processing the request. The error message is generally designed to present to the user.";
+            schema: {
+                json_schema: {
+                    type: OBJECT;
+                }
+                example: { value: '{"error":"<error details>","code":3,"message":"<error details>"}'}
+            }
+        }
+    }
+    responses: {
 		key: "401";
 		value: {
-			description: "Returned when the user does not have permission to access the resource.";
+            description: "Returned when the user does not have permission to access the resource.";
+			schema: {
+				json_schema: {
+					type: OBJECT;
+                };
+                example: { value: '{"error":"invalid login","code":16,"message":"invalid login"}'}
+			}
 		}
 	}
 	responses: {
@@ -60,8 +78,21 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 			description: "Returned when the resource does not exist.";
 			schema: {
 				json_schema: {
-					type: STRING;
-				}
+					type: OBJECT;
+                };
+                example: { value: '{"error":"not found","code":5,"message":"not found"}'}
+			}
+		}
+	}
+	responses: {
+		key: "500";
+		value: {
+			description: "Internal error. The back-end experienced an error. No useful information will be provided in error message.";
+			schema: {
+				json_schema: {
+					type: OBJECT;
+                };
+                example: { value: '{"error":"internal error","code":5,"message":"internal error"}'}
 			}
 		}
 	}
@@ -81,6 +112,13 @@ service ThunderdomeRPC {
         option (google.api.http) = {
             post: "/decode"
             body: "*"
+            additional_bindings: [
+				{
+					get: "/decode"
+				}
+			]
+        };
+        option (grpc.gateway.protoc_gen_swagger.options.openapiv2_operation) = {
         };
     }
 
@@ -125,6 +163,9 @@ service ThunderdomeRPC {
 
 // Account
 message Account {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "id": "pubkey:abcabc123123", "created_at": "2019-10-01T18:33:17.606Z", "updated_at": "2019-10-01T18:33:17.606Z", "address":"2MymaDj8Jfv5tXv6bhjVVpisHvsbsXmhFbE", "balance":100000, "pending_in":5000, "pending_out": 6000, "locked": true }' }
+    };
 
     string id = 1;
     // Created at timestamp
@@ -162,6 +203,10 @@ message Account {
 
 // Ledger Record
 message LedgerRecord {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "id": "c31b53fd5e93b90250aa2e2839744dfb7d9f7f768ae395a65531e1a033dcc311", "account_id": "pubkey:abcabc123123", "created_at": "2019-10-01T18:33:17.606Z", "updated_at": "2019-10-01T18:33:17.606Z", "expires_at": "2019-10-01T18:33:17.606Z", "status":"pending", "type":"lightning", "direction":"in", "value":100000, "network_fee":7000, "processing_fee": 700, "memo": "Example ledger record" }' }
+    };
+
     // The ID for the record. Lightning Payment Hash or BTC transaction
     string id = 1;
     // The user account associated with the request
@@ -256,6 +301,10 @@ message LedgerRecord {
 
 // Decode Request
 message DecodeRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "request": "lnrabcabc123..." }' }
+    };
+
     // The payment request to be decoded
     string request = 1;
 }
@@ -331,6 +380,10 @@ message HopHint {
 
 // Create Request
 message CreateRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "memo": "Sample Memo", "value": 10000, "expires":86400 }' }
+    };
+
     // An optional memo to include
     string memo = 1;
     // The amount for the payment request. (Zero means no pre-set value)
@@ -345,18 +398,28 @@ message CreateRequest {
 
 // Create Response
 message CreateResponse {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "request": "lnrabcabc123..." }' }
+    };
+
     // The payment request string
     string request = 1;
 }
 
 // Pay Request
 message PayRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "request": "lnrabcabc123...", "value": 10000 }' }
+    };
+
     // The payment request string
     string request = 1;
     // The amount you wish to pay the payment request
     int64 value = 2 [
         (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {type: INTEGER}
     ];
+    // Estimate the pay request that would be created based on the route
+    bool estimate = 3;
 }
 
 // Pay Response
@@ -388,6 +451,9 @@ message LedgerResponse {
 
 // Withdraw Request
 message WithdrawRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "address": "2MymaDj8Jfv5tXv6bhjVVpisHvsbsXmhFbE", "value": 100000, "sat_per_byte": 40 }' }
+    };
     // The address to send funds to
     string address = 1;
     // The amount to send (in satoshis)
@@ -412,6 +478,6 @@ message WithdrawResponse {
 
 // CreateGenerated Request
 message CreateGeneratedRequest {
-    // Allow generated requests when the user account is locked
+    // Allow generated requests when the user account is locked. Requires Agent Authorization.
     bool allow_locked = 1;
 }

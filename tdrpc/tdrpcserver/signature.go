@@ -2,19 +2,10 @@ package tdrpcserver
 
 import (
 	"encoding/hex"
-	"errors"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-)
-
-var (
-	ErrSigVerficationFailed   = errors.New("signature verification failed")
-	ErrInvalidSig             = errors.New("signature invalid")
-	ErrInvalidPubKey          = errors.New("invalid public key string")
-	ErrInvalidTimestamp       = errors.New("invalid timestamp")
-	ErrInvalidTimestampOffset = errors.New("invalid timestamp offset")
 )
 
 // ParsePubKeyHexString parses a hex encoded string to a public key struct

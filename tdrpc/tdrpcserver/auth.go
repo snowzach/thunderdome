@@ -8,6 +8,7 @@ import (
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	config "github.com/spf13/viper"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -29,7 +30,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 	// Returns a 503
 	if config.GetBool("tdome.disabled") {
-		return ctx, status.Errorf(codes.Unavailable, "Service Unavailable")
+		return ctx, ErrServiceUnavailable
 	}
 
 	// No auth required for DecodeEndpoint
@@ -40,13 +41,13 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	// Get request metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return ctx, status.Errorf(codes.PermissionDenied, "Permission Denied")
+		return ctx, ErrInvalidLogin
 	}
 
 	// Get the user pubKeyString
 	pubKeyString := mdfirst(md, tdrpc.MetadataAuthPubKeyString)
 	if pubKeyString == "" {
-		return ctx, status.Errorf(codes.PermissionDenied, "Invalid Login")
+		return ctx, ErrInvalidLogin
 	}
 
 	// Get the timestamp and signature
@@ -71,7 +72,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		// Otherwise require a valid signature
 		err := ValidateTimestampSigntature(ts, pubKeyString, sig, time.Now())
 		if err != nil {
-			return ctx, status.Errorf(codes.PermissionDenied, err.Error())
+			return ctx, err
 		}
 
 		break // Authenticated
@@ -84,7 +85,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		accountID = AccountTypePubKey + ":" + pubKeyString
 		// PERFORM AUTH
 	} else {
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid Login")
+		return nil, ErrInvalidLogin
 	}
 
 	// See if we have an account already?
@@ -93,7 +94,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 		// We will never auto-create an account for the CreateGeneratedEndpoint
 		if fullMethodName == tdrpc.CreateGeneratedEndpoint {
-			return ctx, status.Errorf(codes.NotFound, "account does not exist")
+			return ctx, ErrNotFound
 		}
 
 		// Create a new account
@@ -106,6 +107,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 			Type: lnrpc.AddressType_NESTED_PUBKEY_HASH,
 		})
 		if err != nil {
+			s.logger.Errorw("LND NewAddress Error", "error", err)
 			return nil, status.Errorf(codes.Internal, "New Address Error: %v", err)
 		}
 
@@ -113,11 +115,13 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		account.Address = address.Address
 		account, err = s.store.SaveAccount(ctx, account)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "SaveAccount Error: %v", err)
+			s.logger.Errorw("SaveAccount Error", zap.Any("account", account), "error", err)
+			return nil, status.Errorf(codes.Internal, "SaveAccount internal error")
 		}
 
 	} else if err != nil {
-		return ctx, status.Errorf(codes.Internal, "GetAccountByID Error: %v", err)
+		s.logger.Errorw("GetAccountByID Error", "account_id", accountID, "error", err)
+		return nil, status.Errorf(codes.Internal, "GetAccountByID internal error")
 	}
 
 	// Include the account in the context

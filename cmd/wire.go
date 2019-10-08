@@ -7,6 +7,7 @@ package cmd
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"time"
@@ -170,7 +171,7 @@ func NewCNAuthClient() (*cnauth.Client, error) {
 func NewBloccClient() blocc.BloccRPCClient {
 
 	// We only need the blocc client when topup_instant is enabled so we can verify input transactions are confirmed
-	if !config.GetBool("tdome.topup_instant") {
+	if !config.GetBool("tdome.topup_instant_enabled") {
 		return nil
 	}
 
@@ -222,6 +223,13 @@ func NewDogStatsDClient() *statsd.Client {
 
 	client.Namespace = config.GetString("dogstatsd.namespace")
 	client.Tags = append(client.Tags, config.GetStringSlice("dogstatsd.tags")...)
+
+	client.Event(&statsd.Event{
+		Title:     "Thunderdome Started",
+		Text:      fmt.Sprintf(`Thunderdome Started`),
+		Priority:  statsd.Normal,
+		AlertType: statsd.Info,
+	})
 
 	return client
 }

@@ -19,28 +19,30 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, status.Errorf(codes.Internal, "Missing Account")
+		return nil, ErrNotFound
 	}
 
 	if account.Locked {
-		return nil, status.Errorf(codes.PermissionDenied, "Account is locked")
+		return nil, ErrAccountLocked
 	}
 
 	// Decode the Request
 	pr, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: request.Request})
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "Could not DecodePayReq: %v", status.Convert(err).Message())
 	}
 
 	// Check for expiration
 	expiresAt := time.Unix(pr.Timestamp+pr.Expiry, 0)
 	if time.Now().UTC().After(expiresAt) {
-		return nil, status.Errorf(codes.InvalidArgument, "Request is expired")
+		return nil, ErrRequestExpired
 	}
 
 	// Check for mangled amount
 	if pr.NumSatoshis < 0 || request.Value < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
+	} else if request.Value > config.GetInt64("tdome.value_limit") {
+		return nil, status.Errorf(codes.InvalidArgument, "Max request value is %d", config.GetInt64("tdome.value_limit"))
 	}
 
 	// Check for zero amount
@@ -58,12 +60,6 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		}
 		// Force the request value to match the payment request
 		request.Value = pr.NumSatoshis
-	}
-
-	if request.Value < 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Invalid request value")
-	} else if request.Value > config.GetInt64("tdome.value_limit") {
-		return nil, status.Errorf(codes.InvalidArgument, "Max request value is %d", config.GetInt64("tdome.value_limit"))
 	}
 
 	// Build the ledger record
@@ -84,21 +80,23 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// If it's not another user using this service, calcuate the network fee
 	if pr.Destination != s.myPubKey {
-		routesResponse, err := s.lclient.QueryRoutes(ctx, &lnrpc.QueryRoutesRequest{
+		queryRoutesRequest := &lnrpc.QueryRoutesRequest{
 			PubKey: pr.Destination,
 			Amt:    lr.Value + lr.ProcessingFee,
-		})
+		}
+		routesResponse, err := s.lclient.QueryRoutes(ctx, queryRoutesRequest)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "%v", err)
+			s.logger.Errorw("LND QueryRoutes Error", zap.Any("request", queryRoutesRequest), "error", err)
+			return nil, status.Errorf(codes.Internal, "Could not QueryRoutes: %v", status.Convert(err).Message())
 		} else if len(routesResponse.Routes) != 1 {
-			return nil, status.Errorf(codes.Internal, "did not get network route")
+			return nil, ErrNoRouteFound
 		}
 		lr.NetworkFee = routesResponse.Routes[0].TotalFees
 	}
 
 	// Sanity check the network fee
 	if lr.NetworkFee > config.GetInt64("tdome.network_fee_limit") {
-		return nil, status.Errorf(codes.Internal, "network fee too large: %d", lr.NetworkFee)
+		return nil, status.Errorf(codes.Internal, "Network fee too large: %d", lr.NetworkFee)
 	}
 
 	// If this is a payment to someone else using this service, mark the outbound records as interal
@@ -106,10 +104,18 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		lr.Id += tdrpc.InternalIdSuffix
 	}
 
+	// If we're just providing an estimate, return it
+	if request.Estimate {
+		return &tdrpc.PayResponse{
+			Result: lr,
+		}, nil
+	}
+
 	// Save the initial state - will do some sanity checking as well
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
+		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
+		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
 
 	// If this is a payment to someone else using this service, we transfer the balance internally
@@ -118,7 +124,8 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		// This is an internal payment, process the record
 		lr, err = s.store.ProcessInternal(ctx, pr.PaymentHash)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "%v", err)
+			s.logger.Errorw("ProcessInternal Error", zap.Any("lr", lr), "error", err)
+			return nil, status.Errorf(codes.Internal, "ProcessInternal internal error")
 		}
 
 		return &tdrpc.PayResponse{
@@ -128,10 +135,11 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	}
 
 	// Send the payment
-	response, err := s.lclient.SendPaymentSync(ctx, &lnrpc.SendRequest{
+	sendPaymentSyncRequest := &lnrpc.SendRequest{
 		Amt:            request.Value,
 		PaymentRequest: request.Request,
-	})
+	}
+	response, err := s.lclient.SendPaymentSync(ctx, sendPaymentSyncRequest)
 	if err != nil || (response != nil && response.PaymentError != "") {
 		lr.Status = tdrpc.FAILED
 		if response.PaymentError != "" {
@@ -147,12 +155,14 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// Update the status and the balance
 	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
-		return nil, status.Errorf(codes.Internal, "%v", plrerr)
+		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
+		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
 
 	// If there was an error, the ledger has been updated, return the error now
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not Pay: %v", err)
+		s.logger.Errorw("LND SendPaymentSync Error", zap.Any("request", sendPaymentSyncRequest), "error", err)
+		return nil, status.Errorf(codes.Internal, "Could not SendPaymentSync: %v", status.Convert(err).Message())
 	}
 
 	return &tdrpc.PayResponse{

@@ -94,6 +94,7 @@ func NewMonitor(store tdrpc.Store, lclient lnrpc.LightningClient, bclient blocc.
 	go m.MonitorLN()
 	go m.MonitorExpired()
 	go m.MonitorLND()
+	go m.MonitorStats()
 
 	return m, nil
 

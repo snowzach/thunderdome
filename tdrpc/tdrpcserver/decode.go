@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
@@ -14,7 +16,7 @@ func (s *tdRPCServer) Decode(ctx context.Context, request *tdrpc.DecodeRequest) 
 	// Decode and return the PayRequest
 	pr, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: request.Request})
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.InvalidArgument, "Could not DecodePayReq: %v", status.Convert(err).Message())
 	}
 
 	// Convert it to our type
