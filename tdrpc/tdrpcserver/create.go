@@ -21,11 +21,11 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, ErrNotFound
+		return nil, tdrpc.ErrNotFound
 	}
 
 	if account.Locked {
-		return nil, ErrAccountLocked
+		return nil, tdrpc.ErrAccountLocked
 	}
 
 	if request.Value < 0 {
@@ -74,6 +74,10 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
+		// A valid message is provided with this error
+		if status.Code(err) == codes.InvalidArgument {
+			return nil, err
+		}
 		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
@@ -91,18 +95,18 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.Create
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, ErrNotFound
+		return nil, tdrpc.ErrNotFound
 	}
 
 	// If it's locked
 	if account.Locked {
 		// If we're not the agent, access denied
 		if !isAgent(ctx) {
-			return nil, ErrAccountLocked
+			return nil, tdrpc.ErrAccountLocked
 		}
 		// If we don't specifically allow locked accounts, return not found
 		if !request.AllowLocked {
-			return nil, ErrNotFound
+			return nil, tdrpc.ErrNotFound
 		}
 	}
 
@@ -149,6 +153,10 @@ func (s *tdRPCServer) CreateGenerated(ctx context.Context, request *tdrpc.Create
 	}
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
+		// A valid message is provided with this error
+		if status.Code(err) == codes.InvalidArgument {
+			return nil, err
+		}
 		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}

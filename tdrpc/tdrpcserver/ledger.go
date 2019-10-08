@@ -17,7 +17,7 @@ func (s *tdRPCServer) Ledger(ctx context.Context, request *tdrpc.LedgerRequest) 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, ErrNotFound
+		return nil, tdrpc.ErrNotFound
 	}
 
 	// Ensure after has a value

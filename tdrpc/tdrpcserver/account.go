@@ -14,7 +14,7 @@ func (s *tdRPCServer) GetAccount(ctx context.Context, _ *emptypb.Empty) (*tdrpc.
 	// The authentication function will upsert the account and include it in the request context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, ErrNotFound
+		return nil, tdrpc.ErrNotFound
 	}
 
 	// If the account is locked, don't reveal the address

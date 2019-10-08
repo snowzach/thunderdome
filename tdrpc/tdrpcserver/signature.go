@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	"git.coinninja.net/backend/thunderdome/tdrpc"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 )
@@ -12,7 +13,7 @@ import (
 func ParsePubKeyHexString(str string) (*btcec.PublicKey, error) {
 
 	if str == "" {
-		return nil, ErrInvalidPubKey
+		return nil, tdrpc.ErrInvalidPubKey
 	}
 
 	pubKeyBytes, err := hex.DecodeString(str)
@@ -27,7 +28,7 @@ func ParsePubKeyHexString(str string) (*btcec.PublicKey, error) {
 func ParseSignatureHexString(str string) (*btcec.Signature, error) {
 
 	if str == "" {
-		return nil, ErrInvalidSig
+		return nil, tdrpc.ErrInvalidSig
 	}
 
 	sig, err := hex.DecodeString(str)
@@ -54,16 +55,16 @@ func ValidateSigntature(payload string, pubKeyHexString string, sigHexString str
 
 	pubKey, err := ParsePubKeyHexString(pubKeyHexString)
 	if err != nil {
-		return ErrInvalidPubKey
+		return tdrpc.ErrInvalidPubKey
 	}
 
 	sig, err := ParseSignatureHexString(sigHexString)
 	if err != nil {
-		return ErrInvalidSig
+		return tdrpc.ErrInvalidSig
 	}
 
 	if !sig.Verify(chainhash.DoubleHashB([]byte(payload)), pubKey) {
-		return ErrSigVerficationFailed
+		return tdrpc.ErrSigVerficationFailed
 	}
 
 	return nil
@@ -74,19 +75,19 @@ func ValidateSigntature(payload string, pubKeyHexString string, sigHexString str
 func ValidateTimestampSigntature(timeString string, pubKeyHexString string, sigHexString string, referenceTime time.Time) error {
 
 	if timeString == "" {
-		return ErrInvalidTimestamp
+		return tdrpc.ErrInvalidTimestamp
 	}
 
 	t, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {
-		return ErrInvalidTimestamp
+		return tdrpc.ErrInvalidTimestamp
 	}
 
 	// If timestamp is +/- 10 mintues from server then fail
 	dt := referenceTime.UTC().Sub(t)
 	delta := 10 * time.Minute
 	if dt < -delta || dt > delta {
-		return ErrInvalidTimestampOffset
+		return tdrpc.ErrInvalidTimestampOffset
 	}
 
 	return ValidateSigntature(timeString, pubKeyHexString, sigHexString)
