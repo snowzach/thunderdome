@@ -1,4 +1,4 @@
-package tdrpcserver
+package tdrpc
 
 import (
 	"google.golang.org/grpc/codes"
@@ -15,6 +15,8 @@ var (
 	ErrAccountLocked          = status.Errorf(codes.PermissionDenied, "account is locked")
 	ErrServiceUnavailable     = status.Errorf(codes.Unavailable, "service unavailable")
 	ErrRequestExpired         = status.Errorf(codes.InvalidArgument, "request is expired")
+	ErrRequestAlreadyPaid     = status.Errorf(codes.InvalidArgument, "request already paid")
+	ErrInsufficientFunds      = status.Errorf(codes.InvalidArgument, "insufficient funds")
 	ErrNoRouteFound           = status.Errorf(codes.Internal, "network route not found")
 	ErrNotFound               = status.Errorf(codes.NotFound, "not found")
 )

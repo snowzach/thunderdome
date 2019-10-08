@@ -9,14 +9,13 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
 // ProcessInternal will process an payment between two accounts on this system
 func (c *Client) ProcessInternal(ctx context.Context, id string) (*tdrpc.LedgerRecord, error) {
 
-	for retries := 5; retries > 0; retries-- {
+	for retries := 10; retries > 0; retries-- {
 
 		// Start a transaction
 		tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
@@ -121,7 +120,7 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 			return nil, err
 		}
 
-		return nil, store.ErrRequestExpired
+		return nil, tdrpc.ErrRequestExpired
 	}
 
 	// The sender funds have already been placed into pending_out by the pending request setting it up
