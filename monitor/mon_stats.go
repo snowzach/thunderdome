@@ -12,6 +12,7 @@ import (
 
 type Stats struct {
 	UserCount                int64 `json:"user_count"`
+	UserLockedCount          int64 `json:"user_locked_count"`
 	UserBalance              int64 `json:"user_balance"`
 	UserPendingIn            int64 `json:"user_pending_in"`
 	UserPendingOut           int64 `json:"user_pending_out"`
@@ -81,6 +82,7 @@ monLoop:
 			continue
 		}
 		stats.UserCount = aStats.Count
+		stats.UserLockedCount = aStats.LockedCount
 		stats.UserBalance = aStats.Balance
 		stats.UserPendingIn = aStats.PendingIn
 		stats.UserPendingOut = aStats.PendingOut

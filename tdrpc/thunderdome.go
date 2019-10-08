@@ -40,10 +40,11 @@ const (
 )
 
 type AccountStats struct {
-	Count      int64 `db:"count"`
-	Balance    int64 `db:"balance"`
-	PendingIn  int64 `db:"pending_in"`
-	PendingOut int64 `db:"pending_out"`
+	Count       int64 `db:"count"`
+	LockedCount int64 `db:"locked_count"`
+	Balance     int64 `db:"balance"`
+	PendingIn   int64 `db:"pending_in"`
+	PendingOut  int64 `db:"pending_out"`
 }
 
 type LedgerRecordStats struct {
