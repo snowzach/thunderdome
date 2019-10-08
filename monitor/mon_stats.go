@@ -85,7 +85,7 @@ monLoop:
 		stats.UserPendingIn = aStats.PendingIn
 		stats.UserPendingOut = aStats.PendingOut
 
-		m.logger.Infow("Stats", zap.Any("stats", stats))
+		m.logger.Debugw("Stats", zap.Any("stats", stats))
 
 		if m.ddclient != nil {
 			m.ddclient.Gauge("user_count", float64(stats.UserCount), []string{}, 1)
