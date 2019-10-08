@@ -9,14 +9,13 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
 // ProcessLedgerRecord handles any balance transfer and changes to the ledger based on the status of the LedgerRecord
 func (c *Client) ProcessLedgerRecord(ctx context.Context, lr *tdrpc.LedgerRecord) error {
 
-	for retries := 5; retries > 0; retries-- {
+	for retries := 10; retries > 0; retries-- {
 
 		// Start a transaction
 		tx, err := c.db.BeginTxx(ctx, &sql.TxOptions{
@@ -92,7 +91,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 			// Completed is a final state always
 			(prevlr.Status == tdrpc.COMPLETED && lr.Status != tdrpc.COMPLETED) {
 			if prevlr.Status == tdrpc.COMPLETED {
-				return fmt.Errorf("already processed/paid")
+				return tdrpc.ErrRequestAlreadyPaid
 			}
 			return fmt.Errorf("Invalid Status Transition %v->%v", prevlr.Status, lr.Status)
 		}
@@ -165,7 +164,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 
 				// Check to make sure we have enough funds to start this transaction
 				if balance < lr.ValueTotal() {
-					return store.ErrInsufficientFunds
+					return tdrpc.ErrInsufficientFunds
 				}
 
 				// Put it in pending_out
@@ -179,7 +178,7 @@ func (c *Client) processLedgerRecord(ctx context.Context, tx *sqlx.Tx, lr *tdrpc
 
 				// Check to make sure we have enough funds - this should never really happen unless somehow made out of band
 				if balance < lr.ValueTotal() {
-					return store.ErrInsufficientFunds
+					return tdrpc.ErrInsufficientFunds
 				}
 
 				_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance - $1 WHERE id = $2`, lr.ValueTotal(), lr.AccountId)

@@ -22,11 +22,11 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, ErrNotFound
+		return nil, tdrpc.ErrNotFound
 	}
 
 	if account.Locked {
-		return nil, ErrAccountLocked
+		return nil, tdrpc.ErrAccountLocked
 	}
 
 	// What we charge to withdraw (percentage)
@@ -134,6 +134,10 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 	// Save the initial state - will do some sanity checking as well and preallocate funds
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
+		// A valid message is provided with this error
+		if status.Code(err) == codes.InvalidArgument {
+			return nil, err
+		}
 		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
@@ -152,6 +156,10 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 
 		// Update the record to failed - return funds
 		if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
+			// A valid message is provided with this error
+			if status.Code(plrerr) == codes.InvalidArgument {
+				return nil, plrerr
+			}
 			s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
 			return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 		}
@@ -166,7 +174,12 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 	// Otherwise we succeeded, update the ledger record ID to be the transaction id
 	err = s.store.UpdateLedgerRecordID(ctx, tempLedgerRecordID, response.Txid)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not UpdateLedgerRecordID: %v", err)
+		// A valid message is provided with this error
+		if status.Code(err) == codes.InvalidArgument {
+			return nil, err
+		}
+		s.logger.Errorw("UpdateLedgerRecordID Error", "prev", tempLedgerRecordID, "next", response.Txid)
+		return nil, status.Errorf(codes.Internal, "UpdateLedgerRecordID internal error")
 	}
 
 	lr.Id = response.Txid

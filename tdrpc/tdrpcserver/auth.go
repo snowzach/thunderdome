@@ -30,7 +30,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 	// Returns a 503
 	if config.GetBool("tdome.disabled") {
-		return ctx, ErrServiceUnavailable
+		return ctx, tdrpc.ErrServiceUnavailable
 	}
 
 	// No auth required for DecodeEndpoint
@@ -41,13 +41,13 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	// Get request metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return ctx, ErrInvalidLogin
+		return ctx, tdrpc.ErrInvalidLogin
 	}
 
 	// Get the user pubKeyString
 	pubKeyString := mdfirst(md, tdrpc.MetadataAuthPubKeyString)
 	if pubKeyString == "" {
-		return ctx, ErrInvalidLogin
+		return ctx, tdrpc.ErrInvalidLogin
 	}
 
 	// Get the timestamp and signature
@@ -85,7 +85,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		accountID = AccountTypePubKey + ":" + pubKeyString
 		// PERFORM AUTH
 	} else {
-		return nil, ErrInvalidLogin
+		return nil, tdrpc.ErrInvalidLogin
 	}
 
 	// See if we have an account already?
@@ -94,7 +94,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 		// We will never auto-create an account for the CreateGeneratedEndpoint
 		if fullMethodName == tdrpc.CreateGeneratedEndpoint {
-			return ctx, ErrNotFound
+			return ctx, tdrpc.ErrNotFound
 		}
 
 		// Create a new account

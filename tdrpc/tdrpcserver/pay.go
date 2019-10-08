@@ -19,11 +19,11 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
 	if account == nil {
-		return nil, ErrNotFound
+		return nil, tdrpc.ErrNotFound
 	}
 
 	if account.Locked {
-		return nil, ErrAccountLocked
+		return nil, tdrpc.ErrAccountLocked
 	}
 
 	// Decode the Request
@@ -35,7 +35,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	// Check for expiration
 	expiresAt := time.Unix(pr.Timestamp+pr.Expiry, 0)
 	if time.Now().UTC().After(expiresAt) {
-		return nil, ErrRequestExpired
+		return nil, tdrpc.ErrRequestExpired
 	}
 
 	// Check for mangled amount
@@ -88,8 +88,8 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		if err != nil {
 			s.logger.Errorw("LND QueryRoutes Error", zap.Any("request", queryRoutesRequest), "error", err)
 			return nil, status.Errorf(codes.Internal, "Could not QueryRoutes: %v", status.Convert(err).Message())
-		} else if len(routesResponse.Routes) != 1 {
-			return nil, ErrNoRouteFound
+		} else if len(routesResponse.Routes) == 0 {
+			return nil, tdrpc.ErrNoRouteFound
 		}
 		lr.NetworkFee = routesResponse.Routes[0].TotalFees
 	}
@@ -114,6 +114,10 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	// Save the initial state - will do some sanity checking as well
 	err = s.store.ProcessLedgerRecord(ctx, lr)
 	if err != nil {
+		// A valid message is provided with this error
+		if status.Code(err) == codes.InvalidArgument {
+			return nil, err
+		}
 		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
@@ -124,6 +128,10 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		// This is an internal payment, process the record
 		lr, err = s.store.ProcessInternal(ctx, pr.PaymentHash)
 		if err != nil {
+			// A valid message is provided with this error
+			if status.Code(err) == codes.InvalidArgument {
+				return nil, err
+			}
 			s.logger.Errorw("ProcessInternal Error", zap.Any("lr", lr), "error", err)
 			return nil, status.Errorf(codes.Internal, "ProcessInternal internal error")
 		}
@@ -155,6 +163,10 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// Update the status and the balance
 	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
+		// A valid message is provided with this error
+		if status.Code(plrerr) == codes.InvalidArgument {
+			return nil, plrerr
+		}
 		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
