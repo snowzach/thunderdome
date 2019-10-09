@@ -41,7 +41,10 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	// Check for mangled amount
 	if pr.NumSatoshis < 0 || request.Value < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
-	} else if request.Value > config.GetInt64("tdome.value_limit") {
+	}
+
+	// Limit the value when paying internally
+	if pr.Destination == s.myPubKey && request.Value > config.GetInt64("tdome.value_limit") {
 		return nil, status.Errorf(codes.InvalidArgument, "Max request value is %d", config.GetInt64("tdome.value_limit"))
 	}
 
