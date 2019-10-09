@@ -91,6 +91,7 @@ monLoop:
 
 		if m.ddclient != nil {
 			m.ddclient.Gauge("user_count", float64(stats.UserCount), []string{}, 1)
+			m.ddclient.Gauge("user_locked_count", float64(stats.UserLockedCount), []string{}, 1)
 			m.ddclient.Gauge("user_balance", float64(stats.UserBalance), []string{}, 1)
 			m.ddclient.Gauge("user_pending_in", float64(stats.UserPendingIn), []string{}, 1)
 			m.ddclient.Gauge("user_pending_out", float64(stats.UserPendingOut), []string{}, 1)
