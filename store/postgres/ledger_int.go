@@ -141,7 +141,8 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 		UPDATE ledger SET
 		updated_at = NOW(),
 		status = $1,
-		value = $2
+		value = $2,
+		hidden = false
 		WHERE id = $3
 	`, tdrpc.COMPLETED, sender.ValueTotal(), internalID)
 	if err != nil {
