@@ -48,8 +48,10 @@ type AccountStats struct {
 }
 
 type LedgerRecordStats struct {
-	Count int64 `db:"count"`
-	Value int64 `db:"value"`
+	Count         int64 `db:"count"`
+	Value         int64 `db:"value"`
+	NetworkFee    int64 `db:"network_fee"`
+	ProcessingFee int64 `db:"processing_fee"`
 }
 
 type Store interface {
