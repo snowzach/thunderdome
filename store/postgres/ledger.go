@@ -347,7 +347,9 @@ func (c *Client) GetLedgerRecordStats(ctx context.Context, filter map[string]str
 	err := c.db.GetContext(ctx, stats, `
 		SELECT
 		COUNT(id) as count,
-		COALESCE(SUM(value),0) as value
+		COALESCE(SUM(value),0) as value,
+		COALESCE(SUM(network_fee),0) as network_fee,
+		COALESCE(SUM(processing_fee),0) as processing_fee
 		FROM ledger WHERE 1=1`+queryClause, queryParams...)
 	if err != nil {
 		return stats, err
