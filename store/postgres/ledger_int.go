@@ -72,7 +72,7 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string) (*
 	// Get the receiver record
 	err := tx.GetContext(ctx, &receiver, `SELECT * FROM ledger WHERE id = $1 AND direction = $2`, id, tdrpc.IN)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("Could not find receiver request")
+		return nil, fmt.Errorf("Could not find receiver request. Was this a manually created payment request?")
 	} else if err != nil {
 		return nil, err
 	}
