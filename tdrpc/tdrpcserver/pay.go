@@ -129,18 +129,23 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	if pr.Destination == s.myPubKey {
 
 		// This is an internal payment, process the record
-		lr, err = s.store.ProcessInternal(ctx, pr.PaymentHash)
+		intLr, err := s.store.ProcessInternal(ctx, pr.PaymentHash)
 		if err != nil {
+
+			// Mark the original record as failed
+			lr.Status = tdrpc.FAILED
+			s.store.ProcessLedgerRecord(ctx, lr)
+
 			// A valid message is provided with this error
 			if status.Code(err) == codes.InvalidArgument {
 				return nil, err
 			}
 			s.logger.Errorw("ProcessInternal Error", zap.Any("lr", lr), "error", err)
-			return nil, status.Errorf(codes.Internal, "ProcessInternal internal error")
+			return nil, status.Errorf(codes.Internal, "ProcessInternal error")
 		}
 
 		return &tdrpc.PayResponse{
-			Result: lr,
+			Result: intLr,
 		}, nil
 
 	}
