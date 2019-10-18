@@ -31,11 +31,11 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 	if request.Value < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid Value")
 	} else if request.Value > config.GetInt64("tdome.value_limit") {
-		return nil, status.Errorf(codes.InvalidArgument, "Max invoice value is %s", tdrpc.FormatInt(ctx, config.GetInt64("tdome.value_limit")))
+		return nil, status.Errorf(codes.InvalidArgument, "Max invoice value is %s sats", tdrpc.FormatInt(ctx, config.GetInt64("tdome.value_limit")))
 	}
 
 	if request.Expires != 0 && (request.Expires < 300 || request.Expires > 7776000) {
-		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than %s or greater than %s", tdrpc.FormatInt(ctx, 300), tdrpc.FormatInt(ctx, 7776000))
+		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than %s or greater than %s seconds", tdrpc.FormatInt(ctx, 300), tdrpc.FormatInt(ctx, 7776000))
 	}
 	if request.Expires == 0 {
 		request.Expires = config.GetInt64("tdome.default_request_expires")
