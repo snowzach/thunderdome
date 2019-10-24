@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	config "github.com/spf13/viper"
+
+	"git.coinninja.net/backend/cnauth"
 )
 
 func init() {
@@ -82,16 +84,23 @@ func init() {
 	config.SetDefault("blocc.tls_host", "blocc")
 
 	config.SetDefault("tdome.disabled", false)
-	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
 	config.SetDefault("tdome.disable_auth", false)
 	config.SetDefault("tdome.lock_new_accounts", false)
 	config.SetDefault("tdome.firebase_credentials_file", "")
-	config.SetDefault("tdome.value_limit", 500000)
+	config.SetDefault("tdome.firebase_admin_role", cnauth.ClaimRolePrefix) // cn_role is the default
+	config.SetDefault("tdome.agent_secret", "")                            // If left blank, it cannot be used
+
+	config.SetDefault("tdome.value_limit", 1000000)
 	config.SetDefault("tdome.processing_fee_rate", 0.0)
+	config.SetDefault("tdome.network_fee_limit", 40000)
+	config.SetDefault("tdome.default_request_expires", 172800)
+	config.SetDefault("tdome.create_generated_expires", 2592000)
+
+	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
 	config.SetDefault("tdome.withdraw_fee_rate", 1.0)
 	config.SetDefault("tdome.withdraw_fee_estimate", 2000)
 	config.SetDefault("tdome.withdraw_min", 40000)
-	config.SetDefault("tdome.network_fee_limit", 40000)
+
 	config.SetDefault("tdome.topup_instant_enabled", false)
 	config.SetDefault("tdome.topup_instant_user_count_limit", 2)
 	config.SetDefault("tdome.topup_instant_user_value_limit", 1200000)
@@ -99,8 +108,5 @@ func init() {
 	config.SetDefault("tdome.topup_fee_free", false)
 	config.SetDefault("tdome.topup_fee_free_limit", 40000)
 	config.SetDefault("tdome.topup_alert_large", 1500000)
-	config.SetDefault("tdome.default_request_expires", 172800)
-	config.SetDefault("tdome.agent_secret", "") // If left blank, it cannot be used
-	config.SetDefault("tdome.create_generated_expires", 2592000)
 
 }

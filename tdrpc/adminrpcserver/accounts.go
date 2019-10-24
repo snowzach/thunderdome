@@ -6,6 +6,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"git.coinninja.net/backend/cnauth"
+
 	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
@@ -55,6 +57,15 @@ func (s *adminRPCServer) GetAccount(ctx context.Context, request *tdrpc.AdminGet
 }
 
 func (s *adminRPCServer) UpdateAccount(ctx context.Context, request *tdrpc.AdminUpdateAccountRequest) (*tdrpc.Account, error) {
+
+	// Ensure the user has write access
+	hasRole, err := cnauth.HasRole(getRole(ctx), cnauth.RoleWrite)
+	if err != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "role error: %v", err)
+	}
+	if !hasRole {
+		return nil, tdrpc.ErrPermissionDenied
+	}
 
 	if request.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid id")

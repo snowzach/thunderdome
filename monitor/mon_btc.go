@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
@@ -62,7 +63,7 @@ func (m *Monitor) MonitorBTC() {
 				m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees, false)
+			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, false)
 		}
 
 		// Main loop
@@ -85,7 +86,7 @@ func (m *Monitor) MonitorBTC() {
 				m.logger.Errorw("Could not decode transaction", "monitor", "btc", "hash", tx.TxHash)
 				continue
 			}
-			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, tx.TotalFees, true)
+			m.parseBTCTranaction(ctx, rawTx, tx.NumConfirmations, true)
 		}
 
 		// We were disconnected, reconnect and try again
@@ -102,7 +103,7 @@ func (m *Monitor) MonitorBTC() {
 }
 
 // This will parse the transaction and add it to the ledger
-func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, txFee int64, shouldAlert bool) {
+func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirmations int32, shouldAlert bool) {
 
 	// Decode the transaction
 	tx, err := btcutil.NewTxFromBytes(rawTx)
@@ -131,7 +132,8 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 	}
 
 	// This is the amount of possible credit we can get for a fee free topup (if enabled). It will be adjusted as it's used
-	feeFreeTopupCredit := txFee
+	var txFee int64
+	var feeFreeTopupCredit int64
 
 	// Parse all of inbound to thunderdome transactions. These are transaction outputs destined for an address in thunderdome
 	for height, vout := range wTx.TxOut {
@@ -170,18 +172,24 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 
 		// If the record is already completed in the database and the request isn't still instant_pending, there is nothing to process
 		if prevLr != nil && prevLr.Status == tdrpc.COMPLETED && prevLr.Request != tdrpc.RequestInstantPending {
+			foundTx = true
 			continue
 		}
 
 		// We do not yet have the fee for this transaction, fetch it from blocc if we can
 		if txFee == 0 && m.bclient != nil {
+			var hasBech32Inputs bool
 			// Fetch the fee by looking up the inputs and subtracting this txn outputs
-			txFee = m.GetTxnFee(ctx, txHash, wTx)
+			txFee, hasBech32Inputs = m.GetTxnFeeAndBech32Inputs(ctx, txHash, wTx)
 			// We looked up the fee, we can also credit the feeFreeTopupCredit
-			feeFreeTopupCredit = txFee
+			// But we will only credit fee free when the inputs are bech32 (from drop bit)
+			if hasBech32Inputs {
+				feeFreeTopupCredit = txFee
+			}
 		}
 
 		m.logger.Debugw("Processing TxOut", "tx", ledgerRecordId, "value", vout.Value, "address", addresses[0].String(), "account_id", account.Id, "fee", txFee)
+		memo := "TopUp"
 
 		// Handle fee free topup
 		if feeFreeTopupCredit > 0 && config.GetBool("tdome.topup_fee_free") {
@@ -190,6 +198,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 			}
 			vout.Value += feeFreeTopupCredit
 			feeFreeTopupCredit = 0 // Make sure if this tx somehow pays multiple people we don't double up the fee
+			memo += " FeeFree"
 		}
 
 		// Convert it to a LedgerRecord
@@ -201,6 +210,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 			Direction:  tdrpc.IN,
 			Value:      vout.Value,
 			NetworkFee: txFee, // For inbound transactions this is for documentation only and can be
+			Memo:       memo,
 		}
 
 		// No confirmations yet,
@@ -308,7 +318,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 			// If we're still validForInstantTopUp after limit checks
 			if validForInstantTopUp {
 				lr.Status = tdrpc.COMPLETED
-				lr.Memo = "Instant Topup"
+				lr.Memo += " Instant"
 				lr.Request = tdrpc.RequestInstantPending
 				m.logger.Infow("Transaction marked for instant top-up", "hash", ledgerRecordId)
 			}
@@ -380,7 +390,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 }
 
 // Returns the fee for this transaction (or zero) by fetching the inputs from this transaction and calculating fees
-func (m *Monitor) GetTxnFee(ctx context.Context, txHash string, wTx *wire.MsgTx) int64 {
+func (m *Monitor) GetTxnFeeAndBech32Inputs(ctx context.Context, txHash string, wTx *wire.MsgTx) (int64, bool) {
 
 	idsMap := make(map[string]*blocc.Tx)
 	idsSlice := make([]string, 0)
@@ -403,7 +413,7 @@ func (m *Monitor) GetTxnFee(ctx context.Context, txHash string, wTx *wire.MsgTx)
 	})
 	if err != nil {
 		m.logger.Errorw("GetTxnFee FindTransactions Error", "error", err)
-		return 0
+		return 0, false
 	}
 
 	// Parse them out into the map for lookup
@@ -412,6 +422,8 @@ func (m *Monitor) GetTxnFee(ctx context.Context, txHash string, wTx *wire.MsgTx)
 	}
 
 	var fee int64
+	var foundInputs bool
+	var hasBech32Inputs = true
 
 	// Sum the input values
 	for _, vin := range wTx.TxIn {
@@ -421,14 +433,22 @@ func (m *Monitor) GetTxnFee(ctx context.Context, txHash string, wTx *wire.MsgTx)
 		// Transaction was missing from blocc
 		if bloccTx == nil {
 			m.logger.Infow("GetTxnFee missing input", "hash", txHash, "input_hash", hash)
-			return 0
+			return 0, false
+		}
+
+		// Look through the addresses, if any are not bech32, make note
+		for _, bloccVOut := range bloccTx.Out {
+			foundInputs = true // Just a safety to ensure we found some inputs
+			if len(bloccVOut.Addresses) != 1 || !strings.HasPrefix(bloccVOut.Addresses[0], "bc1") {
+				hasBech32Inputs = false
+			}
 		}
 
 		if int(vin.PreviousOutPoint.Index) < len(bloccTx.Out) {
 			fee += bloccTx.Out[int(vin.PreviousOutPoint.Index)].Value
 		} else {
 			m.logger.Infow("GetTxnFee missing input index", "hash", txHash, "input_hash", hash, "input_index", vin.PreviousOutPoint.Index)
-			return 0
+			return 0, false
 		}
 	}
 
@@ -437,6 +457,6 @@ func (m *Monitor) GetTxnFee(ctx context.Context, txHash string, wTx *wire.MsgTx)
 		fee -= vout.Value
 	}
 
-	return fee
+	return fee, (foundInputs && hasBech32Inputs)
 
 }
