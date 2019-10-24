@@ -12,6 +12,7 @@ var (
 	ErrInvalidTimestamp       = status.Errorf(codes.Unauthenticated, "invalid timestamp")
 	ErrInvalidTimestampOffset = status.Errorf(codes.Unauthenticated, "invalid timestamp offset")
 	ErrInvalidLogin           = status.Errorf(codes.Unauthenticated, "invalid login")
+	ErrPermissionDenied       = status.Errorf(codes.PermissionDenied, "permission denied")
 	ErrAccountLocked          = status.Errorf(codes.PermissionDenied, "account is locked")
 	ErrServiceUnavailable     = status.Errorf(codes.Unavailable, "service unavailable")
 	ErrRequestExpired         = status.Errorf(codes.InvalidArgument, "request is expired")
