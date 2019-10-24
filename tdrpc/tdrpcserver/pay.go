@@ -43,11 +43,6 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid value for payment request or payment value.")
 	}
 
-	// Limit the value when paying internally
-	if pr.Destination == s.myPubKey && request.Value > config.GetInt64("tdome.value_limit") {
-		return nil, status.Errorf(codes.InvalidArgument, "Max request value is %d", config.GetInt64("tdome.value_limit"))
-	}
-
 	// Check for zero amount
 	if pr.NumSatoshis == 0 {
 		if request.Value == 0 {
@@ -156,13 +151,12 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		PaymentRequest: request.Request,
 	}
 	response, err := s.lclient.SendPaymentSync(ctx, sendPaymentSyncRequest)
-	if err != nil || (response != nil && response.PaymentError != "") {
+	if err != nil {
 		lr.Status = tdrpc.FAILED
-		if response.PaymentError != "" {
-			lr.Error = response.PaymentError
-		} else {
-			lr.Error = err.Error()
-		}
+		lr.Error = err.Error()
+	} else if response.PaymentError != "" {
+		lr.Status = tdrpc.FAILED
+		lr.Error = response.PaymentError
 	} else {
 		lr.Status = tdrpc.COMPLETED
 	}

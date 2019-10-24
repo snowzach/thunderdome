@@ -17,11 +17,6 @@ func (s *tdRPCServer) GetAccount(ctx context.Context, _ *emptypb.Empty) (*tdrpc.
 		return nil, tdrpc.ErrNotFound
 	}
 
-	// If the account is locked, don't reveal the address
-	if account.Locked {
-		account.Address = ""
-	}
-
 	return account, nil
 
 }
