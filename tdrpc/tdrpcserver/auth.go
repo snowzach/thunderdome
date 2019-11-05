@@ -61,9 +61,8 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 			break // Authenticated
 		}
 
-		// We're requesting tdrpc.CreateGeneratedEndpoint
-		// The signature is supplied and is = tdome.agent_secret"
-		if (fullMethodName == tdrpc.CreateGeneratedEndpoint) && sig != "" && sig == config.GetString("tdome.agent_secret") {
+		// If this is an agent and it's going to an allowed endpoint
+		if allowAgent(fullMethodName, sig) {
 			// Add the agent flag to the context
 			ctx = context.WithValue(ctx, contextKey(contextKeyAgent), true)
 			break // Authenticated
@@ -135,4 +134,23 @@ func mdfirst(md metadata.MD, key string) string {
 		return val[0]
 	}
 	return ""
+}
+
+func allowAgent(endpoint string, sig string) bool {
+
+	// We allow the following endpoints from the agent
+	switch endpoint {
+	case tdrpc.CreateGeneratedEndpoint:
+	case tdrpc.PayEndpoint:
+	case tdrpc.GetPreAuthEndpoint:
+	default:
+		return false
+	}
+
+	// The signature must match the agent_secret
+	if sig != "" && sig == config.GetString("tdome.agent_secret") {
+		return true
+	}
+
+	return false
 }

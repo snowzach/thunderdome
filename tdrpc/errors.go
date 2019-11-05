@@ -18,6 +18,6 @@ var (
 	ErrRequestExpired         = status.Errorf(codes.InvalidArgument, "request is expired")
 	ErrRequestAlreadyPaid     = status.Errorf(codes.InvalidArgument, "request already paid")
 	ErrInsufficientFunds      = status.Errorf(codes.InvalidArgument, "insufficient funds")
-	ErrNoRouteFound           = status.Errorf(codes.Internal, "network route not found")
+	ErrNoRouteFound           = status.Errorf(codes.InvalidArgument, "No route was found in the Lightning Network. Your amount might be too large.")
 	ErrNotFound               = status.Errorf(codes.NotFound, "not found")
 )
