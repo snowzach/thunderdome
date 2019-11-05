@@ -233,3 +233,74 @@ func (suite *DBTestSuite) TestProcessLedgerRecordOut() {
 	suite.Equal(a2.Balance, int64(7))    // Make sure Balance = 7
 
 }
+
+func (suite *DBTestSuite) TestProcessLedgerPreAuth() {
+
+	// Create a test account
+	a1 := suite.newTestAccount("testuser1", 10)
+
+	// Check basic storage of the record
+	lr1 := &tdrpc.LedgerRecord{
+		Id:            "PreAuthRandomeId1",
+		AccountId:     a1.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.OUT,
+		Value:         20,
+		NetworkFee:    0,
+		ProcessingFee: 0,
+		Memo:          "memo-lr2",
+		Request:       tdrpc.PreAuthRequest,
+	}
+
+	err := suite.client.ProcessLedgerRecord(suite.ctx, lr1)
+	suite.Equal(tdrpc.ErrInsufficientFunds, err)
+
+	lr1.Value = 10
+
+	err = suite.client.ProcessLedgerRecord(suite.ctx, lr1)
+	suite.Nil(err)
+
+	// Switch the ID
+	lr2 := &tdrpc.LedgerRecord{
+		Id:            "TR2ID",
+		AccountId:     a1.Id,
+		Status:        tdrpc.PENDING,
+		Type:          tdrpc.LIGHTNING,
+		Direction:     tdrpc.OUT,
+		Value:         10,
+		NetworkFee:    1,
+		ProcessingFee: 2,
+		Memo:          "memo-tr1",
+		Request:       "Some Request ID",
+	}
+
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, lr1.Id, lr2.Id)
+	suite.Nil(err)
+
+	// This should update the request but make no changes
+	err = suite.client.ProcessLedgerRecord(suite.ctx, lr2)
+	suite.Nil(err)
+
+	// This should lead to an insufficient funds error
+	lr2.Status = tdrpc.COMPLETED
+	err = suite.client.ProcessLedgerRecord(suite.ctx, lr2)
+	suite.Equal(tdrpc.ErrInsufficientFunds, err)
+
+	// This will complete leaving us 1
+	lr2.Value = 6
+	err = suite.client.ProcessLedgerRecord(suite.ctx, lr2)
+	suite.Nil(err)
+
+	// Check the balance, should show lesser balance
+	a1, err = suite.client.GetAccountByID(suite.ctx, a1.Id)
+	suite.Nil(err)
+	suite.Equal(a1.PendingOut, int64(0)) // Make sure PendingOut = 0
+	suite.Equal(a1.Balance, int64(1))    // Make sure Balance = 1
+
+	// Check the LR for the right fields
+	lr3, err := suite.client.GetLedgerRecord(suite.ctx, lr2.Id, tdrpc.OUT)
+	suite.Nil(err)
+	suite.Equal(lr2, lr3)
+
+}

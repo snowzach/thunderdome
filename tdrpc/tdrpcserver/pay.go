@@ -2,6 +2,7 @@ package tdrpcserver
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -10,11 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
 // Pay will pay a payment request
-func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.PayResponse, error) {
+func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrpc.LedgerRecordResponse, error) {
 
 	// Get the authenticated user from the context
 	account := getAccount(ctx)
@@ -24,6 +26,11 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	if account.Locked {
 		return nil, tdrpc.ErrAccountLocked
+	}
+
+	// If we're an agent, we are only allowed to proceed when we provide a PreAuthId
+	if isAgent(ctx) && request.PreAuthId == "" {
+		return nil, tdrpc.ErrPermissionDenied
 	}
 
 	// Decode the Request
@@ -84,8 +91,11 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		}
 		routesResponse, err := s.lclient.QueryRoutes(ctx, queryRoutesRequest)
 		if err != nil {
+			if strings.Contains(status.Convert(err).Message(), "unable to find a path") {
+				return nil, tdrpc.ErrNoRouteFound
+			}
 			s.logger.Errorw("LND QueryRoutes Error", zap.Any("request", queryRoutesRequest), "error", err)
-			return nil, status.Errorf(codes.Internal, "Could not QueryRoutes: %v", status.Convert(err).Message())
+			return nil, status.Errorf(codes.Internal, "LND QueryRoutes internal error")
 		} else if len(routesResponse.Routes) == 0 {
 			return nil, tdrpc.ErrNoRouteFound
 		}
@@ -94,7 +104,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// Sanity check the network fee
 	if lr.NetworkFee > config.GetInt64("tdome.network_fee_limit") {
-		return nil, status.Errorf(codes.Internal, "Network fee too large: %d", lr.NetworkFee)
+		return nil, status.Errorf(codes.InvalidArgument, "Required network fee too large: %d", lr.NetworkFee)
 	}
 
 	// If this is a payment to someone else using this service, mark the outbound records as interal
@@ -104,9 +114,34 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// If we're just providing an estimate, return it
 	if request.Estimate {
-		return &tdrpc.PayResponse{
+		return &tdrpc.LedgerRecordResponse{
 			Result: lr,
 		}, nil
+	}
+
+	// Check if the request is pre-authorized and change the Id to match this request to update it
+	if request.PreAuthId != "" {
+		preAuthLr, err := s.store.GetLedgerRecord(ctx, request.PreAuthId, tdrpc.OUT)
+		if err == store.ErrNotFound {
+			return nil, status.Errorf(codes.NotFound, "Pre-Authorized payment not found")
+		} else if err != nil {
+			s.logger.Errorw("GetLedgerRecord Error", "preauth_id", request.PreAuthId, "error", err)
+			return nil, status.Errorf(codes.Internal, "GetLedgerRecord internal error")
+		} else if preAuthLr.Status != tdrpc.PENDING || preAuthLr.Request != tdrpc.PreAuthRequest {
+			s.logger.Errorw("GetLedgerRecord Error", "preauth_id", request.PreAuthId, zap.Any("preauth_lr", preAuthLr), "error", err)
+			return nil, status.Errorf(codes.Internal, "GetLedgerRecord internal error")
+		}
+
+		// We found the pre-authorizazed/reserved funds. Update the record to the current ID
+		err = s.store.UpdateLedgerRecordID(ctx, preAuthLr.Id, lr.Id)
+		if err != nil {
+			// A valid message is provided with this error
+			if status.Code(err) == codes.InvalidArgument {
+				return nil, err
+			}
+			s.logger.Errorw("UpdateLedgerRecordID Error", "prev", preAuthLr.Id, "next", lr.Id)
+			return nil, status.Errorf(codes.Internal, "UpdateLedgerRecordID internal error")
+		}
 	}
 
 	// Save the initial state - will do some sanity checking as well
@@ -124,7 +159,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	if pr.Destination == s.myPubKey {
 
 		// This is an internal payment, process the record
-		intLr, err := s.store.ProcessInternal(ctx, pr.PaymentHash)
+		intLr, err := s.store.ProcessInternal(ctx, pr.PaymentHash, lr)
 		if err != nil {
 
 			// Mark the original record as failed
@@ -139,7 +174,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 			return nil, status.Errorf(codes.Internal, "ProcessInternal error")
 		}
 
-		return &tdrpc.PayResponse{
+		return &tdrpc.LedgerRecordResponse{
 			Result: intLr,
 		}, nil
 
@@ -179,7 +214,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		return nil, status.Errorf(codes.Internal, "Could not SendPaymentSync: %v", status.Convert(err).Message())
 	}
 
-	return &tdrpc.PayResponse{
+	return &tdrpc.LedgerRecordResponse{
 		Result: lr,
 	}, nil
 }

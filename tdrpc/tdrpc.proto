@@ -131,7 +131,7 @@ service ThunderdomeRPC {
     }
 
     // Pay a request
-    rpc Pay(PayRequest) returns (PayResponse) {
+    rpc Pay(PayRequest) returns (LedgerRecordResponse) {
         option (google.api.http) = {
             post: "/pay"
             body: "*"
@@ -157,6 +157,27 @@ service ThunderdomeRPC {
     rpc CreateGenerated(CreateGeneratedRequest) returns (CreateResponse) {
         option (google.api.http) = {
             get: "/create"
+        };
+    }
+
+    // Create a pre-authorized request used for locking up funds until ready to pay
+    rpc CreatePreAuth(CreateRequest) returns (LedgerRecordResponse) {
+        option (google.api.http) = {
+            post: "/pay/preauth"
+            body: "*"
+        };
+    }
+
+    // Get a pre-authorized request
+    rpc GetPreAuth(Id) returns (LedgerRecordResponse) {
+        option (google.api.http) = {
+            get: "/pay/preauth/{id}"
+        };
+    }
+
+    rpc ExpirePreAuth(Id) returns (LedgerRecordResponse) {
+        option (google.api.http) = {
+            delete: "/pay/preauth/{id}"
         };
     }
 }
@@ -420,10 +441,14 @@ message PayRequest {
     ];
     // Estimate the pay request that would be created based on the route
     bool estimate = 3;
+    // A pre-authorized request id
+    string pre_auth_id = 4 [
+        (gogoproto.jsontag) = "preauth_id"
+    ];
 }
 
-// Pay Response
-message PayResponse {
+// A single Ledger Record result
+message LedgerRecordResponse {
     // The pay request result
     LedgerRecord result = 1;    
 }
@@ -480,4 +505,12 @@ message WithdrawResponse {
 message CreateGeneratedRequest {
     // Allow generated requests when the user account is locked. Requires Agent Authorization.
     bool allow_locked = 1;
+}
+
+// An Id field only
+message Id {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "id": "preauth:abc123..." }' }
+    };
+    string id = 1;
 }

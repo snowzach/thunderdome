@@ -21,9 +21,17 @@ const (
 	CreateGeneratedEndpoint = "/tdrpc.ThunderdomeRPC/CreateGenerated"
 	AccountEndpoint         = "/tdrpc.ThunderdomeRPC/Account"
 	DecodeEndpoint          = "/tdrpc.ThunderdomeRPC/Decode"
+	PayEndpoint             = "/tdrpc.ThunderdomeRPC/Pay"
+	GetPreAuthEndpoint      = "/tdrpc.ThunderdomeRPC/GetPreAuth"
 
 	// TempLedgerRecordIdPrefix is used to temporary store ledger record IDs
 	TempLedgerRecordIdPrefix = "temp:"
+
+	// PreAuthLedgerRecordIdPrefix is used to indicate an id that's for pre-authorization
+	PreAuthLedgerRecordIdPrefix = "preauth:"
+
+	// The request field will be set to this when PreAuthing funds
+	PreAuthRequest = "PreAuth"
 
 	// These are the metadata fields that we will use to authenticate requests
 	MetadataAuthPubKeyString = "cn-auth-pubkeystring"
@@ -60,7 +68,7 @@ type Store interface {
 	GetAccountByAddress(ctx context.Context, address string) (*Account, error)
 	SaveAccount(ctx context.Context, account *Account) (*Account, error)
 	ProcessLedgerRecord(ctx context.Context, lr *LedgerRecord) error
-	ProcessInternal(ctx context.Context, id string) (*LedgerRecord, error)
+	ProcessInternal(ctx context.Context, id string, lr *LedgerRecord) (*LedgerRecord, error) // Original ID, Internal LedgerRecord
 	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error
 	GetLedger(ctx context.Context, filter map[string]string, after time.Time, offset int, limit int) ([]*LedgerRecord, error)
 	GetLedgerRecord(ctx context.Context, id string, direction LedgerRecord_Direction) (*LedgerRecord, error)

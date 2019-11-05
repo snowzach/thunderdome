@@ -104,6 +104,72 @@ build:tagged:
     fi
     kubectl -n ${CI_ENVIRONMENT_SLUG} rollout status ${GKE_APP_TYPE} ${GKE_APP_NAME} -w
 
+development:branch-server:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: dev
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    GKE_APP_NAME: thunderdome
+    GKE_PROJECT: coinninja-dev
+    GKE_INSTANCE: dev-01
+  when: manual
+  only:
+    - branches@backend/thunderdome
+  except:
+    - master
+    - develop
+
+development:branch-monitor:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: dev
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+    GKE_APP_NAME: thunderdome-monitor
+    GKE_PROJECT: coinninja-dev
+    GKE_INSTANCE: dev-01
+  when: manual
+  only:
+    - branches@backend/thunderdome
+  except:
+    - master
+    - develop
+
+development:latest-server:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: dev
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:latest
+    GKE_APP_NAME: thunderdome
+    GKE_PROJECT: coinninja-dev
+    GKE_INSTANCE: dev-01
+  when: manual
+  only:
+    - develop@backend/thunderdome
+
+development:latest-monitor:
+  <<: *k8s
+  stage: testing
+  environment:
+    name: dev
+    url: https://api.${CI_ENVIRONMENT_SLUG}.coinninja.net/api/v1/thunderdome/version
+  variables:
+    CONTAINER_NAME: $CI_REGISTRY_IMAGE:latest
+    GKE_APP_NAME: thunderdome-monitor
+    GKE_PROJECT: coinninja-dev
+    GKE_INSTANCE: dev-01
+  when: manual
+  only:
+    - develop@backend/thunderdome
+
 testing:branch-server:
   <<: *k8s
   stage: testing
@@ -113,6 +179,7 @@ testing:branch-server:
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
     GKE_APP_NAME: thunderdome
+  when: manual
   only:
     - branches@backend/thunderdome
   except:
@@ -128,6 +195,7 @@ testing:branch-monitor:
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
     GKE_APP_NAME: thunderdome-monitor
+  when: manual
   only:
     - branches@backend/thunderdome
   except:
@@ -143,6 +211,7 @@ testing:latest-server:
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:latest
     GKE_APP_NAME: thunderdome
+  when: manual
   only:
     - develop@backend/thunderdome
 
@@ -155,6 +224,7 @@ testing:latest-monitor:
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:latest
     GKE_APP_NAME: thunderdome-monitor
+  when: manual
   only:
     - develop@backend/thunderdome
 
@@ -167,6 +237,7 @@ testing:tag-server:
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
     GKE_APP_NAME: thunderdome
+  when: manual
   only:
     - tags@backend/thunderdome
   except:
@@ -181,6 +252,7 @@ testing:tag-monitor:
   variables:
     CONTAINER_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
     GKE_APP_NAME: thunderdome-monitor
+  when: manual
   only:
     - tags@backend/thunderdome
   except:
