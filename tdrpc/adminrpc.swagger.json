@@ -180,6 +180,16 @@
     },
     "tdrpcAccount": {
       "type": "object",
+      "example": {
+        "id": "pubkey:abcabc123123",
+        "created_at": "2019-10-01T18:33:17.606Z",
+        "updated_at": "2019-10-01T18:33:17.606Z",
+        "address": "2MymaDj8Jfv5tXv6bhjVVpisHvsbsXmhFbE",
+        "balance": 100000,
+        "pending_in": 5000,
+        "pending_out": 6000,
+        "locked": true
+      },
       "properties": {
         "id": {
           "type": "string"
@@ -249,6 +259,20 @@
     },
     "tdrpcLedgerRecord": {
       "type": "object",
+      "example": {
+        "id": "c31b53fd5e93b90250aa2e2839744dfb7d9f7f768ae395a65531e1a033dcc311",
+        "account_id": "pubkey:abcabc123123",
+        "created_at": "2019-10-01T18:33:17.606Z",
+        "updated_at": "2019-10-01T18:33:17.606Z",
+        "expires_at": "2019-10-01T18:33:17.606Z",
+        "status": "pending",
+        "type": "lightning",
+        "direction": "in",
+        "value": 100000,
+        "network_fee": 7000,
+        "processing_fee": 700,
+        "memo": "Example ledger record"
+      },
       "properties": {
         "id": {
           "type": "string",

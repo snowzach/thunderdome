@@ -2,7 +2,7 @@ package tdrpcserver
 
 import (
 	"context"
-	"strings"
+    "strings"
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
