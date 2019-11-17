@@ -187,8 +187,14 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	}
 	response, err := s.lclient.SendPaymentSync(ctx, sendPaymentSyncRequest)
 	if err != nil {
-		lr.Status = tdrpc.FAILED
-		lr.Error = err.Error()
+		// The payment is still in transition, it could end up getting paid. Leave it for now as pending.
+		if strings.Contains(err.Error(), "transition") { // Error should be: payment is in transition
+			lr.Status = tdrpc.PENDING
+			lr.Error = err.Error()
+		} else {
+			lr.Status = tdrpc.FAILED
+			lr.Error = err.Error()
+		}
 	} else if response.PaymentError != "" {
 		lr.Status = tdrpc.FAILED
 		lr.Error = response.PaymentError
@@ -198,8 +204,8 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	// TODO: Determine if route taken was not the same as the quoted route and account for fee difference
 
-	// Update the status and the balance
-	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
+	// Update the status and the balance - Ensure it completes outside of this request context
+	if plrerr := s.store.ProcessLedgerRecord(context.Background(), lr); plrerr != nil {
 		// A valid message is provided with this error
 		if status.Code(plrerr) == codes.InvalidArgument {
 			return nil, plrerr
