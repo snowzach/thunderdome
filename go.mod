@@ -3,17 +3,18 @@ module git.coinninja.net/backend/thunderdome
 go 1.12
 
 require (
-	cloud.google.com/go v0.47.0 // indirect
-	cloud.google.com/go/firestore v1.0.0 // indirect
-	cloud.google.com/go/storage v1.1.1 // indirect
-	git.coinninja.net/backend/blocc v1.1.15
+	cloud.google.com/go v0.48.0 // indirect
+	cloud.google.com/go/firestore v1.1.0 // indirect
+	cloud.google.com/go/storage v1.3.0 // indirect
+	firebase.google.com/go v3.10.0+incompatible // indirect
+	git.coinninja.net/backend/blocc v1.1.16
 	git.coinninja.net/backend/cnauth v0.1.2
-	github.com/DataDog/datadog-go v2.3.0+incompatible
+	github.com/DataDog/datadog-go v3.2.0+incompatible
 	github.com/Microsoft/go-winio v0.4.14 // indirect
-	github.com/blendle/zapdriver v1.1.6
-	github.com/btcsuite/btcd v0.20.0-beta
+	github.com/blendle/zapdriver v1.3.1
+	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/btcsuite/btcwallet v0.10.0 // indirect
+	github.com/btcsuite/btcwallet v0.11.0 // indirect
 	github.com/containerd/containerd v1.2.8 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhui/dktest v0.3.1 // indirect
@@ -24,14 +25,15 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/cors v1.0.0
 	github.com/go-chi/render v1.0.1
+	github.com/go-redis/redis v6.15.5+incompatible
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang-migrate/migrate/v4 v4.6.2
-	github.com/golang/groupcache v0.0.0-20191002201903-404acd9df4cc // indirect
+	github.com/golang-migrate/migrate/v4 v4.7.0
+	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/google/wire v0.3.0
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
-	github.com/grpc-ecosystem/grpc-gateway v1.11.3
+	github.com/grpc-ecosystem/grpc-gateway v1.12.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/juju/clock v0.0.0-20190205081909-9c5c9712527c // indirect
@@ -41,31 +43,30 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/lightningnetwork/lnd v0.7.1-beta
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
-	github.com/pelletier/go-toml v1.5.0 // indirect
-	github.com/rogpeppe/fastuuid v1.2.0 // indirect
+	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/rs/xid v1.2.1
 	github.com/snowzach/certtools v1.0.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.4.0
+	github.com/spf13/viper v1.5.0
 	github.com/stretchr/testify v1.4.0
-	go.opencensus.io v0.22.1
-	go.uber.org/multierr v1.2.0 // indirect
-	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
-	golang.org/x/exp v0.0.0-20191014171548-69215a2ee97e // indirect
-	golang.org/x/net v0.0.0-20191021124707-24d2ffbea1e8
-	golang.org/x/sys v0.0.0-20191020212454-3e7259c5e7c2 // indirect
+	go.opencensus.io v0.22.2 // indirect
+	go.uber.org/multierr v1.4.0 // indirect
+	go.uber.org/zap v1.13.0
+	golang.org/x/crypto v0.0.0-20191117063200-497ca9f6d64f // indirect
+	golang.org/x/net v0.0.0-20191116160921-f9c825593386
+	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
 	golang.org/x/text v0.3.2
-	golang.org/x/tools v0.0.0-20191018212557-ed542cd5b28a // indirect
-	google.golang.org/api v0.11.0 // indirect
+	golang.org/x/tools v0.0.0-20191116214431-80313e1ba718 // indirect
+	google.golang.org/api v0.14.0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03
-	google.golang.org/grpc v1.24.0
+	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11
+	google.golang.org/grpc v1.25.1
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/macaroon-bakery.v2 v2.1.0 // indirect
 	gopkg.in/macaroon.v2 v2.1.0
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
+	gopkg.in/yaml.v2 v2.2.5 // indirect
 )
 
 replace github.com/btcsuite/btcwallet v0.0.0-20180904010540-284e2e0e696e33d5be388f7f3d9a26db703e0c06 => github.com/btcsuite/btcwallet v0.0.0-20181130030754-284e2e0e696e
