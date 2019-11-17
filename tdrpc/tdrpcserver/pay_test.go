@@ -48,7 +48,7 @@ func TestPay(t *testing.T) {
 	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
 	mockLClient.On("SendPaymentSync", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.SendRequest")).Once().
 		Return(&lnrpc.SendResponse{}, nil)
-	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
+	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
 
 	// Insufficient funds
 	_, err = s.Pay(ctx, &tdrpc.PayRequest{

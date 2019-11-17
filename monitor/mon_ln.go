@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -52,13 +53,15 @@ func (m *Monitor) MonitorLN() {
 			m.logger.Fatalw("LightningMonitor Failure", "monitor", "ln", "error", err)
 		}
 
+		// Get the payment_hash
+		paymentHash := hex.EncodeToString(invoice.RHash)
+
+		m.logger.Debugw("Handling Invoice", "monitor", "ln", "payment_hash", paymentHash, zap.Any("invoice", invoice))
+
 		// We only need to process settled transactions
 		if !invoice.Settled {
 			continue
 		}
-
-		// Get the payment_hash
-		paymentHash := hex.EncodeToString(invoice.RHash)
 
 		// Find the existing ledger record outbound
 		lr, err := m.store.GetLedgerRecord(ctx, paymentHash, tdrpc.OUT)
