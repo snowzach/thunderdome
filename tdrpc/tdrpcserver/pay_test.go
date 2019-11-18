@@ -46,7 +46,7 @@ func TestPay(t *testing.T) {
 	mockLClient.On("QueryRoutes", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.QueryRoutesRequest")).Once().Return(&lnrpc.QueryRoutesResponse{Routes: []*lnrpc.Route{route}}, nil)
 
 	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
-	mockLClient.On("SendPaymentSync", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.SendRequest")).Once().
+	mockLClient.On("SendPaymentSync", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.SendRequest")).Once().
 		Return(&lnrpc.SendResponse{}, nil)
 	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
 

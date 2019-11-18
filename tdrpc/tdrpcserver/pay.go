@@ -2,7 +2,7 @@ package tdrpcserver
 
 import (
 	"context"
-    "strings"
+	"strings"
 	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -121,6 +121,10 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
 
+	// ********* AT THIS POINT IN TIME ALL FUNCTIONS BELOW MUST COMPLETE *********
+	// DO NOT ALLOW THE REQUEST CONTEXT TO CANCEL ANY OPERATION IN PROGRESS
+	ctx = context.Background()
+
 	// If this is a payment to someone else using this service, we transfer the balance internally
 	if pr.Destination == s.myPubKey {
 
@@ -171,7 +175,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 	// TODO: Determine if route taken was not the same as the quoted route and account for fee difference
 
 	// Update the status and the balance - Ensure it completes outside of this request context
-	if plrerr := s.store.ProcessLedgerRecord(context.Background(), lr); plrerr != nil {
+	if plrerr := s.store.ProcessLedgerRecord(ctx, lr); plrerr != nil {
 		// A valid message is provided with this error
 		if status.Code(plrerr) == codes.InvalidArgument {
 			return nil, plrerr
