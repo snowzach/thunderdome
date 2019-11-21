@@ -13,7 +13,9 @@ import (
 	"git.coinninja.net/backend/cnauth"
 	"git.coinninja.net/backend/thunderdome/monitor"
 	"git.coinninja.net/backend/thunderdome/server"
+	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
+	"git.coinninja.net/backend/thunderdome/store/redis"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 	"git.coinninja.net/backend/thunderdome/tdrpc/adminrpcserver"
 	"git.coinninja.net/backend/thunderdome/tdrpc/tdrpcserver"
@@ -48,7 +50,8 @@ func NewServer() (*server.Server, error) {
 func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
 	store := NewStore()
 	lightningClient := NewLightningClient()
-	thunderdomeRPCServer, err := tdrpcserver.NewTDRPCServer(store, lightningClient)
+	distCache := NewDistCache()
+	thunderdomeRPCServer, err := tdrpcserver.NewTDRPCServer(store, lightningClient, distCache)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +221,16 @@ func NewBloccClient() blocc.BloccRPCClient {
 	}
 
 	return blocc.NewBloccRPCClient(conn)
+
+}
+
+func NewDistCache() store.DistCache {
+
+	r, err := redis.New(viper.GetStringSlice("redis.prefixes")...)
+	if err != nil {
+		logger.Fatalw("Could not connect to redis", "error", err)
+	}
+	return r
 
 }
 

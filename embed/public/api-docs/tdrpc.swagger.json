@@ -1252,6 +1252,12 @@
     }
   },
   "securityDefinitions": {
+    "CN-Auth-Nonce": {
+      "type": "apiKey",
+      "description": "An optional random string to concatenate after the CN-Auth-Timestamp header before calculating the the signature field. The nonce value can only be used once.",
+      "name": "CN-Auth-Nonce",
+      "in": "header"
+    },
     "CN-Auth-PubKeyString": {
       "type": "apiKey",
       "description": "Hex encoded compressed public key. Example: 020c3a0e7b00e0d8dcccdd931b2d61848392878297ab455272cca9840144681848",
@@ -1260,7 +1266,7 @@
     },
     "CN-Auth-Signature": {
       "type": "apiKey",
-      "description": "Hex encoded signature of signing the `CN-Auth-Timestamp` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1",
+      "description": "Hex encoded signature of signing the `CN-Auth-Timestamp+CN-Auth-Nonce` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1",
       "name": "CN-Auth-Signature",
       "in": "header"
     },

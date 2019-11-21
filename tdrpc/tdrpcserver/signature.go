@@ -71,8 +71,8 @@ func ValidateSigntature(payload string, pubKeyHexString string, sigHexString str
 
 }
 
-// ValidateTimestampSigntature will validate a timestamp string ensuring proper time window
-func ValidateTimestampSigntature(timeString string, pubKeyHexString string, sigHexString string, referenceTime time.Time) error {
+// ValidateTimestampAndNonceSigntature will validate a timestamp string ensuring proper time window
+func ValidateTimestampAndNonceSigntature(timeString string, nonce string, pubKeyHexString string, sigHexString string, referenceTime time.Time) error {
 
 	if timeString == "" {
 		return tdrpc.ErrInvalidTimestamp
@@ -90,6 +90,6 @@ func ValidateTimestampSigntature(timeString string, pubKeyHexString string, sigH
 		return tdrpc.ErrInvalidTimestampOffset
 	}
 
-	return ValidateSigntature(timeString, pubKeyHexString, sigHexString)
+	return ValidateSigntature(timeString+nonce, pubKeyHexString, sigHexString)
 
 }

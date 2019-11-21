@@ -358,6 +358,21 @@ func (c *Client) GetLedgerRecordStats(ctx context.Context, filter map[string]str
 	return stats, nil
 }
 
+// GetEarliestActiveAddIndex fetches the lowest lighting incoming payment request address index that is pending
+func (c *Client) GetEarliestActiveAddIndex(ctx context.Context) (uint64, error) {
+
+	var addIndex uint64
+	err := c.db.GetContext(ctx, &addIndex, `SELECT COALESCE(MIN(add_index),0) FROM ledger WHERE status = 'pending' AND type = 'lightning' AND direction = 'in'`)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	} else if err != nil {
+		return 0, err
+	}
+
+	return addIndex, nil
+
+}
+
 // LedgerDeltaLog logs the difference between 2 ledger records
 func (c *Client) LedgerDeltaLog(lr1, lr2 *tdrpc.LedgerRecord) {
 
