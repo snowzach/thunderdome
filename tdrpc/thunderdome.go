@@ -21,14 +21,23 @@ const (
 	CreateGeneratedEndpoint = "/tdrpc.ThunderdomeRPC/CreateGenerated"
 	AccountEndpoint         = "/tdrpc.ThunderdomeRPC/Account"
 	DecodeEndpoint          = "/tdrpc.ThunderdomeRPC/Decode"
+	PayEndpoint             = "/tdrpc.ThunderdomeRPC/Pay"
+	GetPreAuthEndpoint      = "/tdrpc.ThunderdomeRPC/GetPreAuth"
 
 	// TempLedgerRecordIdPrefix is used to temporary store ledger record IDs
 	TempLedgerRecordIdPrefix = "temp:"
+
+	// PreAuthLedgerRecordIdPrefix is used to indicate an id that's for pre-authorization
+	PreAuthLedgerRecordIdPrefix = "preauth:"
+
+	// The request field will be set to this when PreAuthing funds
+	PreAuthRequest = "PreAuth"
 
 	// These are the metadata fields that we will use to authenticate requests
 	MetadataAuthPubKeyString = "cn-auth-pubkeystring"
 	MetadataAuthSignature    = "cn-auth-signature"
 	MetadataAuthTimestamp    = "cn-auth-timestamp"
+	MetadataAuthNonce        = "cn-auth-nonce"
 
 	// This is used to determine language settings
 	MetadataLocale = "cn-locale"
@@ -60,7 +69,7 @@ type Store interface {
 	GetAccountByAddress(ctx context.Context, address string) (*Account, error)
 	SaveAccount(ctx context.Context, account *Account) (*Account, error)
 	ProcessLedgerRecord(ctx context.Context, lr *LedgerRecord) error
-	ProcessInternal(ctx context.Context, id string) (*LedgerRecord, error)
+	ProcessInternal(ctx context.Context, id string, lr *LedgerRecord) (*LedgerRecord, error) // Original ID, Internal LedgerRecord
 	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error
 	GetLedger(ctx context.Context, filter map[string]string, after time.Time, offset int, limit int) ([]*LedgerRecord, error)
 	GetLedgerRecord(ctx context.Context, id string, direction LedgerRecord_Direction) (*LedgerRecord, error)
@@ -68,6 +77,20 @@ type Store interface {
 	GetActiveGeneratedLightningLedgerRequest(ctx context.Context, accountID string) (*LedgerRecord, error)
 	ExpireLedgerRequests(ctx context.Context) error
 	GetAccountStats(ctx context.Context) (*AccountStats, error)
+	GetEarliestActiveAddIndex(ctx context.Context) (uint64, error)
+}
+
+// LedgerRecordBus is an interface to subscribe to LedgerRecords
+type LedgerRecordBus interface {
+	Init(bucket string) error
+	Publish(bucket string, key string, tx *LedgerRecord) error
+	Subscribe(bucket string, key string) (LedgerRecordChannel, error)
+}
+
+// LedgerRecordChannel is a MsgBus channel for LedgerRecords
+type LedgerRecordChannel interface {
+	Channel() <-chan *LedgerRecord
+	Close()
 }
 
 // FormatsInt will format any integer type with commas. It attempts to determine the language from the

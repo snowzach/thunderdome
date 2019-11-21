@@ -27,7 +27,9 @@ import (
 
 	"git.coinninja.net/backend/thunderdome/monitor"
 	"git.coinninja.net/backend/thunderdome/server"
+	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/store/postgres"
+	"git.coinninja.net/backend/thunderdome/store/redis"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 	"git.coinninja.net/backend/thunderdome/tdrpc/adminrpcserver"
 	"git.coinninja.net/backend/thunderdome/tdrpc/tdrpcserver"
@@ -41,7 +43,7 @@ func NewServer() (*server.Server, error) {
 
 // NewTDRPCServer will create a new grpc/rest server on the webserver
 func NewTDRPCServer() (tdrpc.ThunderdomeRPCServer, error) {
-	wire.Build(tdrpcserver.NewTDRPCServer, NewStore, NewLightningClient)
+	wire.Build(tdrpcserver.NewTDRPCServer, NewStore, NewLightningClient, NewDistCache)
 	return nil, nil
 }
 
@@ -206,6 +208,16 @@ func NewBloccClient() blocc.BloccRPCClient {
 	}
 
 	return blocc.NewBloccRPCClient(conn)
+
+}
+
+func NewDistCache() store.DistCache {
+
+	r, err := redis.New(config.GetStringSlice("redis.prefixes")...)
+	if err != nil {
+		logger.Fatalw("Could not connect to redis", "error", err)
+	}
+	return r
 
 }
 

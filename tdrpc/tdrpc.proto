@@ -35,7 +35,7 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 				type: TYPE_API_KEY;
 				in: IN_HEADER;
                 name: "CN-Auth-Signature";
-                description: "Hex encoded signature of signing the `CN-Auth-Timestamp` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1"
+                description: "Hex encoded signature of signing the `CN-Auth-Timestamp+CN-Auth-Nonce` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1"
 			}
         }
 		security: {
@@ -45,6 +45,15 @@ option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 				in: IN_HEADER;
                 name: "CN-Auth-Timestamp";
                 description: "Current time in RFC3339. Example: 2006-01-02T15:04:05Z07:00"
+			}
+        }
+		security: {
+			key: "CN-Auth-Nonce";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+                name: "CN-Auth-Nonce";
+                description: "An optional random string to concatenate after the CN-Auth-Timestamp header before calculating the the signature field. The nonce value can only be used once."
 			}
         }
     }
@@ -131,7 +140,7 @@ service ThunderdomeRPC {
     }
 
     // Pay a request
-    rpc Pay(PayRequest) returns (PayResponse) {
+    rpc Pay(PayRequest) returns (LedgerRecordResponse) {
         option (google.api.http) = {
             post: "/pay"
             body: "*"
@@ -157,6 +166,27 @@ service ThunderdomeRPC {
     rpc CreateGenerated(CreateGeneratedRequest) returns (CreateResponse) {
         option (google.api.http) = {
             get: "/create"
+        };
+    }
+
+    // Create a pre-authorized request used for locking up funds until ready to pay
+    rpc CreatePreAuth(CreateRequest) returns (LedgerRecordResponse) {
+        option (google.api.http) = {
+            post: "/pay/preauth"
+            body: "*"
+        };
+    }
+
+    // Get a pre-authorized request
+    rpc GetPreAuth(Id) returns (LedgerRecordResponse) {
+        option (google.api.http) = {
+            get: "/pay/preauth/{id}"
+        };
+    }
+
+    rpc ExpirePreAuth(Id) returns (LedgerRecordResponse) {
+        option (google.api.http) = {
+            delete: "/pay/preauth/{id}"
         };
     }
 }
@@ -420,10 +450,14 @@ message PayRequest {
     ];
     // Estimate the pay request that would be created based on the route
     bool estimate = 3;
+    // A pre-authorized request id
+    string pre_auth_id = 4 [
+        (gogoproto.jsontag) = "preauth_id"
+    ];
 }
 
-// Pay Response
-message PayResponse {
+// A single Ledger Record result
+message LedgerRecordResponse {
     // The pay request result
     LedgerRecord result = 1;    
 }
@@ -480,4 +514,12 @@ message WithdrawResponse {
 message CreateGeneratedRequest {
     // Allow generated requests when the user account is locked. Requires Agent Authorization.
     bool allow_locked = 1;
+}
+
+// An Id field only
+message Id {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        example: { value: '{ "id": "preauth:abc123..." }' }
+    };
+    string id = 1;
 }

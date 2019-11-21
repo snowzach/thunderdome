@@ -19,8 +19,10 @@ func TestWithdraw(t *testing.T) {
 	mockStore := new(mocks.Store)
 	mockLClient := new(mocks.LightningClient)
 	mockLClient.On("GetInfo", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.GetInfoRequest")).Once().Return(&lnrpc.GetInfoResponse{IdentityPubkey: "testing"}, nil)
+	mockDCache := new(mocks.DistCache)
+
 	// RPC Server
-	s, err := NewTDRPCServer(mockStore, mockLClient)
+	s, err := NewTDRPCServer(mockStore, mockLClient, mockDCache)
 	assert.Nil(t, err)
 
 	// Bootstrap authentication
@@ -30,6 +32,14 @@ func TestWithdraw(t *testing.T) {
 		Balance: 10,
 	}
 	ctx := addAccount(context.Background(), account)
+
+	mockStore.On("GetLedgerRecordStats", mock.AnythingOfType("*context.valueCtx"), map[string]string{
+		"account_id": account.Id,
+		"type":       tdrpc.BTC.String(),
+		"direction":  tdrpc.IN.String(),
+		"status":     tdrpc.COMPLETED.String(),
+		"request":    tdrpc.RequestInstantPending,
+	}, mock.AnythingOfType("time.Time")).Once().Return(&tdrpc.LedgerRecordStats{Count: 0, Value: 0, NetworkFee: 0, ProcessingFee: 0}, nil)
 
 	// To small amount
 	_, err = s.Withdraw(ctx, &tdrpc.WithdrawRequest{
@@ -50,6 +60,14 @@ func TestWithdraw(t *testing.T) {
 			Txid: "abc1234",
 		}, nil,
 	)
+
+	mockStore.On("GetLedgerRecordStats", mock.AnythingOfType("*context.valueCtx"), map[string]string{
+		"account_id": account.Id,
+		"type":       tdrpc.BTC.String(),
+		"direction":  tdrpc.IN.String(),
+		"status":     tdrpc.COMPLETED.String(),
+		"request":    tdrpc.RequestInstantPending,
+	}, mock.AnythingOfType("time.Time")).Once().Return(&tdrpc.LedgerRecordStats{}, nil)
 	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
 	mockStore.On("UpdateLedgerRecordID", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Once().Return(nil)
 

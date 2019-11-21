@@ -472,7 +472,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/tdrpcPayResponse"
+              "$ref": "#/definitions/tdrpcLedgerRecordResponse"
             }
           },
           "400": {
@@ -532,6 +532,224 @@
             "schema": {
               "$ref": "#/definitions/tdrpcPayRequest"
             }
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/pay/preauth": {
+      "post": {
+        "summary": "Create a pre-authorized request used for locking up funds until ready to pay",
+        "operationId": "CreatePreAuth",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcLedgerRecordResponse"
+            }
+          },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
+          "401": {
+            "description": "Returned when the user does not have permission to access the resource.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/tdrpcCreateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      }
+    },
+    "/pay/preauth/{id}": {
+      "get": {
+        "summary": "Get a pre-authorized request",
+        "operationId": "GetPreAuth",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcLedgerRecordResponse"
+            }
+          },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
+          "401": {
+            "description": "Returned when the user does not have permission to access the resource.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ThunderdomeRPC"
+        ]
+      },
+      "delete": {
+        "operationId": "ExpirePreAuth",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/tdrpcLedgerRecordResponse"
+            }
+          },
+          "400": {
+            "description": "There was an error processing the request. The error message is generally designed to present to the user.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "\u003cerror details\u003e",
+                "code": 3,
+                "message": "\u003cerror details\u003e"
+              }
+            }
+          },
+          "401": {
+            "description": "Returned when the user does not have permission to access the resource.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "invalid login",
+                "code": 16,
+                "message": "invalid login"
+              }
+            }
+          },
+          "404": {
+            "description": "Returned when the resource does not exist.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "not found",
+                "code": 5,
+                "message": "not found"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error. The back-end experienced an error. No useful information will be provided in error message.",
+            "schema": {
+              "type": "object",
+              "format": "object",
+              "example": {
+                "error": "internal error",
+                "code": 5,
+                "message": "internal error"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -914,6 +1132,16 @@
       },
       "title": "Ledger Record"
     },
+    "tdrpcLedgerRecordResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/tdrpcLedgerRecord",
+          "title": "The pay request result"
+        }
+      },
+      "title": "A single Ledger Record result"
+    },
     "tdrpcLedgerRecordType": {
       "type": "string",
       "enum": [
@@ -956,19 +1184,13 @@
           "type": "boolean",
           "format": "boolean",
           "title": "Estimate the pay request that would be created based on the route"
+        },
+        "pre_auth_id": {
+          "type": "string",
+          "title": "A pre-authorized request id"
         }
       },
       "title": "Pay Request"
-    },
-    "tdrpcPayResponse": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/tdrpcLedgerRecord",
-          "title": "The pay request result"
-        }
-      },
-      "title": "Pay Response"
     },
     "tdrpcRouteHint": {
       "type": "object",
@@ -1030,6 +1252,12 @@
     }
   },
   "securityDefinitions": {
+    "CN-Auth-Nonce": {
+      "type": "apiKey",
+      "description": "An optional random string to concatenate after the CN-Auth-Timestamp header before calculating the the signature field. The nonce value can only be used once.",
+      "name": "CN-Auth-Nonce",
+      "in": "header"
+    },
     "CN-Auth-PubKeyString": {
       "type": "apiKey",
       "description": "Hex encoded compressed public key. Example: 020c3a0e7b00e0d8dcccdd931b2d61848392878297ab455272cca9840144681848",
@@ -1038,7 +1266,7 @@
     },
     "CN-Auth-Signature": {
       "type": "apiKey",
-      "description": "Hex encoded signature of signing the `CN-Auth-Timestamp` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1",
+      "description": "Hex encoded signature of signing the `CN-Auth-Timestamp+CN-Auth-Nonce` header. Example: 3045022100aef1851655cd6e7ccc77afc3cd6c8f7a99de855571cea2dce9e94b17b392228f02206b37f35397018eb64d3f68995e6500d3c761c284d6a67a2509947da9137558d1",
       "name": "CN-Auth-Signature",
       "in": "header"
     },

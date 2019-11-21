@@ -67,6 +67,15 @@ func init() {
 	config.SetDefault("storage.max_connections", 80)
 	config.SetDefault("storage.wipe_confirm", false)
 
+	// Redis Settings
+	config.SetDefault("redis.host", "redis")
+	config.SetDefault("redis.port", "6379")
+	config.SetDefault("redis.master_name", "")
+	config.SetDefault("redis.password", "")
+	config.SetDefault("redis.index", 0)
+	config.SetDefault("redis.prefixes", []string{"tdome"})
+
+	// LND Settings
 	config.SetDefault("lnd.host", "lnd")
 	config.SetDefault("lnd.port", 10009)
 	config.SetDefault("lnd.tls_insecure", false)

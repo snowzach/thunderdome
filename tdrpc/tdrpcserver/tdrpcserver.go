@@ -8,12 +8,14 @@ import (
 	config "github.com/spf13/viper"
 	"go.uber.org/zap"
 
+	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
 type tdRPCServer struct {
 	logger   *zap.SugaredLogger
 	store    tdrpc.Store
+	cache    store.DistCache
 	myPubKey string
 	lclient  lnrpc.LightningClient
 }
@@ -49,13 +51,13 @@ func isAgent(ctx context.Context) bool {
 }
 
 // NewTDRPCServer creates the server
-func NewTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient) (tdrpc.ThunderdomeRPCServer, error) {
+func NewTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient, cache store.DistCache) (tdrpc.ThunderdomeRPCServer, error) {
 
-	return newTDRPCServer(store, lclient)
+	return newTDRPCServer(store, lclient, cache)
 
 }
 
-func newTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient) (*tdRPCServer, error) {
+func newTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient, cache store.DistCache) (*tdRPCServer, error) {
 
 	info, err := lclient.GetInfo(context.Background(), &lnrpc.GetInfoRequest{})
 	if err != nil {
@@ -66,6 +68,7 @@ func newTDRPCServer(store tdrpc.Store, lclient lnrpc.LightningClient) (*tdRPCSer
 	s := &tdRPCServer{
 		logger:   zap.S().With("package", "tdrpc"),
 		store:    store,
+		cache:    cache,
 		myPubKey: info.IdentityPubkey,
 		lclient:  lclient,
 	}

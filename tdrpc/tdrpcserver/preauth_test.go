@@ -3,7 +3,6 @@ package tdrpcserver
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +13,7 @@ import (
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
-func TestPay(t *testing.T) {
+func TestCreatePreAuth(t *testing.T) {
 
 	// Mocks
 	mockStore := new(mocks.Store)
@@ -34,32 +33,26 @@ func TestPay(t *testing.T) {
 	}
 	ctx := addAccount(context.Background(), account)
 
-	// Decoded payment request
-	pr := &lnrpc.PayReq{
-		Destination: "test",
-		Expiry:      time.Now().Add(time.Hour).Unix(),
-	}
-	mockLClient.On("DecodePayReq", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.PayReqString")).Once().Return(pr, nil)
-
-	// Route/Fee requests
-	route := &lnrpc.Route{
-		TotalFees: 123,
-	}
-	mockLClient.On("QueryRoutes", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.QueryRoutesRequest")).Once().Return(&lnrpc.QueryRoutesResponse{Routes: []*lnrpc.Route{route}}, nil)
-
-	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
-	mockLClient.On("SendPaymentSync", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.SendRequest")).Once().
-		Return(&lnrpc.SendResponse{}, nil)
-	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
+	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(tdrpc.ErrInsufficientFunds)
 
 	// Insufficient funds
-	_, err = s.Pay(ctx, &tdrpc.PayRequest{
-		Request: "somerequest",
+	_, err = s.CreatePreAuth(ctx, &tdrpc.CreateRequest{
+		Memo:    "test",
 		Value:   20,
+		Expires: 600,
+	})
+	assert.NotNil(t, err)
+
+	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
+
+	// Insufficient funds
+	_, err = s.CreatePreAuth(ctx, &tdrpc.CreateRequest{
+		Memo:    "test",
+		Value:   50,
+		Expires: 600,
 	})
 	assert.Nil(t, err)
 
 	mockStore.AssertExpectations(t)
-	mockLClient.AssertExpectations(t)
 
 }

@@ -24,18 +24,24 @@ func (m *Monitor) MonitorLN() {
 		cancel()
 	}()
 
+	// Get the earliest pending invoice address index
+	startAddIndex, err := m.store.GetEarliestActiveAddIndex(ctx)
+	if err != nil {
+		m.logger.Fatalw("GetEarliestActiveAddIndex Error", "monitor", "ln", "error", err)
+	}
+
 	// Connect to the transaction stream
 	conf.Stop.Add(1)
 	invclient, err := m.lclient.SubscribeInvoices(ctx, &lnrpc.InvoiceSubscription{
 		// TODO: We could start with the highest completed, not expired index
-		AddIndex:    1,
+		AddIndex:    startAddIndex,
 		SettleIndex: 1,
 	})
 	if err != nil {
 		m.logger.Fatalw("Could not SubscribeInvoices", "monitor", "ln", "error", err)
 	}
 
-	m.logger.Info("Listening for lightning transactions...", "monitor", "ln")
+	m.logger.Infow("Listening for lightning transactions...", "monitor", "ln", "add_index", startAddIndex)
 
 	for !conf.Stop.Bool() {
 

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"testing"
+	"time"
 
 	config "github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -11,6 +12,10 @@ import (
 
 	"git.coinninja.net/backend/thunderdome/conf" // Will initialize the config and loggers if you wish to use them
 )
+
+func timePtr(t time.Time) *time.Time {
+	return &t
+}
 
 type DBTestSuite struct {
 	suite.Suite

@@ -47,18 +47,19 @@ func TestSignatureVerification(t *testing.T) {
 	assert.True(t, valid)
 }
 
-func TestValidateTimestampSigntature(t *testing.T) {
+func TestValidateTimestampAndNonceSigntature(t *testing.T) {
 
 	key, err := NewKey()
 	require.Nil(t, err)
 	pubKeyHexString := HexEncodedPublicKey(key)
 
 	timeString := time.Now().UTC().Format(time.RFC3339)
-	sig, err := key.Sign(chainhash.DoubleHashB([]byte(timeString)))
+	nonce := "SomeRandomString"
+	sig, err := key.Sign(chainhash.DoubleHashB([]byte(timeString + nonce)))
 	require.Nil(t, err)
 	sigHexString := hex.EncodeToString(sig.Serialize())
 
-	err = ValidateTimestampSigntature(timeString, pubKeyHexString, sigHexString, time.Now().UTC())
+	err = ValidateTimestampAndNonceSigntature(timeString, nonce, pubKeyHexString, sigHexString, time.Now().UTC())
 	assert.Nil(t, err)
 }
 
