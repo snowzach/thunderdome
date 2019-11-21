@@ -25,7 +25,7 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/cors v1.0.0
 	github.com/go-chi/render v1.0.1
-	github.com/go-redis/redis v6.15.5+incompatible
+	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang-migrate/migrate/v4 v4.7.0
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
@@ -55,9 +55,9 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20191117063200-497ca9f6d64f // indirect
 	golang.org/x/net v0.0.0-20191116160921-f9c825593386
-	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
+	golang.org/x/sys v0.0.0-20191118133127-cf1e2d577169 // indirect
 	golang.org/x/text v0.3.2
-	golang.org/x/tools v0.0.0-20191116214431-80313e1ba718 // indirect
+	golang.org/x/tools v0.0.0-20191118051429-5a76f03bc7c3 // indirect
 	google.golang.org/api v0.14.0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11

@@ -73,6 +73,8 @@ cmd/wire_gen.go: cmd/wire.go
 .PHONY: mocks
 mocks: tools
 	mockery -dir ./tdrpc -name Store
+	mockery -dir ./store -name DistCache
+	mockery -dir $(shell go list -e -f '{{.Dir}}' github.com/go-redis/redis) -name UniversalClient
 	mockery -dir $(shell go list -e -f '{{.Dir}}' github.com/lightningnetwork/lnd/lnrpc) -name LightningClient
 
 .PHONY: ${EXECUTABLE}

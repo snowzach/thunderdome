@@ -37,6 +37,7 @@ const (
 	MetadataAuthPubKeyString = "cn-auth-pubkeystring"
 	MetadataAuthSignature    = "cn-auth-signature"
 	MetadataAuthTimestamp    = "cn-auth-timestamp"
+	MetadataAuthNonce        = "cn-auth-nonce"
 
 	// This is used to determine language settings
 	MetadataLocale = "cn-locale"
@@ -76,6 +77,20 @@ type Store interface {
 	GetActiveGeneratedLightningLedgerRequest(ctx context.Context, accountID string) (*LedgerRecord, error)
 	ExpireLedgerRequests(ctx context.Context) error
 	GetAccountStats(ctx context.Context) (*AccountStats, error)
+	GetEarliestActiveAddIndex(ctx context.Context) (uint64, error)
+}
+
+// LedgerRecordBus is an interface to subscribe to LedgerRecords
+type LedgerRecordBus interface {
+	Init(bucket string) error
+	Publish(bucket string, key string, tx *LedgerRecord) error
+	Subscribe(bucket string, key string) (LedgerRecordChannel, error)
+}
+
+// LedgerRecordChannel is a MsgBus channel for LedgerRecords
+type LedgerRecordChannel interface {
+	Channel() <-chan *LedgerRecord
+	Close()
 }
 
 // FormatsInt will format any integer type with commas. It attempts to determine the language from the

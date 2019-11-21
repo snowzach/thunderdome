@@ -18,8 +18,10 @@ func TestLedger(t *testing.T) {
 	mockStore := new(mocks.Store)
 	mockLClient := new(mocks.LightningClient)
 	mockLClient.On("GetInfo", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.GetInfoRequest")).Once().Return(&lnrpc.GetInfoResponse{IdentityPubkey: "testing"}, nil)
+	mockDCache := new(mocks.DistCache)
+
 	// RPC Server
-	s, err := NewTDRPCServer(mockStore, mockLClient)
+	s, err := NewTDRPCServer(mockStore, mockLClient, mockDCache)
 	assert.Nil(t, err)
 
 	// Bootstrap authentication

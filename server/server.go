@@ -195,6 +195,8 @@ func (s *Server) ListenAndServe() error {
 				return header, true
 			case tdrpc.MetadataAuthTimestamp:
 				return header, true
+			case tdrpc.MetadataAuthNonce:
+				return header, true
 			}
 			return header, false
 		}),

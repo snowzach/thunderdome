@@ -32,6 +32,23 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 	// What we charge to withdraw (percentage)
 	withdrawFeeRate := config.GetFloat64("tdome.withdraw_fee_rate") / 100.0
 
+	// Get pending incoming bitcoin balance for this user
+	pendingStats, err := s.store.GetLedgerRecordStats(ctx, map[string]string{
+		"account_id": account.Id,
+		"type":       tdrpc.BTC.String(),
+		"direction":  tdrpc.IN.String(),
+		"status":     tdrpc.COMPLETED.String(),
+		"request":    tdrpc.RequestInstantPending,
+	}, time.Time{})
+	if err != nil {
+		s.logger.Errorw("GetLedgerRecordStats Error", "error", err)
+		return nil, status.Errorf(codes.Internal, "GetLedgerRecordStats internal error")
+	}
+	// If there is a pending value, ensure there is sufficient confirmed value to withdraw
+	if pendingStats.Value > 0 && request.Value > account.Balance-pendingStats.Value {
+		return nil, status.Errorf(codes.InvalidArgument, "The confirmed balance %s is insufficient for this withdraw", tdrpc.FormatInt(ctx, account.Balance-pendingStats.Value))
+	}
+
 	// Check if this is an account sweep
 	if request.Value == tdrpc.ValueSweep {
 		request.Value = account.Balance
