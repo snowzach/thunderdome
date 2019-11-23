@@ -65,8 +65,10 @@ func (direction *LedgerRecord_Direction) UnmarshalJSON(in []byte) error {
 	switch string(in) {
 	case `"in"`:
 		*direction = IN
+		return nil
 	case `"out"`:
 		*direction = OUT
+		return nil
 	}
 
 	return fmt.Errorf("Unknown direction %s", in)

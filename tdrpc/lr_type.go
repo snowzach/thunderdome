@@ -65,8 +65,10 @@ func (t *LedgerRecord_Type) UnmarshalJSON(in []byte) error {
 	switch string(in) {
 	case `"btc"`:
 		*t = BTC
+		return nil
 	case `"lightning"`:
 		*t = LIGHTNING
+		return nil
 	}
 
 	return fmt.Errorf("Unknown type %s", in)
