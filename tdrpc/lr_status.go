@@ -77,12 +77,16 @@ func (status *LedgerRecord_Status) UnmarshalJSON(in []byte) error {
 	switch string(in) {
 	case `"pending"`:
 		*status = PENDING
+		return nil
 	case `"completed"`:
 		*status = COMPLETED
+		return nil
 	case `"expired"`:
 		*status = EXPIRED
+		return nil
 	case `"failed"`:
 		*status = FAILED
+		return nil
 	}
 
 	return fmt.Errorf("Unknown status %s", in)
