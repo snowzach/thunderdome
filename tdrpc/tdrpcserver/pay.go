@@ -83,6 +83,20 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 	s.logger.Debugw("request.pay", "account_id", account.Id, zap.Any("request", lr))
 
+	// Perform a quick sanity check to ensure we're not trying to pay ourself
+	if pr.Destination == s.myPubKey {
+		lrIn, err := s.store.GetLedgerRecord(ctx, lr.Id, tdrpc.IN)
+		if err != nil {
+			s.logger.Errorw("GetLedgerRecord Error", "id", lr.Id, "error", err)
+			return nil, status.Errorf(codes.Internal, "GetLedgerRecord internal error")
+		}
+		// If the user it trying to pay themself, error out
+		if lrIn.AccountId == lr.AccountId {
+			return nil, tdrpc.ErrCannotPaySelfInvoice
+		}
+
+	}
+
 	// If it's not another user using this service, calcuate the network fee
 	if pr.Destination != s.myPubKey {
 		queryRoutesRequest := &lnrpc.QueryRoutesRequest{
@@ -133,8 +147,13 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		}
 
 		// We found the pre-authorizazed/reserved funds. Update the record to the current ID
-		err = s.store.UpdateLedgerRecordID(ctx, preAuthLr.Id, lr.Id)
+		// This could return an error if the request was already paid
+		err = s.store.UpdateLedgerRecordID(ctx, preAuthLr.Id, lr.Id, tdrpc.OUT)
 		if err != nil {
+			// Already exists means already paid
+			if err == store.ErrAlreadyExists {
+				return nil, tdrpc.ErrRequestAlreadyPaid
+			}
 			// A valid message is provided with this error
 			if status.Code(err) == codes.InvalidArgument {
 				return nil, err

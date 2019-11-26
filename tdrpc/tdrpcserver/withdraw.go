@@ -189,7 +189,7 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 	}
 
 	// Otherwise we succeeded, update the ledger record ID to be the transaction id
-	err = s.store.UpdateLedgerRecordID(ctx, tempLedgerRecordID, response.Txid)
+	err = s.store.UpdateLedgerRecordID(ctx, tempLedgerRecordID, response.Txid, tdrpc.OUT)
 	if err != nil {
 		// A valid message is provided with this error
 		if status.Code(err) == codes.InvalidArgument {

@@ -70,7 +70,7 @@ type Store interface {
 	SaveAccount(ctx context.Context, account *Account) (*Account, error)
 	ProcessLedgerRecord(ctx context.Context, lr *LedgerRecord) error
 	ProcessInternal(ctx context.Context, id string, lr *LedgerRecord) (*LedgerRecord, error) // Original ID, Internal LedgerRecord
-	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error
+	UpdateLedgerRecordID(ctx context.Context, oldID string, newID string, direction LedgerRecord_Direction) error
 	GetLedger(ctx context.Context, filter map[string]string, after time.Time, offset int, limit int) ([]*LedgerRecord, error)
 	GetLedgerRecord(ctx context.Context, id string, direction LedgerRecord_Direction) (*LedgerRecord, error)
 	GetLedgerRecordStats(ctx context.Context, filter map[string]string, after time.Time) (*LedgerRecordStats, error)
