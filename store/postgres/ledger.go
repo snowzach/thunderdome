@@ -155,7 +155,7 @@ func (c *Client) GetActiveGeneratedLightningLedgerRequest(ctx context.Context, a
 }
 
 // UpdateLedgerRecordID returns the LedgerRecord
-func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID string) error {
+func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID string, direction tdrpc.LedgerRecord_Direction) error {
 
 	for retries := 5; retries > 0; retries-- {
 
@@ -176,7 +176,7 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 			}
 		}()
 
-		err = c.updateLedgerRecordID(ctx, tx, oldID, newID)
+		err = c.updateLedgerRecordID(ctx, tx, oldID, newID, direction)
 		if err != nil {
 			_ = tx.Rollback()
 			if IsTransactionError(err) {
@@ -206,12 +206,12 @@ func (c *Client) UpdateLedgerRecordID(ctx context.Context, oldID string, newID s
 
 }
 
-func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID string, newID string) error {
+func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID string, newID string, direction tdrpc.LedgerRecord_Direction) error {
 
 	var temp int
 
 	// Make sure the ID exists
-	err := tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 LIMIT 1`, oldID)
+	err := tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 AND direction = $2 LIMIT 1`, oldID, direction)
 	if err == sql.ErrNoRows {
 		return store.ErrNotFound
 	} else if err != nil {
@@ -219,9 +219,9 @@ func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID st
 	}
 
 	// Make sure the newID doesn't exist
-	err = tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 LIMIT 1`, newID)
+	err = tx.GetContext(ctx, &temp, `SELECT 1 FROM ledger WHERE id = $1 AND direction = $2 LIMIT 1`, newID, direction)
 	if err == nil {
-		return fmt.Errorf("Cannot rename record. Record already exists.")
+		return store.ErrAlreadyExists
 	} else if err == sql.ErrNoRows {
 		// We're good
 	} else {
@@ -229,7 +229,7 @@ func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID st
 	}
 
 	// Rename the records
-	_, err = tx.ExecContext(ctx, `UPDATE ledger SET id = $1 WHERE id = $2`, newID, oldID)
+	_, err = tx.ExecContext(ctx, `UPDATE ledger SET id = $1 WHERE id = $2 AND direction = $3`, newID, oldID, direction)
 	if err != nil {
 		return err
 	}

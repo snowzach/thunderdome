@@ -3,6 +3,7 @@ package postgres
 import (
 	"time"
 
+	"git.coinninja.net/backend/thunderdome/store"
 	"git.coinninja.net/backend/thunderdome/tdrpc"
 )
 
@@ -93,7 +94,7 @@ func (suite *DBTestSuite) TestUpdateLedgerRecordID() {
 	// Create a test account
 	a1 := suite.newTestAccount("testuser1", 10)
 
-	err := suite.client.UpdateLedgerRecordID(suite.ctx, "abc", "123")
+	err := suite.client.UpdateLedgerRecordID(suite.ctx, "abc", "123", tdrpc.OUT)
 	suite.NotNil(err)
 
 	lr := &tdrpc.LedgerRecord{
@@ -111,7 +112,7 @@ func (suite *DBTestSuite) TestUpdateLedgerRecordID() {
 	suite.Nil(err)
 
 	// Sucess
-	err = suite.client.UpdateLedgerRecordID(suite.ctx, "tr1", "tr2")
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, "tr1", "tr2", tdrpc.OUT)
 	suite.Nil(err)
 
 	// Check to find it
@@ -126,7 +127,7 @@ func (suite *DBTestSuite) TestUpdateLedgerRecordID() {
 	suite.Nil(err)
 
 	// Already exists
-	err = suite.client.UpdateLedgerRecordID(suite.ctx, "tr3", "tr2")
-	suite.NotNil(err)
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, "tr3", "tr2", tdrpc.OUT)
+	suite.Equal(store.ErrAlreadyExists, err)
 
 }

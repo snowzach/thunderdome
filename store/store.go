@@ -7,7 +7,8 @@ import (
 
 // ErrNotFound is a standard no found error
 var (
-	ErrNotFound = errors.New("not found")
+	ErrNotFound      = errors.New("not found")
+	ErrAlreadyExists = errors.New("already exits")
 )
 
 type DistCache interface {

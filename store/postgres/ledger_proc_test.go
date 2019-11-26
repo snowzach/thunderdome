@@ -275,7 +275,7 @@ func (suite *DBTestSuite) TestProcessLedgerPreAuth() {
 		Request:       "Some Request ID",
 	}
 
-	err = suite.client.UpdateLedgerRecordID(suite.ctx, lr1.Id, lr2.Id)
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, lr1.Id, lr2.Id, tdrpc.OUT)
 	suite.Nil(err)
 
 	// This should update the request but make no changes
