@@ -247,7 +247,7 @@ func (suite *DBTestSuite) TestProcessLedgerPreAuthInt() {
 	sender.Value = 12
 
 	// Prepare to pay the internal record, update the preauth to the sender.Id
-	err = suite.client.UpdateLedgerRecordID(suite.ctx, palr.Id, sender.Id)
+	err = suite.client.UpdateLedgerRecordID(suite.ctx, palr.Id, sender.Id, tdrpc.OUT)
 	suite.Nil(err)
 
 	// Create the record, will notr change anything so it will succeed

@@ -69,7 +69,7 @@ func TestWithdraw(t *testing.T) {
 		"request":    tdrpc.RequestInstantPending,
 	}, mock.AnythingOfType("time.Time")).Once().Return(&tdrpc.LedgerRecordStats{}, nil)
 	mockStore.On("ProcessLedgerRecord", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*tdrpc.LedgerRecord")).Once().Return(nil)
-	mockStore.On("UpdateLedgerRecordID", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Once().Return(nil)
+	mockStore.On("UpdateLedgerRecordID", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), tdrpc.OUT).Once().Return(nil)
 
 	// Make the request
 	_, err = s.Withdraw(ctx, &tdrpc.WithdrawRequest{
