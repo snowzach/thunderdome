@@ -15,8 +15,9 @@ import (
 )
 
 type Monitor struct {
-	logger *zap.SugaredLogger
-	store  tdrpc.Store
+	logger  *zap.SugaredLogger
+	store   tdrpc.Store
+	cbstore tdrpc.ChanBackupStore
 
 	lclient lnrpc.LightningClient
 	bclient blocc.BloccRPCClient
@@ -26,7 +27,7 @@ type Monitor struct {
 	chain *chaincfg.Params
 }
 
-func NewMonitor(store tdrpc.Store, lclient lnrpc.LightningClient, bclient blocc.BloccRPCClient, ddclient *statsd.Client) (*Monitor, error) {
+func NewMonitor(store tdrpc.Store, cbstore tdrpc.ChanBackupStore, lclient lnrpc.LightningClient, bclient blocc.BloccRPCClient, ddclient *statsd.Client) (*Monitor, error) {
 
 	logger := zap.S().With("package", "txmonitor")
 
@@ -79,8 +80,9 @@ func NewMonitor(store tdrpc.Store, lclient lnrpc.LightningClient, bclient blocc.
 
 	// Return the server
 	m := &Monitor{
-		logger: logger,
-		store:  store,
+		logger:  logger,
+		store:   store,
+		cbstore: cbstore,
 
 		lclient: lclient,
 		bclient: bclient,
@@ -94,6 +96,7 @@ func NewMonitor(store tdrpc.Store, lclient lnrpc.LightningClient, bclient blocc.
 	go m.MonitorLN()
 	go m.MonitorExpired()
 	go m.MonitorLND()
+	go m.MonitorLNDChan()
 	go m.MonitorStats()
 
 	return m, nil

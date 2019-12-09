@@ -73,10 +73,11 @@ func NewAdminRPCServer() (tdrpc.AdminRPCServer, error) {
 
 func NewMonitor() (*monitor.Monitor, error) {
 	store := NewStore()
+	chanBackupStore := NewChannelBackupStore()
 	lightningClient := NewLightningClient()
 	bloccRPCClient := NewBloccClient()
 	client := NewDogStatsDClient()
-	monitorMonitor, err := monitor.NewMonitor(store, lightningClient, bloccRPCClient, client)
+	monitorMonitor, err := monitor.NewMonitor(store, chanBackupStore, lightningClient, bloccRPCClient, client)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +98,20 @@ func NewStore() tdrpc.Store {
 		logger.Fatalw("Database Error", "error", err)
 	}
 	return store
+}
+
+// NewStore is the store for the application
+func NewChannelBackupStore() tdrpc.ChanBackupStore {
+	var cbstore tdrpc.ChanBackupStore
+	var err error
+	switch viper.GetString("storage.type") {
+	case "postgres":
+		cbstore, err = postgres.New()
+	}
+	if err != nil {
+		logger.Fatalw("Database Error", "error", err)
+	}
+	return cbstore
 }
 
 func NewLightningClient() lnrpc.LightningClient {
