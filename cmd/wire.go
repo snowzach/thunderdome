@@ -55,7 +55,7 @@ func NewAdminRPCServer() (tdrpc.AdminRPCServer, error) {
 
 // NewTXMonitor will create a new BTC and LN transaction monitor
 func NewMonitor() (*monitor.Monitor, error) {
-	wire.Build(monitor.NewMonitor, NewStore, NewLightningClient, NewBloccClient, NewDogStatsDClient)
+	wire.Build(monitor.NewMonitor, NewStore, NewChannelBackupStore, NewLightningClient, NewBloccClient, NewDogStatsDClient)
 	return nil, nil
 }
 
@@ -71,6 +71,20 @@ func NewStore() tdrpc.Store {
 		logger.Fatalw("Database Error", "error", err)
 	}
 	return store
+}
+
+// NewStore is the store for the application
+func NewChannelBackupStore() tdrpc.ChanBackupStore {
+	var cbstore tdrpc.ChanBackupStore
+	var err error
+	switch config.GetString("storage.type") {
+	case "postgres":
+		cbstore, err = postgres.New()
+	}
+	if err != nil {
+		logger.Fatalw("Database Error", "error", err)
+	}
+	return cbstore
 }
 
 func NewLightningClient() lnrpc.LightningClient {
