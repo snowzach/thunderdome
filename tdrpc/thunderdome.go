@@ -80,6 +80,22 @@ type Store interface {
 	GetEarliestActiveAddIndex(ctx context.Context) (uint64, error)
 }
 
+type ChanBackupData []byte
+
+// ChanBackup is a backup of the lnd channel database
+type ChanBackup struct {
+	Id           int64          `db:"id"`
+	Timestamp    time.Time      `db:"timestamp"`
+	FundingTXIDs string         `db:"funding_txids"`
+	Data         ChanBackupData `db:"data"`
+}
+
+// ChanBackupStore handles storing channel backups
+type ChanBackupStore interface {
+	GetLastChanBackup(ctx context.Context) (*ChanBackup, error)
+	StoreChanBackup(ctx context.Context, fundingTXIDs string, data ChanBackupData) (*ChanBackup, error)
+}
+
 // LedgerRecordBus is an interface to subscribe to LedgerRecords
 type LedgerRecordBus interface {
 	Init(bucket string) error
