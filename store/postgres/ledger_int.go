@@ -158,7 +158,7 @@ func (c *Client) processInternal(ctx context.Context, tx *sqlx.Tx, id string, pa
 	}
 
 	// Update the receiver balance, unlock the account if it is
-	_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1, locked = false WHERE id = $2`, paylr.Value, receiver.AccountId)
+	_, err = tx.ExecContext(ctx, `UPDATE account SET balance = balance + $1 WHERE id = $2`, paylr.Value, receiver.AccountId)
 	if err != nil {
 		return nil, fmt.Errorf("Could not process receiver balance: %v", err)
 	}
