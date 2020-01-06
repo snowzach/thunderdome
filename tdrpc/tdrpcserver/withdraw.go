@@ -51,7 +51,7 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 
 	// Check if this is an account sweep
 	if request.Value == tdrpc.ValueSweep {
-		request.Value = account.Balance
+		request.Value = account.Balance - pendingStats.Value // Give them all the confirmed funds
 	} else if request.Value < config.GetInt64("tdome.withdraw_min") {
 		return nil, status.Errorf(codes.InvalidArgument, "Withdraw value must be at least %s satoshis", tdrpc.FormatInt(ctx, config.GetInt64("tdome.withdraw_min")))
 	}
