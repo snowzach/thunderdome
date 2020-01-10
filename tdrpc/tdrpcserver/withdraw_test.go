@@ -29,7 +29,7 @@ func TestWithdraw(t *testing.T) {
 	account := &tdrpc.Account{
 		Id:      "123123123123132132132123131123123123123132132132123131123123123333",
 		Address: "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm",
-		Balance: 10,
+		Balance: 100000,
 	}
 	ctx := addAccount(context.Background(), account)
 
