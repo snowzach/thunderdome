@@ -44,15 +44,26 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 		s.logger.Errorw("GetLedgerRecordStats Error", "error", err)
 		return nil, status.Errorf(codes.Internal, "GetLedgerRecordStats internal error")
 	}
-	// If there is a pending value, ensure there is sufficient confirmed value to withdraw
-	if pendingStats.Value > 0 && request.Value > account.Balance-pendingStats.Value {
+
+	// Check if this is an account sweep give them all the confirmed funds
+	if request.Value == tdrpc.ValueSweep {
+		request.Value = account.Balance - pendingStats.Value
+		// Ensure there is enough to allow a withdraw still
+		if request.Value < config.GetInt64("tdome.withdraw_min") {
+			if pendingStats.Value > 0 {
+				return nil, status.Errorf(codes.InvalidArgument, "The confirmed balance of %s sats is too small for this withdraw to pay network fees. You have %s sats still pending confirmation.", tdrpc.FormatInt(ctx, account.Balance-pendingStats.Value), tdrpc.FormatInt(ctx, pendingStats.Value))
+			} else {
+				return nil, status.Errorf(codes.InvalidArgument, "The balance of %s sats is too small for this withdraw to pay network fees.", tdrpc.FormatInt(ctx, request.Value))
+			}
+		}
+	}
+
+	// If there is a pending value, ensure there is sufficient confirmed value to withdraw the requested amount
+	if request.Value > account.Balance-pendingStats.Value {
 		return nil, status.Errorf(codes.InvalidArgument, "The confirmed balance of %s sats is insufficient for this withdraw. You have %s sats still pending confirmation.", tdrpc.FormatInt(ctx, account.Balance-pendingStats.Value), tdrpc.FormatInt(ctx, pendingStats.Value))
 	}
 
-	// Check if this is an account sweep
-	if request.Value == tdrpc.ValueSweep {
-		request.Value = account.Balance - pendingStats.Value // Give them all the confirmed funds
-	} else if request.Value < config.GetInt64("tdome.withdraw_min") {
+	if request.Value < config.GetInt64("tdome.withdraw_min") {
 		return nil, status.Errorf(codes.InvalidArgument, "Withdraw value must be at least %s satoshis", tdrpc.FormatInt(ctx, config.GetInt64("tdome.withdraw_min")))
 	}
 
