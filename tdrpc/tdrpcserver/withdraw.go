@@ -60,7 +60,11 @@ func (s *tdRPCServer) Withdraw(ctx context.Context, request *tdrpc.WithdrawReque
 
 	// If there is a pending value, ensure there is sufficient confirmed value to withdraw the requested amount
 	if request.Value > account.Balance-pendingStats.Value {
-		return nil, status.Errorf(codes.InvalidArgument, "The confirmed balance of %s sats is insufficient for this withdraw. You have %s sats still pending confirmation.", tdrpc.FormatInt(ctx, account.Balance-pendingStats.Value), tdrpc.FormatInt(ctx, pendingStats.Value))
+		if pendingStats.Value > 0 {
+			return nil, status.Errorf(codes.InvalidArgument, "The confirmed balance of %s sats is insufficient for this withdraw. You have %s sats still pending confirmation.", tdrpc.FormatInt(ctx, account.Balance-pendingStats.Value), tdrpc.FormatInt(ctx, pendingStats.Value))
+		} else {
+			return nil, status.Errorf(codes.InvalidArgument, "The balance of %s sats is insufficient for this withdraw.", tdrpc.FormatInt(ctx, account.Balance))
+		}
 	}
 
 	if request.Value < config.GetInt64("tdome.withdraw_min") {
