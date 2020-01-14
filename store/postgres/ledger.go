@@ -242,7 +242,7 @@ func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID st
 func (c *Client) ExpireLedgerRequests(ctx context.Context) error {
 
 	var lrs = make([]*tdrpc.LedgerRecord, 0)
-	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE type = 'lightning' AND direction = 'in' AND status = $1 AND expires_at < NOW()`, tdrpc.PENDING)
+	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE type = $1 AND direction = $2 AND status = $3 AND expires_at < NOW()`, tdrpc.LIGHTNING, tdrpc.IN, tdrpc.PENDING)
 	if err != nil {
 		return err
 	}
