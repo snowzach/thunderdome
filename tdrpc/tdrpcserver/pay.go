@@ -235,7 +235,7 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		if status.Code(plrerr) == codes.InvalidArgument {
 			return nil, plrerr
 		}
-		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
+		s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", plrerr)
 		return nil, status.Errorf(codes.Internal, "ProcessLedgerRecord internal error")
 	}
 
