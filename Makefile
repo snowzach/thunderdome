@@ -86,6 +86,10 @@ ${EXECUTABLE}: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go
 test: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go cmd/wire_gen.go mocks
 	go test -cover ./...
 
+.PHONY: golangci-lint
+golangci-lint: tools ${PROTOS} ${MIGRATIONDIR}/bindata.go ${EMBEDDIR}/bindata.go cmd/wire_gen.go mocks
+	golangci-lint run
+
 .PHONY: deps
 deps:
 	# Fetching dependancies...

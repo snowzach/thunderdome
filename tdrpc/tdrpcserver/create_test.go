@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
+	config "github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -46,6 +47,10 @@ func TestCreate(t *testing.T) {
 	})
 	assert.NotNil(t, err)
 
+	mockStore.On("GetLedgerRecordStats", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("time.Time")).Once().Return(&tdrpc.LedgerRecordStats{
+		Count: 0,
+	}, nil)
+
 	// AddInvoice call
 	mockLClient.On("AddInvoice", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("*lnrpc.Invoice")).Once().Return(
 		&lnrpc.AddInvoiceResponse{
@@ -61,6 +66,55 @@ func TestCreate(t *testing.T) {
 		Value: 0,
 	})
 	assert.Nil(t, err)
+
+	mockStore.AssertExpectations(t)
+	mockLClient.AssertExpectations(t)
+
+}
+
+func TestCreateThrottled(t *testing.T) {
+
+	// Mocks
+	mockStore := new(mocks.Store)
+	mockLClient := new(mocks.LightningClient)
+	mockLClient.On("GetInfo", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("*lnrpc.GetInfoRequest")).Once().Return(&lnrpc.GetInfoResponse{IdentityPubkey: "testing"}, nil)
+	mockDCache := new(mocks.DistCache)
+
+	// RPC Server
+	s, err := NewTDRPCServer(mockStore, mockLClient, mockDCache)
+	assert.Nil(t, err)
+
+	// Bootstrap authentication
+	account := &tdrpc.Account{
+		Id:      "123123123123132132132123131123123123123132132132123131123123123333",
+		Address: "2MsoezssHTCZbeoVcZ5NgYmtNiUpyzAc5hm",
+	}
+	ctx := addAccount(context.Background(), account)
+
+	// Bad Value
+	_, err = s.Create(ctx, &tdrpc.CreateRequest{
+		Memo:  "test",
+		Value: -1,
+	})
+	assert.NotNil(t, err)
+
+	_, err = s.Create(ctx, &tdrpc.CreateRequest{
+		Memo:    "test",
+		Value:   1,
+		Expires: -1,
+	})
+	assert.NotNil(t, err)
+
+	mockStore.On("GetLedgerRecordStats", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("time.Time")).Once().Return(&tdrpc.LedgerRecordStats{
+		Count: config.GetInt64("tdome.create_request_limit") + 1,
+	}, nil)
+
+	// Make the request
+	_, err = s.Create(ctx, &tdrpc.CreateRequest{
+		Memo:  "test",
+		Value: 0,
+	})
+	assert.Equal(t, tdrpc.ErrCreateRequestLimitExceeded, err)
 
 	mockStore.AssertExpectations(t)
 	mockLClient.AssertExpectations(t)

@@ -39,6 +39,20 @@ test:
     - timeout 60 sh -c 'until nc -z $0 $1; do sleep 1; done' $STORAGE_HOST 5432
     - CGO_ENABLED=0 make test
 
+golangci-lint:
+  stage: test
+  image: registry.coinninja.net/engineering/go-ci:latest
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - .cache
+  script:
+    - mkdir -p .cache
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
+    - export PATH=$PATH:$GOPATH/bin
+    - export GOPRIVATE=git.coinninja.net
+    - make golangci-lint
+
 .build: &build
   allow_failure: false
   services:

@@ -108,6 +108,7 @@ LOGGER_LEVEL=debug
 | tdome.network_fee_limit                | The limit we will accept for a withdraw fee                       | 40000                              |
 | tdome.default_request_expires          | How long a payment request is good for (seconds)                  | 172800                             |
 | tdome.create_generated_expires         | How long a generic invoice expiration will be in seconds          | 2592000                            |
+| tdome.create_request_limit             | How many unpaid invoices a user can have                          | 5                                  |
 | ---                                    | ---                                                               | ---                                |
 | tdome.default_withdraw_target_blocks   | The default number of target blocks for confirmation on withdraw  | 6                                  |
 | tdome.withdraw_fee_rate                | The percentage fee charged for a withdraw 0.1 = 0.1%              | 1.0                                |
@@ -128,3 +129,15 @@ Data is stored in a postgres database
 ## TLS/HTTPS
 You can enable https by setting the config option server.tls = true and pointing it to your keyfile and certfile.
 To create a self-signed cert: `openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -keyout server.key -out server.crt`
+
+## Sanity Checking
+This query is for checking inputs vs outputs and ensuring the user balance matches the transactions that have taken place
+```
+select 
+(select sum(value) as total from ledger where direction = 'in' AND status = 'completed')
+-
+(select sum(value)+sum(network_fee)+sum(processing_fee) as total from ledger where direction = 'out' AND (status = 'completed' OR status = 'pending'))
+-
+(select sum(balance) from account)
+AS delta
+```

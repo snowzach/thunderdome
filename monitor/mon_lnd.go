@@ -79,14 +79,14 @@ monLoop:
 		m.logger.Debugw("LND Stats", zap.Any("lnd_stats", stats))
 
 		if m.ddclient != nil {
-			m.ddclient.Gauge("lnd.total_balance", float64(stats.TotalBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.confirmed_balance", float64(stats.ConfirmedBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.unconfirmed_balance", float64(stats.UnconfirmedBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.channel_balance", float64(stats.ChannelBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.channel_pending_balance", float64(stats.ChannelPendingBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.local_balance", float64(stats.LocalBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.remote_balance", float64(stats.RemoteBalance), []string{}, 1)
-			m.ddclient.Gauge("lnd.channel_count", float64(stats.ChannelCount), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.total_balance", float64(stats.TotalBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.confirmed_balance", float64(stats.ConfirmedBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.unconfirmed_balance", float64(stats.UnconfirmedBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.channel_balance", float64(stats.ChannelBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.channel_pending_balance", float64(stats.ChannelPendingBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.local_balance", float64(stats.LocalBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.remote_balance", float64(stats.RemoteBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("lnd.channel_count", float64(stats.ChannelCount), []string{}, 1)
 		}
 	}
 

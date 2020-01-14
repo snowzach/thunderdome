@@ -340,8 +340,5 @@ func grpcMetadataGetFirst(ctx context.Context, key string) string {
 }
 
 func fromGRPCGateway(ctx context.Context) bool {
-	if grpcMetadataGetFirst(ctx, grpcGatewayIdentifier) != "" {
-		return true
-	}
-	return false
+	return grpcMetadataGetFirst(ctx, grpcGatewayIdentifier) != ""
 }

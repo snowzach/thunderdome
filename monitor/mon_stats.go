@@ -144,17 +144,17 @@ monLoop:
 		m.logger.Debugw("Stats", zap.Any("stats", stats))
 
 		if m.ddclient != nil {
-			m.ddclient.Gauge("user_count", float64(stats.UserCount), []string{}, 1)
-			m.ddclient.Gauge("user_locked_count", float64(stats.UserLockedCount), []string{}, 1)
-			m.ddclient.Gauge("user_balance", float64(stats.UserBalance), []string{}, 1)
-			m.ddclient.Gauge("user_pending_in", float64(stats.UserPendingIn), []string{}, 1)
-			m.ddclient.Gauge("user_pending_out", float64(stats.UserPendingOut), []string{}, 1)
-			m.ddclient.Gauge("topup_pending_count", float64(stats.TopupPendingCount), []string{}, 1)
-			m.ddclient.Gauge("topup_pending_value", float64(stats.TopupPendingValue), []string{}, 1)
-			m.ddclient.Gauge("topup_instant_pending_count", float64(stats.TopupInstantPendingCount), []string{}, 1)
-			m.ddclient.Gauge("topup_instant_pending_value", float64(stats.TopupInstantPendingValue), []string{}, 1)
-			m.ddclient.Gauge("network_fee", float64(stats.NetworkFee), []string{}, 1)
-			m.ddclient.Gauge("processing_fee", float64(stats.ProcessingFee), []string{}, 1)
+			_ = m.ddclient.Gauge("user_count", float64(stats.UserCount), []string{}, 1)
+			_ = m.ddclient.Gauge("user_locked_count", float64(stats.UserLockedCount), []string{}, 1)
+			_ = m.ddclient.Gauge("user_balance", float64(stats.UserBalance), []string{}, 1)
+			_ = m.ddclient.Gauge("user_pending_in", float64(stats.UserPendingIn), []string{}, 1)
+			_ = m.ddclient.Gauge("user_pending_out", float64(stats.UserPendingOut), []string{}, 1)
+			_ = m.ddclient.Gauge("topup_pending_count", float64(stats.TopupPendingCount), []string{}, 1)
+			_ = m.ddclient.Gauge("topup_pending_value", float64(stats.TopupPendingValue), []string{}, 1)
+			_ = m.ddclient.Gauge("topup_instant_pending_count", float64(stats.TopupInstantPendingCount), []string{}, 1)
+			_ = m.ddclient.Gauge("topup_instant_pending_value", float64(stats.TopupInstantPendingValue), []string{}, 1)
+			_ = m.ddclient.Gauge("network_fee", float64(stats.NetworkFee), []string{}, 1)
+			_ = m.ddclient.Gauge("processing_fee", float64(stats.ProcessingFee), []string{}, 1)
 		}
 	}
 
