@@ -141,3 +141,25 @@ select
 (select sum(balance) from account)
 AS delta
 ```
+
+This query will print out the exact users that have invalid deltas in their accounts
+```
+SELECT
+    a.id,
+    a.balance,
+    a.delta + a.balance AS expected,
+    a.delta
+FROM (
+    SELECT
+    account.id,
+    account.balance,
+    (SELECT COALESCE(SUM(value), 0) AS total FROM ledger WHERE direction = 'in' AND status = 'completed' AND ledger.account_id = account.id)
+        - 
+    (SELECT COALESCE(SUM(value), 0) + COALESCE(SUM(network_fee), 0) + COALESCE(SUM(processing_fee), 0) AS total FROM ledger WHERE direction = 'out' AND (status = 'completed' OR status = 'pending') AND ledger.account_id = account.id)
+        -
+    account.balance
+        AS delta
+    FROM account
+) a
+WHERE a.delta <> 0;
+```
