@@ -104,6 +104,7 @@ func init() {
 	config.SetDefault("tdome.network_fee_limit", 40000)
 	config.SetDefault("tdome.default_request_expires", 172800)
 	config.SetDefault("tdome.create_generated_expires", 2592000)
+	config.SetDefault("tdome.create_request_limit", 5)
 
 	config.SetDefault("tdome.default_withdraw_target_blocks", 6)
 	config.SetDefault("tdome.withdraw_fee_rate", 1.0)

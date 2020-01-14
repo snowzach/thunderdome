@@ -75,7 +75,7 @@ func (s *tdRPCServer) AuthFuncOverride(ctx context.Context, fullMethodName strin
 			return ctx, err
 		}
 
-		break // Authenticated
+		break //nolint - We are authenticated
 	}
 
 	// The accountID will account for different methods of logging in, right now we support public key

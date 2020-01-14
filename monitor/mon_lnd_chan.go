@@ -33,7 +33,7 @@ func (m *Monitor) MonitorLNDChan() {
 	cb, err := m.cbstore.GetLastChanBackup(ctx)
 	if err == store.ErrNotFound {
 		// No backup, always store
-		cb, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
+		_, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
 		if err != nil {
 			m.logger.Fatalw("Could not StoreChanBackup", "monitor", "lnd_chan", "error", err)
 		}
@@ -49,7 +49,7 @@ func (m *Monitor) MonitorLNDChan() {
 		// Failed validation, perform backup
 		if err != nil {
 			m.logger.Infow("Channel Backup fails validation, performing backup", "error", err)
-			cb, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
+			_, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
 			if err != nil {
 				m.logger.Fatalw("Could not StoreChanBackup", "monitor", "lnd_chan", "error", err)
 			}
@@ -59,7 +59,7 @@ func (m *Monitor) MonitorLNDChan() {
 			// Check to make sure the funding TXIDs list matches
 			if cb.FundingTXIDs != getChanBackupSnapshotFundingTXIDs(snapshot) {
 				m.logger.Infow("Channel Backup funding TXID mismatch, performing backup")
-				cb, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
+				_, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
 				if err != nil {
 					m.logger.Fatalw("Could not StoreChanBackup", "monitor", "lnd_chan", "error", err)
 				}
@@ -93,7 +93,7 @@ func (m *Monitor) MonitorLNDChan() {
 		}
 
 		// Store the channel backup
-		cb, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
+		_, err = m.cbstore.StoreChanBackup(ctx, getChanBackupSnapshotFundingTXIDs(snapshot), snapshot.MultiChanBackup.MultiChanBackup)
 		if err != nil {
 			m.logger.Fatalw("Could not StoreChanBackup", "monitor", "lnd_chan", "error", err)
 		}

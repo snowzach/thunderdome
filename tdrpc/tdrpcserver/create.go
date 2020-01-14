@@ -41,6 +41,23 @@ func (s *tdRPCServer) Create(ctx context.Context, request *tdrpc.CreateRequest) 
 		request.Expires = config.GetInt64("tdome.default_request_expires")
 	}
 
+	// Get pending incoming bitcoin balance for this user
+	pendingStats, err := s.store.GetLedgerRecordStats(ctx, map[string]string{
+		"account_id": account.Id,
+		"type":       tdrpc.LIGHTNING.String(),
+		"direction":  tdrpc.IN.String(),
+		"status":     tdrpc.PENDING.String(),
+		"generated":  "false",
+	}, time.Time{})
+	if err != nil {
+		s.logger.Errorw("GetLedgerRecordStats Error", "error", err)
+		return nil, status.Errorf(codes.Internal, "GetLedgerRecordStats internal error")
+	}
+
+	if pendingStats.Count >= config.GetInt64("tdome.create_request_limit") {
+		return nil, tdrpc.ErrCreateRequestLimitExceeded
+	}
+
 	// Create the invoice
 	addInvoiceRequest := &lnrpc.Invoice{
 		Memo:   request.Memo,
