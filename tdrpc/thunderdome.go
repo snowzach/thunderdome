@@ -78,6 +78,7 @@ type Store interface {
 	ExpireLedgerRequests(ctx context.Context) error
 	GetAccountStats(ctx context.Context) (*AccountStats, error)
 	GetEarliestActiveAddIndex(ctx context.Context) (uint64, error)
+	CheckDatabaseConsistency(ctx context.Context) error
 }
 
 type ChanBackupData []byte

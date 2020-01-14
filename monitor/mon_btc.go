@@ -259,7 +259,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 				// The user is allowed only so many pending transactions
 				if lrStats.Count >= config.GetInt64("tdome.topup_instant_user_count_limit") {
 					if m.ddclient != nil {
-						m.ddclient.Event(&statsd.Event{
+						_ = m.ddclient.Event(&statsd.Event{
 							Title:     "TopUp User Limit Exceeded",
 							Text:      fmt.Sprintf(`TopUp TX:%s Value:%d Address:%s AccountId:%s`, ledgerRecordId, lr.Value, addresses[0].String(), account.Id),
 							Priority:  statsd.Normal,
@@ -273,7 +273,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 				// Their pending transactions cannot exceed the user limit
 				if lrStats.Value+vout.Value > config.GetInt64("tdome.topup_instant_user_value_limit") {
 					if m.ddclient != nil {
-						m.ddclient.Event(&statsd.Event{
+						_ = m.ddclient.Event(&statsd.Event{
 							Title:     "TopUp User Value Exceeded",
 							Text:      fmt.Sprintf(`TopUp TX:%s Value:%d Address:%s AccountId:%s`, ledgerRecordId, lr.Value, addresses[0].String(), account.Id),
 							Priority:  statsd.Normal,
@@ -303,7 +303,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 				// The system can only have a total value pending at any given time
 				if lrStats.Value > config.GetInt64("tdome.topup_instant_system_value_limit") {
 					if m.ddclient != nil {
-						m.ddclient.Event(&statsd.Event{
+						_ = m.ddclient.Event(&statsd.Event{
 							Title:     "TopUp System Value Exceeded",
 							Text:      fmt.Sprintf(`TopUp TX:%s Value:%d Address:%s AccountId:%s`, ledgerRecordId, lr.Value, addresses[0].String(), account.Id),
 							Priority:  statsd.Normal,
@@ -343,7 +343,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 		// If it's a large transaction, send an alert
 		if lr.Value > config.GetInt64("tdome.topup_alert_large") && shouldAlert {
 			if m.ddclient != nil {
-				m.ddclient.Event(&statsd.Event{
+				_ = m.ddclient.Event(&statsd.Event{
 					Title:     "Large TopUp Received",
 					Text:      fmt.Sprintf(`Large TopUp TX:%s Value:%d Address:%s AccountId:%s`, txHash, lr.Value, addresses[0].String(), account.Id),
 					Priority:  statsd.Normal,
@@ -368,7 +368,7 @@ func (m *Monitor) parseBTCTranaction(ctx context.Context, rawTx []byte, confirma
 				if receivedTime, err := strconv.ParseInt(receivedTimeString, 10, 64); err == nil {
 					if time.Now().UTC().Unix()-receivedTime > 300 {
 						if m.ddclient != nil {
-							m.ddclient.Event(&statsd.Event{
+							_ = m.ddclient.Event(&statsd.Event{
 								Title:     "Delayed TopUp Transaction",
 								Text:      fmt.Sprintf(`Delayed TopUp Transaction TX:%s Seconds:%d`, txHash, time.Now().UTC().Unix()-receivedTime),
 								Priority:  statsd.Normal,

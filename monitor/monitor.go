@@ -98,6 +98,7 @@ func NewMonitor(store tdrpc.Store, cbstore tdrpc.ChanBackupStore, lclient lnrpc.
 	go m.MonitorLND()
 	go m.MonitorLNDChan()
 	go m.MonitorStats()
+	go m.MonitorDB()
 
 	return m, nil
 

@@ -187,7 +187,9 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 
 			// Mark the original record as failed
 			lr.Status = tdrpc.FAILED
-			s.store.ProcessLedgerRecord(ctx, lr)
+			if prlErr := s.store.ProcessLedgerRecord(ctx, lr); prlErr != nil {
+				s.logger.Errorw("ProcessLedgerRecord Error", zap.Any("lr", lr), "error", err)
+			}
 
 			// A valid message is provided with this error
 			if status.Code(err) == codes.InvalidArgument {
