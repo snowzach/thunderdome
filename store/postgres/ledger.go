@@ -238,11 +238,11 @@ func (c *Client) updateLedgerRecordID(ctx context.Context, tx *sqlx.Tx, oldID st
 
 }
 
-// ExpireLedgerRequests finds any LedgerRequests that have expired and expires them
+// ExpireLedgerRequests finds any inbound LedgerRequests that have expired and expires them
 func (c *Client) ExpireLedgerRequests(ctx context.Context) error {
 
 	var lrs = make([]*tdrpc.LedgerRecord, 0)
-	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE status = $1 AND expires_at < NOW()`, tdrpc.PENDING)
+	err := c.db.SelectContext(ctx, &lrs, `SELECT * FROM ledger WHERE type = 'lightning' AND direction = 'in' AND status = $1 AND expires_at < NOW()`, tdrpc.PENDING)
 	if err != nil {
 		return err
 	}
