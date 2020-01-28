@@ -109,6 +109,7 @@ LOGGER_LEVEL=debug
 | tdome.default_request_expires          | How long a payment request is good for (seconds)                  | 172800                             |
 | tdome.create_generated_expires         | How long a generic invoice expiration will be in seconds          | 2592000                            |
 | tdome.create_request_limit             | How many unpaid invoices a user can have                          | 5                                  |
+| tdome.agent_pay_value_limit            | Agent non-preauthorized pay limit                                 | 100000                             |
 | ---                                    | ---                                                               | ---                                |
 | tdome.default_withdraw_target_blocks   | The default number of target blocks for confirmation on withdraw  | 6                                  |
 | tdome.withdraw_fee_rate                | The percentage fee charged for a withdraw 0.1 = 0.1%              | 1.0                                |
