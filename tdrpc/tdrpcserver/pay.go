@@ -28,11 +28,6 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		return nil, tdrpc.ErrAccountLocked
 	}
 
-	// If we're an agent, we are only allowed to proceed when we provide a PreAuthId
-	if isAgent(ctx) && request.PreAuthId == "" {
-		return nil, tdrpc.ErrPermissionDenied
-	}
-
 	// Decode the Request
 	pr, err := s.lclient.DecodePayReq(ctx, &lnrpc.PayReqString{PayReq: request.Request})
 	if err != nil {
@@ -65,6 +60,11 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 		}
 		// Force the request value to match the payment request
 		request.Value = pr.NumSatoshis
+	}
+
+	// If we're an agent, we are only allowed to proceed when we provide a PreAuthId
+	if isAgent(ctx) && request.PreAuthId == "" && request.Value > config.GetInt64("tdome.agent_pay_value_limit") {
+		return nil, tdrpc.ErrPermissionDenied
 	}
 
 	// Build the ledger record
@@ -103,10 +103,21 @@ func (s *tdRPCServer) Pay(ctx context.Context, request *tdrpc.PayRequest) (*tdrp
 			PubKey: pr.Destination,
 			Amt:    lr.Value + lr.ProcessingFee,
 		}
+
+		// If it includes route hints, use the node id of the route hints to estimate the fee
+		if len(pr.RouteHints) == 1 {
+			if len(pr.RouteHints[0].HopHints) == 1 {
+				queryRoutesRequest.PubKey = pr.RouteHints[0].HopHints[0].NodeId
+			}
+		}
+
 		routesResponse, err := s.lclient.QueryRoutes(ctx, queryRoutesRequest)
 		if err != nil {
 			if strings.Contains(status.Convert(err).Message(), "unable to find a path") {
 				return nil, tdrpc.ErrNoRouteFound
+			}
+			if strings.Contains(status.Convert(err).Message(), "target not found") {
+				return nil, status.Errorf(codes.InvalidArgument, "Unable to query route fee to destination")
 			}
 			s.logger.Errorw("LND QueryRoutes Error", zap.Any("request", queryRoutesRequest), "error", err)
 			return nil, status.Errorf(codes.Internal, "LND QueryRoutes internal error")
