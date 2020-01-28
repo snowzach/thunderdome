@@ -14,7 +14,6 @@ require (
 	github.com/blendle/zapdriver v1.3.1
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	github.com/btcsuite/btcwallet v0.11.0 // indirect
 	github.com/containerd/containerd v1.2.8 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhui/dktest v0.3.1 // indirect
@@ -36,10 +35,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.12.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
-	github.com/juju/clock v0.0.0-20190205081909-9c5c9712527c // indirect
-	github.com/juju/errors v0.0.0-20190806202954-0232dcc7464d // indirect
-	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
-	github.com/juju/testing v0.0.0-20190723135506-ce30eb24acd2 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/lightningnetwork/lnd v0.7.1-beta
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
@@ -62,10 +57,8 @@ require (
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11
 	google.golang.org/grpc v1.25.1
-	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/macaroon-bakery.v2 v2.1.0 // indirect
 	gopkg.in/macaroon.v2 v2.1.0
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
 	gopkg.in/yaml.v2 v2.2.5 // indirect
 )
 
