@@ -163,6 +163,7 @@ func allowAgent(endpoint string, sig string) bool {
 	switch endpoint {
 	case tdrpc.CreateGeneratedEndpoint:
 	case tdrpc.PayEndpoint:
+	case tdrpc.CreatePreAuthEndpoint:
 	case tdrpc.GetPreAuthEndpoint:
 	default:
 		return false

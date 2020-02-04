@@ -37,6 +37,11 @@ func (s *tdRPCServer) CreatePreAuth(ctx context.Context, request *tdrpc.CreateRe
 		return nil, status.Errorf(codes.InvalidArgument, "Expires cannot be less than %s or greater than %s seconds", tdrpc.FormatInt(ctx, 300), tdrpc.FormatInt(ctx, 7776000))
 	}
 
+	// If we're an agent, we can only request a pre-auth below the tdome.agent_pay_value_limit
+	if isAgent(ctx) && request.Value > config.GetInt64("tdome.agent_pay_value_limit") {
+		return nil, tdrpc.ErrPermissionDenied
+	}
+
 	if request.Expires == 0 {
 		request.Expires = config.GetInt64("tdome.default_request_expires")
 	}

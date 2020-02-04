@@ -22,6 +22,7 @@ const (
 	AccountEndpoint         = "/tdrpc.ThunderdomeRPC/Account"
 	DecodeEndpoint          = "/tdrpc.ThunderdomeRPC/Decode"
 	PayEndpoint             = "/tdrpc.ThunderdomeRPC/Pay"
+	CreatePreAuthEndpoint   = "/tdrpc.ThunderdomeRPC/CreatePreAuth"
 	GetPreAuthEndpoint      = "/tdrpc.ThunderdomeRPC/GetPreAuth"
 
 	// TempLedgerRecordIdPrefix is used to temporary store ledger record IDs
